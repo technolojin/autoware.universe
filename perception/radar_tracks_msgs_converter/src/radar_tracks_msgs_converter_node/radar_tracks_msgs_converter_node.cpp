@@ -231,7 +231,8 @@ TrackedObjects RadarTracksMsgsConverterNode::convertRadarTrackToTrackedObjects()
 
     // Velocity conversion
     geometry_msgs::msg::Vector3 compensated_velocity{};
-    // Compensate radar coordinate
+
+    // 1: Compensate radar coordinate
     // radar track velocity is defined in the radar coordinate
     // compensate radar coordinate to vehicle coordinate
     {
@@ -242,7 +243,7 @@ TrackedObjects RadarTracksMsgsConverterNode::convertRadarTrackToTrackedObjects()
       compensated_velocity.z = vel.z;
     }
 
-    // Compensate ego vehicle motion (twist)
+    // 2: Compensate ego vehicle motion (twist)
     if (node_param_.use_twist_compensation) {
       if (odometry_data_) {
         // linear compensation
@@ -258,22 +259,23 @@ TrackedObjects RadarTracksMsgsConverterNode::convertRadarTrackToTrackedObjects()
       }
     }
     
-    // filters
+    // determine static object
+    bool is_static_object = false;
     if (
       node_param_.use_twist_compensation && odometry_data_ && node_param_.use_groundspeed_filter) {
-      // filter static object by ground speed
+      // when longitudinal speed is less than threshold, the object is static
       const float azimuth = std::atan2(radar_track.position.y, radar_track.position.x);
       const float longitudinal_speed =
         compensated_velocity.x * std::cos(azimuth) + compensated_velocity.y * std::sin(azimuth);
-      if (std::fabs(longitudinal_speed) < node_param_.groundspeed_threshold)  // lateral speed is
-                                                                              // larger than
-                                                                              // longitudinal speed
-      {
-        continue;
-      }
-      // filter crossing objects, which cannot detected by radar
+      is_static_object = std::fabs(longitudinal_speed) < node_param_.groundspeed_threshold;
+      // when lateral speed is less than threshold, the object is static
       const float lateral_speed =
         -compensated_velocity.x * std::sin(azimuth) + compensated_velocity.y * std::cos(azimuth);
+      is_static_object |= std::fabs(lateral_speed) < node_param_.groundspeed_threshold;
+
+      // lateral speed cannot be detected by radar
+      // when the ratio of longitudinal speed and lateral speed is large
+      // the object is not reliable, so the object need to be filtered out
       const float long_lat_ratio = std::fabs(longitudinal_speed / lateral_speed);
       if (long_lat_ratio < node_param_.long_lat_speed_ratio_threshold) {
         continue;
@@ -288,7 +290,7 @@ TrackedObjects RadarTracksMsgsConverterNode::convertRadarTrackToTrackedObjects()
     // kinematics setting
     TrackedObjectKinematics kinematics;
     kinematics.orientation_availability = TrackedObjectKinematics::AVAILABLE;
-    kinematics.is_stationary = false;
+    kinematics.is_stationary = is_static_object;
     kinematics.pose_with_covariance.pose = transformed_pose_stamped.pose;
 
     // kinematics of object is defined in the object coordinate
