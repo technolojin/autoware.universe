@@ -1,0 +1,15 @@
+<launch>
+  <!-- Input -->
+  <arg name="input/tracks" default="~/input/tracks"/>
+  <!-- Output -->
+  <arg name="output/tracks_mod" default="~/output/tracks_mod"/>
+  <!-- Parameter -->
+  <arg name="velocity_y_threshold" default="7.0"/>
+
+  <!-- Node -->
+  <node pkg="object_uncertainty_modeler" exec="object_uncertainty_modeler_radar_node" name="object_uncertainty_modeler_radar" output="screen">
+    <remap from="~/input/tracks" to="$(var input/tracks)"/>
+    <remap from="~/output/tracks_mod" to="$(var output/tracks_mod)"/>
+    <param name="velocity_y_threshold" value="$(var velocity_y_threshold)"/>
+  </node>
+</launch>
