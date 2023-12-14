@@ -17,6 +17,8 @@
 
 #include "rclcpp/rclcpp.hpp"
 
+#include <Eigen/Core>
+
 #include "radar_msgs/msg/radar_tracks.hpp"
 
 #include <chrono>
@@ -58,6 +60,7 @@ private:
 
   // Core
   RadarTrack fillCovarianceMatrices(const RadarTrack & radar_track);
+  Eigen::Matrix<float, 2, 2> calcPositionUncertainty(const RadarTrack & radar_track);
 };
 
 }  // namespace object_uncertainty_modeler
