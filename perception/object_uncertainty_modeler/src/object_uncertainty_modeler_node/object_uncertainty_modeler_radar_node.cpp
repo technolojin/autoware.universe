@@ -58,14 +58,23 @@ ObjectUncertaintyModelerRadarNode::ObjectUncertaintyModelerRadarNode(
   const rclcpp::NodeOptions & node_options)
 : Node("object_uncertainty_modeler_radar", node_options)
 {
-  printf("ObjectUncertaintyModelerRadarNode::ObjectUncertaintyModelerRadarNode\n");
-
   // Parameter Server
   set_param_res_ = this->add_on_set_parameters_callback(
     std::bind(&ObjectUncertaintyModelerRadarNode::onSetParam, this, std::placeholders::_1));
 
   // Node Parameter
-  node_param_.velocity_y_threshold = declare_parameter<double>("velocity_y_threshold", 7.0);
+  node_param_.uncertainty_hor_coeff[0] =
+    declare_parameter<double>("uncertainty_hor_coeff_a");  // [rad/m]
+  node_param_.uncertainty_hor_coeff[1] =
+    declare_parameter<double>("uncertainty_hor_coeff_b");  // [-]
+  node_param_.uncertainty_hor_coeff[2] =
+    declare_parameter<double>("uncertainty_hor_coeff_c");  // [m]
+  node_param_.uncertainty_long_coeff[0] =
+    declare_parameter<double>("uncertainty_long_coeff_a");  // [rad/m]
+  node_param_.uncertainty_long_coeff[1] =
+    declare_parameter<double>("uncertainty_long_coeff_b");  // [-]
+  node_param_.uncertainty_long_coeff[2] =
+    declare_parameter<double>("uncertainty_long_coeff_c");  // [m]
 
   // Subscriber
   sub_tracks_ = create_subscription<RadarTracks>(
@@ -78,11 +87,7 @@ ObjectUncertaintyModelerRadarNode::ObjectUncertaintyModelerRadarNode(
 
 void ObjectUncertaintyModelerRadarNode::onTracks(const RadarTracks::ConstSharedPtr msg)
 {
-  // debug message
-  printf("ObjectUncertaintyModelerRadarNode::onTracks\n");
-
   RadarTracks pub_tracks;
-
   pub_tracks.header = msg->header;
 
   for (const auto & radar_track : msg->tracks) {
@@ -104,21 +109,15 @@ Eigen::Matrix<float, 2, 2> ObjectUncertaintyModelerRadarNode::calcPositionUncert
   float distance = std::sqrt(position.x * position.x + position.y * position.y);
   float azimuth = std::atan2(position.y, position.x);
 
-  // uncertainty model parameters
-  float uncertainty_hor_coeff_a = 0.001;   // [rad/m]
-  float uncertainty_hor_coeff_b = 0.005;   // [-]
-  float uncertainty_hor_coeff_c = 0.4;     // [m]
-  float uncertainty_long_coeff_a = 0.0;    // [rad/m]
-  float uncertainty_long_coeff_b = 0.003;  // [-]
-  float uncertainty_long_coeff_c = 0.3;    // [m]
-
-  // polinomial model on radial distance
+  // polynomial model on radial distance
   float horizontal_uncertainty =
-    (uncertainty_hor_coeff_a * distance + uncertainty_hor_coeff_b) * distance +
-    uncertainty_hor_coeff_c;  // [m]
+    (node_param_.uncertainty_hor_coeff[0] * distance + node_param_.uncertainty_hor_coeff[1]) *
+      distance +
+    node_param_.uncertainty_hor_coeff[2];  // [m]
   float longitudinal_uncertainty =
-    (uncertainty_long_coeff_a * distance + uncertainty_long_coeff_b) * distance +
-    uncertainty_long_coeff_c;  // [m]
+    (node_param_.uncertainty_long_coeff[0] * distance + node_param_.uncertainty_long_coeff[1]) *
+      distance +
+    node_param_.uncertainty_long_coeff[2];  // [m]
 
   // rotate covariance matrix
   Eigen::Matrix<float, 2, 1> uncertainty_vector_radial(
@@ -147,13 +146,14 @@ RadarTrack ObjectUncertaintyModelerRadarNode::fillCovarianceMatrices(const Radar
   radar_position_cov[RADAR_IDX::X_Y] = position_uncertainty_matrix(0, 1);
   radar_position_cov[RADAR_IDX::Y_Y] = position_uncertainty_matrix(1, 1);
 
+  // fill velocity and acceleration covariance matrices
   // const geometry_msgs::msg::Vector3 & vel = radar_track.velocity;
-
   auto & radar_vel_cov = pub_track.velocity_covariance;
   radar_vel_cov[RADAR_IDX::X_X] = 3.0;
   radar_vel_cov[RADAR_IDX::X_Y] = 0.0;
   radar_vel_cov[RADAR_IDX::Y_Y] = 5.0;
 
+  // fill acceleration covariance matrices
   auto & radar_accel_cov = pub_track.acceleration_covariance;
   radar_accel_cov[RADAR_IDX::X_X] = 3.0;
   radar_accel_cov[RADAR_IDX::X_Y] = 0.0;
@@ -173,7 +173,12 @@ rcl_interfaces::msg::SetParametersResult ObjectUncertaintyModelerRadarNode::onSe
       auto & p = node_param_;
 
       // Update params
-      update_param(params, "velocity_y_threshold", p.velocity_y_threshold);
+      update_param(params, "uncertainty_hor_coeff_a", p.uncertainty_hor_coeff[0]);
+      update_param(params, "uncertainty_hor_coeff_b", p.uncertainty_hor_coeff[1]);
+      update_param(params, "uncertainty_hor_coeff_c", p.uncertainty_hor_coeff[2]);
+      update_param(params, "uncertainty_long_coeff_a", p.uncertainty_long_coeff[0]);
+      update_param(params, "uncertainty_long_coeff_b", p.uncertainty_long_coeff[1]);
+      update_param(params, "uncertainty_long_coeff_c", p.uncertainty_long_coeff[2]);
     }
   } catch (const rclcpp::exceptions::InvalidParameterTypeException & e) {
     result.successful = false;

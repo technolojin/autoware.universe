@@ -4,12 +4,22 @@
   <!-- Output -->
   <arg name="output/tracks_mod" default="~/output/tracks_mod"/>
   <!-- Parameter -->
-  <arg name="velocity_y_threshold" default="7.0"/>
+  <arg name="uncertainty_hor_coeff_a" default="0.00002"/>
+  <arg name="uncertainty_hor_coeff_b" default="0.015"/>
+  <arg name="uncertainty_hor_coeff_c" default="0.3"/>
+  <arg name="uncertainty_long_coeff_a" default="0.0"/>
+  <arg name="uncertainty_long_coeff_b" default="0.005"/>
+  <arg name="uncertainty_long_coeff_c" default="0.2"/>
 
   <!-- Node -->
   <node pkg="object_uncertainty_modeler" exec="object_uncertainty_modeler_radar_node" name="object_uncertainty_modeler_radar" output="screen">
     <remap from="~/input/tracks" to="$(var input/tracks)"/>
     <remap from="~/output/tracks_mod" to="$(var output/tracks_mod)"/>
-    <param name="velocity_y_threshold" value="$(var velocity_y_threshold)"/>
+    <param name="uncertainty_hor_coeff_a" value="$(var uncertainty_hor_coeff_a)"/>
+    <param name="uncertainty_hor_coeff_b" value="$(var uncertainty_hor_coeff_b)"/>
+    <param name="uncertainty_hor_coeff_c" value="$(var uncertainty_hor_coeff_c)"/>
+    <param name="uncertainty_long_coeff_a" value="$(var uncertainty_long_coeff_a)"/>
+    <param name="uncertainty_long_coeff_b" value="$(var uncertainty_long_coeff_b)"/>
+    <param name="uncertainty_long_coeff_c" value="$(var uncertainty_long_coeff_c)"/>
   </node>
 </launch>
