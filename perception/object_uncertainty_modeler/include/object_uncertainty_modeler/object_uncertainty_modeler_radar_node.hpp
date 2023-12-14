@@ -37,7 +37,8 @@ public:
 
   struct NodeParam
   {
-    double velocity_y_threshold{};
+    float uncertainty_hor_coeff[3] = {0.0, 0.0, 0.0};
+    float uncertainty_long_coeff[3] = {0.0, 0.0, 0.0};
   };
 
 private:
