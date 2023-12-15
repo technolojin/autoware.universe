@@ -398,14 +398,15 @@ FrenetPoint PathGenerator::getFrenetPoint(const TrackedObject & object, const Po
     static_cast<float>(tf2::getYaw(object.kinematics.pose_with_covariance.pose.orientation));
   const float lane_yaw =
     static_cast<float>(tf2::getYaw(ref_path.at(nearest_segment_idx).orientation));
+  const float yaw_rate = static_cast<float>(object.kinematics.twist_with_covariance.twist.angular.z);
   const float delta_yaw = obj_yaw - lane_yaw;
 
   frenet_point.s = motion_utils::calcSignedArcLength(ref_path, 0, nearest_segment_idx) + l;
   frenet_point.d = motion_utils::calcLateralOffset(ref_path, obj_point);
   frenet_point.s_vel = vx * std::cos(delta_yaw) - vy * std::sin(delta_yaw);
   frenet_point.d_vel = vx * std::sin(delta_yaw) + vy * std::cos(delta_yaw);
-  frenet_point.s_acc = 0.0;
-  frenet_point.d_acc = 0.0;
+  frenet_point.s_acc = - 0.5 * yaw_rate * frenet_point.d_vel;
+  frenet_point.d_acc = 0.5 * yaw_rate * frenet_point.s_vel;
 
   return frenet_point;
 }
