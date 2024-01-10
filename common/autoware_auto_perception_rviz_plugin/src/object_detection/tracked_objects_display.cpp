@@ -34,12 +34,13 @@ TrackedObjectsDisplay::TrackedObjectsDisplay() : ObjectPolygonDisplayBase("track
   m_select_object_dynamics_property->addOption("All", 2);
 }
 
-bool TrackedObjectsDisplay::isObjectToShow(
+bool TrackedObjectsDisplay::is_object_to_show(
   const uint showing_dynamic_status, const TrackedObject & object)
 {
   if (showing_dynamic_status == 0 && object.kinematics.is_stationary) {
     return false;  // Show only moving objects
-  } else if (showing_dynamic_status == 1 && !object.kinematics.is_stationary) {
+  }
+  if (showing_dynamic_status == 1 && !object.kinematics.is_stationary) {
     return false;  // Show only stationary objects
   }
   return true;
@@ -53,7 +54,7 @@ void TrackedObjectsDisplay::processMessage(TrackedObjects::ConstSharedPtr msg)
   const auto showing_dynamic_status = get_object_dynamics_to_visualize();
   for (const auto & object : msg->objects) {
     // Filter by object dynamic status
-    if (!isObjectToShow(showing_dynamic_status, object)) continue;
+    if (!is_object_to_show(showing_dynamic_status, object)) continue;
     const auto line_width = get_line_width();
     // Get marker for shape
     auto shape_marker = get_shape_marker_ptr(
@@ -101,7 +102,21 @@ void TrackedObjectsDisplay::processMessage(TrackedObjects::ConstSharedPtr msg)
       pose_with_covariance_marker_ptr->id = uuid_to_marker_id(object.object_id);
       add_marker(pose_with_covariance_marker_ptr);
     }
-
+    // Get marker for existence probability
+    geometry_msgs::msg::Point existence_probability_position;
+    existence_probability_position.x = object.kinematics.pose_with_covariance.pose.position.x + 0.5;
+    existence_probability_position.y = object.kinematics.pose_with_covariance.pose.position.y;
+    existence_probability_position.z = object.kinematics.pose_with_covariance.pose.position.z + 0.5;
+    const float existence_probability = object.existence_probability;
+    auto existence_prob_marker = get_existence_probability_marker_ptr(
+      existence_probability_position, object.kinematics.pose_with_covariance.pose.orientation,
+      existence_probability, object.classification);
+    if (existence_prob_marker) {
+      auto existence_prob_marker_ptr = existence_prob_marker.value();
+      existence_prob_marker_ptr->header = msg->header;
+      existence_prob_marker_ptr->id = uuid_to_marker_id(object.object_id);
+      add_marker(existence_prob_marker_ptr);
+    }
     // Get marker for velocity text
     geometry_msgs::msg::Point vel_vis_position;
     vel_vis_position.x = uuid_vis_position.x - 0.5;

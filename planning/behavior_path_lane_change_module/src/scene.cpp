@@ -997,12 +997,7 @@ PathWithLaneId NormalLaneChange::getTargetSegment(
         std::min(dist_from_start, dist_from_end), s_start + std::numeric_limits<double>::epsilon());
     });
 
-  RCLCPP_DEBUG(
-    rclcpp::get_logger("behavior_path_planner")
-      .get_child("lane_change")
-      .get_child("util")
-      .get_child("getTargetSegment"),
-    "start: %f, end: %f", s_start, s_end);
+  RCLCPP_DEBUG(logger_, "in %s start: %f, end: %f", __func__, s_start, s_end);
 
   PathWithLaneId target_segment = route_handler.getCenterLinePath(target_lanes, s_start, s_end);
   for (auto & point : target_segment.points) {
@@ -1531,11 +1526,17 @@ bool NormalLaneChange::isValidPath(const PathWithLaneId & path) const
   return true;
 }
 
-bool NormalLaneChange::isRequiredStop(const bool is_object_coming_from_rear) const
+bool NormalLaneChange::isRequiredStop(const bool is_object_coming_from_rear)
 {
   const auto threshold = lane_change_parameters_->backward_length_buffer_for_end_of_lane;
-  return isNearEndOfCurrentLanes(status_.current_lanes, status_.target_lanes, threshold) &&
-         isAbleToStopSafely() && is_object_coming_from_rear;
+  if (
+    isNearEndOfCurrentLanes(status_.current_lanes, status_.target_lanes, threshold) &&
+    isAbleToStopSafely() && is_object_coming_from_rear) {
+    current_lane_change_state_ = LaneChangeStates::Stop;
+    return true;
+  }
+  current_lane_change_state_ = LaneChangeStates::Normal;
+  return false;
 }
 
 bool NormalLaneChange::calcAbortPath()
