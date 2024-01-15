@@ -15,12 +15,11 @@
 #ifndef OBJECT_DETECTION__OBJECT_POLYGON_DETAIL_HPP_
 #define OBJECT_DETECTION__OBJECT_POLYGON_DETAIL_HPP_
 
+#include <Eigen/Core>
+#include <Eigen/Eigen>
 #include <rclcpp/logging.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <visibility_control.hpp>
-
-#include <Eigen/Core>
-#include <Eigen/Eigen>
 
 #include <autoware_auto_perception_msgs/msg/detected_object.hpp>
 #include <autoware_auto_perception_msgs/msg/object_classification.hpp>
@@ -115,8 +114,7 @@ get_uuid_marker_ptr(
   const std_msgs::msg::ColorRGBA & color_rgba);
 
 AUTOWARE_AUTO_PERCEPTION_RVIZ_PLUGIN_PUBLIC visualization_msgs::msg::Marker::SharedPtr
-get_pose_covariance_marker_ptr(
-  const geometry_msgs::msg::PoseWithCovariance & pose_with_covariance);
+get_pose_covariance_marker_ptr(const geometry_msgs::msg::PoseWithCovariance & pose_with_covariance);
 
 AUTOWARE_AUTO_PERCEPTION_RVIZ_PLUGIN_PUBLIC visualization_msgs::msg::Marker::SharedPtr
 get_yaw_covariance_marker_ptr(
