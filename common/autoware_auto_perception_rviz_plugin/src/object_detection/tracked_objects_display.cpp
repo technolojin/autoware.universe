@@ -58,8 +58,7 @@ void TrackedObjectsDisplay::processMessage(TrackedObjects::ConstSharedPtr msg)
     // Get marker for shape
     auto shape_marker = get_shape_marker_ptr(
       object.shape, object.kinematics.pose_with_covariance.pose.position,
-      object.kinematics.pose_with_covariance.pose.orientation, object.classification,
-      get_line_width(),
+      object.kinematics.pose_with_covariance.pose.orientation, object.classification, line_width,
       object.kinematics.orientation_availability ==
         autoware_auto_perception_msgs::msg::DetectedObjectKinematics::AVAILABLE);
     if (shape_marker) {

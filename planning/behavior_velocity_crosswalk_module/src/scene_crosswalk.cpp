@@ -766,7 +766,6 @@ CollisionPoint CrosswalkModule::createCollisionPoint(
   const std::optional<double> object_crosswalk_passage_direction) const
 {
   constexpr double min_ego_velocity = 1.38;  // [m/s]
-  const auto base_link2front = planner_data_->vehicle_info_.max_longitudinal_offset_m;
 
   const auto estimated_velocity = std::hypot(obj_vel.x, obj_vel.y);
   const auto velocity = std::max(planner_param_.min_object_velocity, estimated_velocity);
@@ -774,8 +773,12 @@ CollisionPoint CrosswalkModule::createCollisionPoint(
   CollisionPoint collision_point{};
   collision_point.collision_point = nearest_collision_point;
   collision_point.crosswalk_passage_direction = object_crosswalk_passage_direction;
+
+  // The decision of whether the ego vehicle or the pedestrian goes first is determined by the logic
+  // for ego_pass_first or yield; even the decision for ego_pass_later does not affect this sense.
+  // Hence, here, we use the length that would be appropriate for the ego_pass_first judge.
   collision_point.time_to_collision =
-    std::max(0.0, dist_ego2cp - planner_param_.stop_distance_from_object - base_link2front) /
+    std::max(0.0, dist_ego2cp - planner_data_->vehicle_info_.min_longitudinal_offset_m) /
     std::max(ego_vel.x, min_ego_velocity);
   collision_point.time_to_vehicle = std::max(0.0, dist_obj2cp) / velocity;
 
@@ -1055,19 +1058,20 @@ bool CrosswalkModule::isRedSignalForPedestrians() const
     crosswalk_.regulatoryElementsAs<const lanelet::TrafficLight>();
 
   for (const auto & traffic_lights_reg_elem : traffic_lights_reg_elems) {
-    const auto traffic_signal_stamped =
+    const auto traffic_signal_stamped_opt =
       planner_data_->getTrafficSignal(traffic_lights_reg_elem->id());
-    if (!traffic_signal_stamped) {
+    if (!traffic_signal_stamped_opt) {
       continue;
     }
+    const auto traffic_signal_stamped = traffic_signal_stamped_opt.value();
 
     if (
       planner_param_.traffic_light_state_timeout <
-      (clock_->now() - traffic_signal_stamped->stamp).seconds()) {
+      (clock_->now() - traffic_signal_stamped.stamp).seconds()) {
       continue;
     }
 
-    const auto & lights = traffic_signal_stamped->signal.elements;
+    const auto & lights = traffic_signal_stamped.signal.elements;
     if (lights.empty()) {
       continue;
     }
