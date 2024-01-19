@@ -61,7 +61,8 @@ private:
 
   // Core
   RadarTrack fillCovarianceMatrices(const RadarTrack & radar_track);
-  Eigen::Matrix<float, 2, 2> calcPositionUncertainty(const RadarTrack & radar_track);
+  Eigen::Matrix<float, 2, 2> calcPositionUncertainty(const geometry_msgs::msg::Point & position);
+  Eigen::Matrix<float, 2, 2> calcVelocityUncertainty(const geometry_msgs::msg::Point & position, const geometry_msgs::msg::Vector3 & velocity);
 };
 
 }  // namespace object_uncertainty_modeler

@@ -29,6 +29,8 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <Eigen/Core>
+#include <Eigen/Geometry>
 
 using namespace std::literals;
 using std::chrono::duration;
@@ -354,11 +356,25 @@ std::array<double, 36> RadarTracksMsgsConverterNode::convertTwistCovarianceMatri
   using POSE_IDX = tier4_autoware_utils::xyzrpy_covariance_index::XYZRPY_COV_IDX;
   using RADAR_IDX = tier4_autoware_utils::xyz_upper_covariance_index::XYZ_UPPER_COV_IDX;
   std::array<double, 36> twist_covariance{};
-  twist_covariance[POSE_IDX::X_X] = radar_track.velocity_covariance[RADAR_IDX::X_X];
-  twist_covariance[POSE_IDX::X_Y] = radar_track.velocity_covariance[RADAR_IDX::X_Y];
+
+  // Calculate azimuth angle of the object in the vehicle coordinate
+  const double sensor_yaw = tf2::getYaw(transform_->transform.rotation);
+  const double object_yaw = std::atan2(radar_track.velocity.y, radar_track.velocity.x);
+  const double azimuth = sensor_yaw + object_yaw;
+  Eigen::Matrix<float, 2, 2> covariance_matrix, rotation_matrix, rotated_covariance;
+  // velocity covariance matrix is in sensor coordinate
+  covariance_matrix << radar_track.velocity_covariance[RADAR_IDX::X_X],
+    radar_track.velocity_covariance[RADAR_IDX::X_Y], radar_track.velocity_covariance[RADAR_IDX::X_Y],
+    radar_track.velocity_covariance[RADAR_IDX::Y_Y];
+  rotation_matrix << std::cos(azimuth), -std::sin(azimuth),
+    std::sin(azimuth), std::cos(azimuth);
+  rotated_covariance = rotation_matrix * covariance_matrix * rotation_matrix.transpose();
+  // rotate covariance matrix in xy plane
+  twist_covariance[POSE_IDX::X_X] = rotated_covariance(0, 0);
+  twist_covariance[POSE_IDX::X_Y] = rotated_covariance(0, 1);
+  twist_covariance[POSE_IDX::Y_X] = rotated_covariance(1, 0);
+  twist_covariance[POSE_IDX::Y_Y] = rotated_covariance(1, 1);
   twist_covariance[POSE_IDX::X_Z] = radar_track.velocity_covariance[RADAR_IDX::X_Z];
-  twist_covariance[POSE_IDX::Y_X] = radar_track.velocity_covariance[RADAR_IDX::X_Y];
-  twist_covariance[POSE_IDX::Y_Y] = radar_track.velocity_covariance[RADAR_IDX::Y_Y];
   twist_covariance[POSE_IDX::Y_Z] = radar_track.velocity_covariance[RADAR_IDX::Y_Z];
   twist_covariance[POSE_IDX::Z_X] = radar_track.velocity_covariance[RADAR_IDX::X_Z];
   twist_covariance[POSE_IDX::Z_Y] = radar_track.velocity_covariance[RADAR_IDX::Y_Z];
