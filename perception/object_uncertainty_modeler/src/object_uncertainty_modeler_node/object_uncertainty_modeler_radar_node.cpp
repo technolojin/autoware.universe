@@ -102,10 +102,9 @@ void ObjectUncertaintyModelerRadarNode::onTracks(const RadarTracks::ConstSharedP
 }
 
 Eigen::Matrix<float, 2, 2> ObjectUncertaintyModelerRadarNode::calcPositionUncertainty(
-  const RadarTrack & radar_track)
+  const geometry_msgs::msg::Point & position)
 {
   // calculate distance and azimuth
-  const auto position = radar_track.position;
   float distance = std::sqrt(position.x * position.x + position.y * position.y);
   float azimuth = std::atan2(position.y, position.x);
 
@@ -131,6 +130,37 @@ Eigen::Matrix<float, 2, 2> ObjectUncertaintyModelerRadarNode::calcPositionUncert
   return rotated_covariance;
 }
 
+Eigen::Matrix<float, 2, 2> ObjectUncertaintyModelerRadarNode::calcVelocityUncertainty(
+  const geometry_msgs::msg::Point & position, const geometry_msgs::msg::Vector3 & velocity)
+{
+  // calculate distance and azimuth
+  // float distance = std::sqrt(position.x * position.x + position.y * position.y);
+  float azimuth = std::atan2(position.y, position.x);
+
+  // calculate velocity orientation
+  float velocity_azimuth = std::atan2(velocity.y, velocity.x);
+  float lateral_velocity = std::sin(velocity_azimuth - azimuth) * velocity.x +
+                           std::cos(velocity_azimuth - azimuth) * velocity.y;
+  float longitudinal_velocity = std::cos(velocity_azimuth - azimuth) * velocity.x -
+                                std::sin(velocity_azimuth - azimuth) * velocity.y;
+
+  // fixed uncertainty
+  float longitudinal_uncertainty = 0.5f + longitudinal_velocity * 0.0f;  // [m/s]
+  float horizontal_uncertainty   = 5.0f + lateral_velocity * 0.0f;       // [m/s]
+
+  // rotate covariance matrix
+  Eigen::Matrix<float, 2, 1> uncertainty_vector_radial(
+    longitudinal_uncertainty * longitudinal_uncertainty,
+    horizontal_uncertainty * horizontal_uncertainty);
+  Eigen::Rotation2D<float> rotation(azimuth);
+
+  Eigen::Matrix<float, 2, 2> velocity_covariance = rotation.toRotationMatrix() *
+                                                   uncertainty_vector_radial.asDiagonal() *
+                                                   rotation.toRotationMatrix().transpose();
+
+  return velocity_covariance;
+}
+
 RadarTrack ObjectUncertaintyModelerRadarNode::fillCovarianceMatrices(const RadarTrack & radar_track)
 {
   using RADAR_IDX = tier4_autoware_utils::xyz_upper_covariance_index::XYZ_UPPER_COV_IDX;
@@ -138,7 +168,7 @@ RadarTrack ObjectUncertaintyModelerRadarNode::fillCovarianceMatrices(const Radar
   RadarTrack pub_track = radar_track;
 
   // calculate uncertainty
-  const auto position_uncertainty_matrix = calcPositionUncertainty(radar_track);
+  const auto position_uncertainty_matrix = calcPositionUncertainty(radar_track.position);
 
   // fill covariance matrices
   auto & radar_position_cov = pub_track.position_covariance;
@@ -146,12 +176,15 @@ RadarTrack ObjectUncertaintyModelerRadarNode::fillCovarianceMatrices(const Radar
   radar_position_cov[RADAR_IDX::X_Y] = position_uncertainty_matrix(0, 1);
   radar_position_cov[RADAR_IDX::Y_Y] = position_uncertainty_matrix(1, 1);
 
+
+  const auto velocity_uncertainty_matrix = calcVelocityUncertainty(radar_track.position, radar_track.velocity);
+
   // fill velocity and acceleration covariance matrices
   // const geometry_msgs::msg::Vector3 & vel = radar_track.velocity;
   auto & radar_vel_cov = pub_track.velocity_covariance;
-  radar_vel_cov[RADAR_IDX::X_X] = 3.0;
-  radar_vel_cov[RADAR_IDX::X_Y] = 0.0;
-  radar_vel_cov[RADAR_IDX::Y_Y] = 5.0;
+  radar_vel_cov[RADAR_IDX::X_X] = velocity_uncertainty_matrix(0, 0);
+  radar_vel_cov[RADAR_IDX::X_Y] = velocity_uncertainty_matrix(0, 1);
+  radar_vel_cov[RADAR_IDX::Y_Y] = velocity_uncertainty_matrix(1, 1);
 
   // fill acceleration covariance matrices
   auto & radar_accel_cov = pub_track.acceleration_covariance;
