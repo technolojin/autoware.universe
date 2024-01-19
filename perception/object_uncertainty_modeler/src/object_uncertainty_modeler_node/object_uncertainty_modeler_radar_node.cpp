@@ -145,8 +145,8 @@ Eigen::Matrix<float, 2, 2> ObjectUncertaintyModelerRadarNode::calcVelocityUncert
                                 std::sin(velocity_azimuth - azimuth) * velocity.y;
 
   // fixed uncertainty
-  float longitudinal_uncertainty = 0.5f + longitudinal_velocity * 0.0f;  // [m/s]
-  float horizontal_uncertainty   = 5.0f + lateral_velocity * 0.0f;       // [m/s]
+  float longitudinal_uncertainty = 0.5f + std::abs(longitudinal_velocity) * 0.05f;  // [m/s]
+  float horizontal_uncertainty = 3.0f + std::abs(lateral_velocity) * 2.5f;         // [m/s]
 
   // rotate covariance matrix
   Eigen::Matrix<float, 2, 1> uncertainty_vector_radial(
@@ -176,8 +176,8 @@ RadarTrack ObjectUncertaintyModelerRadarNode::fillCovarianceMatrices(const Radar
   radar_position_cov[RADAR_IDX::X_Y] = position_uncertainty_matrix(0, 1);
   radar_position_cov[RADAR_IDX::Y_Y] = position_uncertainty_matrix(1, 1);
 
-
-  const auto velocity_uncertainty_matrix = calcVelocityUncertainty(radar_track.position, radar_track.velocity);
+  const auto velocity_uncertainty_matrix =
+    calcVelocityUncertainty(radar_track.position, radar_track.velocity);
 
   // fill velocity and acceleration covariance matrices
   // const geometry_msgs::msg::Vector3 & vel = radar_track.velocity;
