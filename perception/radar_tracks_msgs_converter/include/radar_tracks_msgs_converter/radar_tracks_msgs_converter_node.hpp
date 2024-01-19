@@ -108,7 +108,7 @@ private:
   std::array<double, 36> convertPoseCovarianceMatrix(
     const radar_msgs::msg::RadarTrack & radar_track);
   std::array<double, 36> convertTwistCovarianceMatrix(
-    const radar_msgs::msg::RadarTrack & radar_track);
+    const radar_msgs::msg::RadarTrack & radar_track, const double object_yaw);
   std::array<double, 36> convertAccelerationCovarianceMatrix(
     const radar_msgs::msg::RadarTrack & radar_track);
   uint8_t convertClassification(const uint16_t classification);

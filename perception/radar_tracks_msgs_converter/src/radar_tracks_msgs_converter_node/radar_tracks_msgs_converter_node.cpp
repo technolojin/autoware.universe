@@ -26,11 +26,12 @@
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #endif
 
+#include <Eigen/Core>
+#include <Eigen/Geometry>
+
 #include <memory>
 #include <string>
 #include <vector>
-#include <Eigen/Core>
-#include <Eigen/Geometry>
 
 using namespace std::literals;
 using std::chrono::duration;
@@ -252,10 +253,11 @@ TrackedObjects RadarTracksMsgsConverterNode::convertRadarTrackToTrackedObjects()
     // 1: Compensate radar coordinate
     // radar track velocity is defined in the radar coordinate
     // compensate radar coordinate to vehicle coordinate
-    auto compensated_velocity = compensateVelocitySensorPosition(radar_track);
+    const auto ego_frame_velocity = compensateVelocitySensorPosition(radar_track);
+    geometry_msgs::msg::Vector3 ground_velocity = ego_frame_velocity;
     // 2: Compensate ego motion
     if (node_param_.use_twist_compensation && odometry_data_) {
-      compensated_velocity = compensateVelocityEgoMotion(compensated_velocity, position_from_veh);
+      ground_velocity = compensateVelocityEgoMotion(ego_frame_velocity, position_from_veh);
     } else if (node_param_.use_twist_compensation && !odometry_data_) {
       RCLCPP_WARN_THROTTLE(
         get_logger(), *get_clock(), 5000,
@@ -263,25 +265,25 @@ TrackedObjects RadarTracksMsgsConverterNode::convertRadarTrackToTrackedObjects()
     }
 
     // yaw angle (vehicle heading) is obtained from ground velocity
-    double yaw = tier4_autoware_utils::normalizeRadian(
-      std::atan2(compensated_velocity.y, compensated_velocity.x));
+    const double ground_yaw =
+      tier4_autoware_utils::normalizeRadian(std::atan2(ground_velocity.y, ground_velocity.x));
 
     // kinematics setting
     TrackedObjectKinematics kinematics;
     kinematics.orientation_availability = TrackedObjectKinematics::AVAILABLE;
-    kinematics.is_stationary = isStaticObject(radar_track, compensated_velocity);
+    kinematics.is_stationary = isStaticObject(radar_track, ground_velocity);
     kinematics.pose_with_covariance.pose = transformed_pose_stamped.pose;
     kinematics.pose_with_covariance.covariance = convertPoseCovarianceMatrix(radar_track);
     // velocity of object is defined in the object coordinate
     // heading is obtained from ground velocity
     kinematics.pose_with_covariance.pose.orientation =
-      tier4_autoware_utils::createQuaternionFromYaw(yaw);
+      tier4_autoware_utils::createQuaternionFromYaw(ground_yaw);
     // longitudinal velocity is the length of the velocity vector
     // lateral velocity is zero, use default value
-    kinematics.twist_with_covariance.twist.linear.x = std::sqrt(
-      compensated_velocity.x * compensated_velocity.x +
-      compensated_velocity.y * compensated_velocity.y);
-    kinematics.twist_with_covariance.covariance = convertTwistCovarianceMatrix(radar_track);
+    kinematics.twist_with_covariance.twist.linear.x =
+      std::sqrt(ground_velocity.x * ground_velocity.x + ground_velocity.y * ground_velocity.y);
+    kinematics.twist_with_covariance.covariance =
+      convertTwistCovarianceMatrix(radar_track, ground_yaw);
     // acceleration is zero, use default value
     kinematics.acceleration_with_covariance.covariance =
       convertAccelerationCovarianceMatrix(radar_track);
@@ -304,15 +306,15 @@ geometry_msgs::msg::Vector3 RadarTracksMsgsConverterNode::compensateVelocitySens
   const radar_msgs::msg::RadarTrack & radar_track)
 {
   // initialize compensated velocity
-  geometry_msgs::msg::Vector3 compensated_velocity{};
+  geometry_msgs::msg::Vector3 ego_frame_velocity{};
 
   const double sensor_yaw = tf2::getYaw(transform_->transform.rotation);
   const geometry_msgs::msg::Vector3 & vel = radar_track.velocity;
-  compensated_velocity.x = vel.x * std::cos(sensor_yaw) - vel.y * std::sin(sensor_yaw);
-  compensated_velocity.y = vel.x * std::sin(sensor_yaw) + vel.y * std::cos(sensor_yaw);
-  compensated_velocity.z = vel.z;
+  ego_frame_velocity.x = vel.x * std::cos(sensor_yaw) - vel.y * std::sin(sensor_yaw);
+  ego_frame_velocity.y = vel.x * std::sin(sensor_yaw) + vel.y * std::cos(sensor_yaw);
+  ego_frame_velocity.z = vel.z;
 
-  return compensated_velocity;
+  return ego_frame_velocity;
 }
 
 geometry_msgs::msg::Vector3 RadarTracksMsgsConverterNode::compensateVelocityEgoMotion(
@@ -351,7 +353,7 @@ std::array<double, 36> RadarTracksMsgsConverterNode::convertPoseCovarianceMatrix
   return pose_covariance;
 }
 std::array<double, 36> RadarTracksMsgsConverterNode::convertTwistCovarianceMatrix(
-  const radar_msgs::msg::RadarTrack & radar_track)
+  const radar_msgs::msg::RadarTrack & radar_track, const double object_yaw)
 {
   using POSE_IDX = tier4_autoware_utils::xyzrpy_covariance_index::XYZRPY_COV_IDX;
   using RADAR_IDX = tier4_autoware_utils::xyz_upper_covariance_index::XYZ_UPPER_COV_IDX;
@@ -359,15 +361,15 @@ std::array<double, 36> RadarTracksMsgsConverterNode::convertTwistCovarianceMatri
 
   // Calculate azimuth angle of the object in the vehicle coordinate
   const double sensor_yaw = tf2::getYaw(transform_->transform.rotation);
-  const double object_yaw = std::atan2(radar_track.velocity.y, radar_track.velocity.x);
-  const double azimuth = sensor_yaw + object_yaw;
+  const double azimuth = sensor_yaw - object_yaw;
+
   Eigen::Matrix<float, 2, 2> covariance_matrix, rotation_matrix, rotated_covariance;
   // velocity covariance matrix is in sensor coordinate
   covariance_matrix << radar_track.velocity_covariance[RADAR_IDX::X_X],
-    radar_track.velocity_covariance[RADAR_IDX::X_Y], radar_track.velocity_covariance[RADAR_IDX::X_Y],
+    radar_track.velocity_covariance[RADAR_IDX::X_Y],
+    radar_track.velocity_covariance[RADAR_IDX::X_Y],
     radar_track.velocity_covariance[RADAR_IDX::Y_Y];
-  rotation_matrix << std::cos(azimuth), -std::sin(azimuth),
-    std::sin(azimuth), std::cos(azimuth);
+  rotation_matrix << std::cos(azimuth), -std::sin(azimuth), std::sin(azimuth), std::cos(azimuth);
   rotated_covariance = rotation_matrix * covariance_matrix * rotation_matrix.transpose();
   // rotate covariance matrix in xy plane
   twist_covariance[POSE_IDX::X_X] = rotated_covariance(0, 0);
