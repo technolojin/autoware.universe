@@ -1,16 +1,3 @@
-// Copyright 2023 TIER IV, Inc.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
 
 #ifndef VISION_ROI_OBJECT_DETECTOR__NODE_HPP_
 #define VISION_ROI_OBJECT_DETECTOR__NODE_HPP_
@@ -21,7 +8,8 @@
 #include "rclcpp/rclcpp.hpp"
 #include "tier4_autoware_utils/ros/transform_listener.hpp"
 
-#include "tier4_perception_msgs/msg/detected_objects_with_feature.hpp"
+#include <tier4_perception_msgs/msg/detected_objects_with_feature.hpp>
+#include <sensor_msgs/msg/camera_info.hpp>
 
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
@@ -35,6 +23,8 @@ namespace vision_roi_object_detector
 {
 using tier4_perception_msgs::msg::DetectedObjectsWithFeature;
 using tier4_perception_msgs::msg::DetectedObjectWithFeature;
+using sensor_msgs::msg::CameraInfo;
+using autoware_auto_perception_msgs::msg::ObjectClassification;
 
 class RoiObjectDetectorNode : public rclcpp::Node
 {
@@ -43,28 +33,25 @@ public:
 
 private:
   // Subscriber
-
   tf2_ros::Buffer tf_buffer_;
   tf2_ros::TransformListener tf_listener_;
-
-  rclcpp::Subscription<DetectedObjectsWithFeature>::SharedPtr sub_objects_{};
-  message_filters::Subscriber<DetectedObjectsWithFeature> objects0_sub_;
-  message_filters::Subscriber<DetectedObjectsWithFeature> objects1_sub_;
-  typedef message_filters::sync_policies::ApproximateTime<
-    DetectedObjectsWithFeature, DetectedObjectsWithFeature>
-    SyncPolicy;
-  typedef message_filters::Synchronizer<SyncPolicy> Sync;
-  Sync sync_;
-
-  std::string output_frame_id_;
-
-  std::vector<rclcpp::Subscription<DetectedObjectsWithFeature>::SharedPtr> sub_objects_array{};
   std::shared_ptr<tier4_autoware_utils::TransformListener> transform_listener_;
 
+  message_filters::Subscriber<DetectedObjectsWithFeature> rois_sub_;
+  message_filters::Subscriber<CameraInfo>                 camera_info_sub_;
+
+  typedef message_filters::sync_policies::ApproximateTime<
+    DetectedObjectsWithFeature, CameraInfo>
+    SyncPolicy;
+  message_filters::Synchronizer<SyncPolicy> sync_;
+
+  // Callback
   void objectsCallback(
-    const DetectedObjectsWithFeature::ConstSharedPtr & input_objects0_msg,
-    const DetectedObjectsWithFeature::ConstSharedPtr & input_objects1_msg);
+    const DetectedObjectsWithFeature::ConstSharedPtr & input_roi_msg,
+    const sensor_msgs::msg::CameraInfo::ConstSharedPtr & camera_info_msg);
+
   // Publisher
+  std::string output_frame_id_;
   rclcpp::Publisher<DetectedObjectsWithFeature>::SharedPtr pub_objects_;
 };
 
