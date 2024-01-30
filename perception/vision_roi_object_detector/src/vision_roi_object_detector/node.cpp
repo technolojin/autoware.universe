@@ -38,6 +38,9 @@ RoiObjectDetectorNode::RoiObjectDetectorNode(const rclcpp::NodeOptions & node_op
 
   // Publisher
   pub_objects_ = create_publisher<DetectedObjects>("~/output/roi_objects", rclcpp::QoS{1});
+
+  // DEBUG roi box
+  pub_debug_roi_ = create_publisher<DetectedObjects>("~/output/debug_roi", rclcpp::QoS{1});
 }
 
 void RoiObjectDetectorNode::objectsCallback(
@@ -49,10 +52,13 @@ void RoiObjectDetectorNode::objectsCallback(
   }
 
   // 3D Object estimation from 2D ROI
-
   DetectedObjects output_objects;
   output_objects.header = input_rois_msg->header;
   output_objects.header.frame_id = output_frame_id_;
+
+  // DEBUG roi box
+  DetectedObjects output_debug_rois;
+  output_debug_rois.header = input_rois_msg->header;
 
   // Camera information
 
@@ -62,20 +68,20 @@ void RoiObjectDetectorNode::objectsCallback(
   // get camera height and pitch angle from tf
   geometry_msgs::msg::TransformStamped camera_to_base_link_tf;
   try {
-    camera_to_base_link_tf = tf_buffer_.lookupTransform(
-      "base_link", camera_frame_id, tf2::TimePointZero);
+    camera_to_base_link_tf =
+      tf_buffer_.lookupTransform("base_link", camera_frame_id, tf2::TimePointZero);
   } catch (tf2::TransformException & ex) {
     RCLCPP_ERROR(get_logger(), "%s", ex.what());
     return;
   }
   // camera height from the ground is calculated from the translation z coordinate of the tf
-  const double camera_height = camera_to_base_link_tf.transform.translation.z ; 
+  const double camera_height = camera_to_base_link_tf.transform.translation.z;
   // camera pitch angle is calculated from the rotation quaternion
   // while the euler angels in 3-2-1 rotation order
   const auto & camera_rotation_quaternion = camera_to_base_link_tf.transform.rotation;
   const double camera_pitch = std::asin(
     2.0 * (camera_rotation_quaternion.w * camera_rotation_quaternion.y -
-    camera_rotation_quaternion.z * camera_rotation_quaternion.x));
+           camera_rotation_quaternion.z * camera_rotation_quaternion.x));
 
   // camera focal length
   const double c_x = camera_info_msg->k[2];
@@ -83,11 +89,12 @@ void RoiObjectDetectorNode::objectsCallback(
   const double f_x = camera_info_msg->k[0];
   const double f_y = camera_info_msg->k[4];
 
-  RCLCPP_INFO(get_logger(), "camera_pitch: %f, camera_height: %f, focal length y: %f", camera_pitch, camera_height, f_y);
+  RCLCPP_INFO(
+    get_logger(), "camera_pitch: %f, camera_height: %f, focal length y: %f", camera_pitch,
+    camera_height, f_y);
 
   // for each feature object
   for (const auto & feature_object : input_rois_msg->feature_objects) {
-
     // Object size
     // calculate object size based on roi box size on the image, distance, and camera focal length
     // The original object size is estimated by the object class
@@ -97,8 +104,8 @@ void RoiObjectDetectorNode::objectsCallback(
     double object_size_y = 2.0;
     double object_size_z = 1.5;
 
-    double object_bottom_to_center = 0.5 * std::sqrt(
-      object_size_x * object_size_x + object_size_y * object_size_y);
+    double object_bottom_to_center =
+      0.5 * std::sqrt(object_size_x * object_size_x + object_size_y * object_size_y);
 
     // Distance from camera to object
     // roi box bottom y coordinate
@@ -128,7 +135,7 @@ void RoiObjectDetectorNode::objectsCallback(
     estimated_object_position.point.x = distance;
     estimated_object_position.point.y = -roi_center_x * distance / f_x;
     estimated_object_position.point.z = object_size_z / 2;
-    
+
     // Object position in the publishing frame
     geometry_msgs::msg::PointStamped estimated_object_position_base_link;
     try {
@@ -139,10 +146,6 @@ void RoiObjectDetectorNode::objectsCallback(
       return;
     }
 
-
-
-
-
     // Covariance matrix
     // when the roi has a certain uncertainty, the covariance matrix of the object is calculated
     // from the covariance matrix of the roi box and the distance
@@ -151,13 +154,12 @@ void RoiObjectDetectorNode::objectsCallback(
     std::array<double, 36> object_pose_covariance{};
     using POSE_IDX = tier4_autoware_utils::xyzrpy_covariance_index::XYZRPY_COV_IDX;
 
-    object_pose_covariance[POSE_IDX::X_X] = 1.0; // x-x
-    object_pose_covariance[POSE_IDX::Y_Y] = 1.0; // y-y
-    object_pose_covariance[POSE_IDX::Z_Z] = 0.1; // z-z
-    object_pose_covariance[POSE_IDX::ROLL_ROLL] = 0.1; // roll-roll
-    object_pose_covariance[POSE_IDX::PITCH_PITCH] = 0.1; // pitch-pitch
-    object_pose_covariance[POSE_IDX::YAW_YAW] = 3.14; // yaw-yaw
-
+    object_pose_covariance[POSE_IDX::X_X] = 1.0;          // x-x
+    object_pose_covariance[POSE_IDX::Y_Y] = 1.0;          // y-y
+    object_pose_covariance[POSE_IDX::Z_Z] = 0.1;          // z-z
+    object_pose_covariance[POSE_IDX::ROLL_ROLL] = 0.1;    // roll-roll
+    object_pose_covariance[POSE_IDX::PITCH_PITCH] = 0.1;  // pitch-pitch
+    object_pose_covariance[POSE_IDX::YAW_YAW] = 3.14;     // yaw-yaw
 
     // Fill in the output_objects
     DetectedObject output_object;
@@ -168,22 +170,42 @@ void RoiObjectDetectorNode::objectsCallback(
     output_object.shape.dimensions.y = object_size_y;
     output_object.shape.dimensions.z = object_size_z;
 
-    output_object.kinematics.pose_with_covariance.pose.position = estimated_object_position_base_link.point;
+    output_object.kinematics.has_position_covariance = true;
+    output_object.kinematics.pose_with_covariance.pose.position =
+      estimated_object_position_base_link.point;
     output_object.kinematics.pose_with_covariance.covariance = object_pose_covariance;
-    
-    output_object.kinematics.has_twist = false;
 
-    
+    output_object.kinematics.has_twist = false;
+    output_object.kinematics.has_twist_covariance = false;
+    output_object.kinematics.orientation_availability = false;
+
     output_objects.objects.push_back(output_object);
 
+    // DEBUG roi box
+    DetectedObject output_roi;
+    output_roi.classification = feature_object.object.classification;
+    output_roi.shape.type = autoware_auto_perception_msgs::msg::Shape::BOUNDING_BOX;
+    const double roi_box_distance = 0.3;  // 30 cm front of the camera
+    output_roi.shape.dimensions.x = roi.width / f_x * roi_box_distance;
+    output_roi.shape.dimensions.y = roi.height / f_y * roi_box_distance;
+    output_roi.shape.dimensions.z = 0.001;
+    output_roi.kinematics.pose_with_covariance.pose.position.x =
+      (roi.x_offset + roi.width / 2 - c_x) / f_x * roi_box_distance;
+    output_roi.kinematics.pose_with_covariance.pose.position.y =
+      (roi.y_offset + roi.height / 2 - c_y) / f_y * roi_box_distance;
+    output_roi.kinematics.pose_with_covariance.pose.position.z = roi_box_distance;
+    output_roi.kinematics.has_position_covariance = false;
+    output_roi.kinematics.pose_with_covariance.covariance[0] = 0.1;
+    output_debug_rois.objects.push_back(output_roi);
   }
-
 
   // debug message
   RCLCPP_INFO(get_logger(), "converted objects: %ld", output_objects.objects.size());
 
-
   pub_objects_->publish(output_objects);
+
+  // DEBUG roi box
+  pub_debug_roi_->publish(output_debug_rois);
 }
 }  // namespace vision_roi_object_detector
 
