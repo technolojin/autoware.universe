@@ -37,7 +37,7 @@ RoiObjectDetectorNode::RoiObjectDetectorNode(const rclcpp::NodeOptions & node_op
   sync_.registerCallback(std::bind(&RoiObjectDetectorNode::objectsCallback, this, _1, _2));
 
   // Publisher
-  pub_objects_ = create_publisher<DetectedObjectsWithFeature>("~/output/roi_objects", rclcpp::QoS{1});
+  pub_objects_ = create_publisher<DetectedObjects>("~/output/roi_objects", rclcpp::QoS{1});
 }
 
 void RoiObjectDetectorNode::objectsCallback(
@@ -50,14 +50,14 @@ void RoiObjectDetectorNode::objectsCallback(
 
   // 3D Object estimation from 2D ROI
 
-  DetectedObjectsWithFeature output_objects;
+  DetectedObjects output_objects;
   output_objects.header = input_rois_msg->header;
   output_objects.header.frame_id = output_frame_id_;
 
   // Camera information
 
   // camera height and pitch angle
-  // obtain from camera frame id to base_link tf, wheel radius
+  // obtain from camera frame id to base_link tf
   std::string camera_frame_id = camera_info_msg->header.frame_id;
   // get camera height and pitch angle from tf
   geometry_msgs::msg::TransformStamped camera_to_base_link_tf;
@@ -68,9 +68,8 @@ void RoiObjectDetectorNode::objectsCallback(
     RCLCPP_ERROR(get_logger(), "%s", ex.what());
     return;
   }
-  const double wheel_radius = 0.35; // [m]
-  // camera height from the ground is calculated from the translation z coordinate of the tf and the wheel radius
-  const double camera_height = camera_to_base_link_tf.transform.translation.z + wheel_radius; 
+  // camera height from the ground is calculated from the translation z coordinate of the tf
+  const double camera_height = camera_to_base_link_tf.transform.translation.z ; 
   // camera pitch angle is calculated from the rotation quaternion
   // while the euler angels in 3-2-1 rotation order
   const auto & camera_rotation_quaternion = camera_to_base_link_tf.transform.rotation;
@@ -79,21 +78,35 @@ void RoiObjectDetectorNode::objectsCallback(
     camera_rotation_quaternion.z * camera_rotation_quaternion.x));
 
   // camera focal length
+  const double c_x = camera_info_msg->k[2];
+  const double c_y = camera_info_msg->k[5];
   const double f_x = camera_info_msg->k[0];
   const double f_y = camera_info_msg->k[4];
 
-  RCLCPP_INFO(get_logger(), "camera_pitch: %f, camera_height: %f", camera_pitch, camera_height);
-
+  RCLCPP_INFO(get_logger(), "camera_pitch: %f, camera_height: %f, focal length y: %f", camera_pitch, camera_height, f_y);
 
   // for each feature object
   for (const auto & feature_object : input_rois_msg->feature_objects) {
 
+    // Object size
+    // calculate object size based on roi box size on the image, distance, and camera focal length
+    // The original object size is estimated by the object class
+
+    // for test, the object size is set to default
+    double object_size_x = 5.0;
+    double object_size_y = 2.0;
+    double object_size_z = 1.5;
+
+    double object_bottom_to_center = 0.5 * std::sqrt(
+      object_size_x * object_size_x + object_size_y * object_size_y);
+
     // Distance from camera to object
     // roi box bottom y coordinate
     auto & roi = feature_object.feature.roi;
-    double roi_bottom = roi.y_offset + roi.height;
+    double roi_bottom = roi.y_offset + roi.height - c_y;
+
     // roi view angle
-    double roi_view_angle = camera_pitch - std::atan2(roi_bottom, f_y);
+    double roi_view_angle = camera_pitch + std::atan2(roi_bottom, f_y);
     // if the view angle is above the horizon, the object is not detected
     if (roi_view_angle > 0) {
       // continue;
@@ -101,40 +114,33 @@ void RoiObjectDetectorNode::objectsCallback(
     RCLCPP_INFO(get_logger(), "roi_bottom: %f, roi_view_angle: %f", roi_bottom, roi_view_angle);
 
     // object distance
-    double distance = camera_height / std::tan(-roi_view_angle);
+    double distance = camera_height / std::tan(roi_view_angle) + object_bottom_to_center;
     RCLCPP_INFO(get_logger(), "distance: %f", distance);
 
     // Object azimuth angle
     // roi box center x coordinate
-    double roi_center_x = roi.x_offset + roi.width / 2;
+    double roi_center_x = roi.x_offset + roi.width / 2 - c_x;
 
     // Object position in the camera frame
     geometry_msgs::msg::PointStamped estimated_object_position;
     estimated_object_position.header = input_rois_msg->header;
-    estimated_object_position.header.frame_id = "base_link";
+    estimated_object_position.header.frame_id = output_frame_id_;
     estimated_object_position.point.x = distance;
-    estimated_object_position.point.y = roi_center_x * distance / f_x;
-    estimated_object_position.point.z = 0.0;
+    estimated_object_position.point.y = -roi_center_x * distance / f_x;
+    estimated_object_position.point.z = object_size_z / 2;
     
-    // Object position in the base_link frame
+    // Object position in the publishing frame
     geometry_msgs::msg::PointStamped estimated_object_position_base_link;
     try {
       tf_buffer_.transform(
-        estimated_object_position, estimated_object_position_base_link, "base_link");
+        estimated_object_position, estimated_object_position_base_link, output_frame_id_);
     } catch (tf2::TransformException & ex) {
       RCLCPP_ERROR(get_logger(), "%s", ex.what());
       return;
     }
 
 
-    // Object size
-    // calculate object size based on roi box size on the image, distance, and camera focal length
-    // The original object size is estimated by the object class
 
-    // for test, the object size is set to default
-    double object_size_x = 2.0;
-    double object_size_y = 5.0;
-    double object_size_z = 1.5;
 
 
     // Covariance matrix
@@ -154,34 +160,28 @@ void RoiObjectDetectorNode::objectsCallback(
 
 
     // Fill in the output_objects
-    DetectedObjectWithFeature output_object;
-    output_object.feature = feature_object.feature;
-    output_object.object.classification = feature_object.object.classification;
+    DetectedObject output_object;
+    output_object.classification = feature_object.object.classification;
 
-    output_object.object.shape.type = autoware_auto_perception_msgs::msg::Shape::BOUNDING_BOX;
-    output_object.object.shape.dimensions.x = object_size_x;
-    output_object.object.shape.dimensions.y = object_size_y;
-    output_object.object.shape.dimensions.z = object_size_z;
+    output_object.shape.type = autoware_auto_perception_msgs::msg::Shape::BOUNDING_BOX;
+    output_object.shape.dimensions.x = object_size_x;
+    output_object.shape.dimensions.y = object_size_y;
+    output_object.shape.dimensions.z = object_size_z;
 
-    output_object.object.kinematics.pose_with_covariance.pose.position = estimated_object_position_base_link.point;
-    output_object.object.kinematics.pose_with_covariance.covariance = object_pose_covariance;
+    output_object.kinematics.pose_with_covariance.pose.position = estimated_object_position_base_link.point;
+    output_object.kinematics.pose_with_covariance.covariance = object_pose_covariance;
     
-    output_object.object.kinematics.has_twist = false;
+    output_object.kinematics.has_twist = false;
 
     
-    output_objects.feature_objects.push_back(output_object);
+    output_objects.objects.push_back(output_object);
 
   }
 
 
-
-
   // debug message
-  RCLCPP_INFO(get_logger(), "converted objects: %ld", output_objects.feature_objects.size());
+  RCLCPP_INFO(get_logger(), "converted objects: %ld", output_objects.objects.size());
 
-
-
-  // output_objects.feature_objects = transformed_objects.feature_objects;
 
   pub_objects_->publish(output_objects);
 }

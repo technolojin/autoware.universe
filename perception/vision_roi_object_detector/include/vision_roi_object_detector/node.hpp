@@ -8,6 +8,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "tier4_autoware_utils/ros/transform_listener.hpp"
 
+#include <autoware_auto_perception_msgs/msg/detected_objects.hpp>
 #include <tier4_perception_msgs/msg/detected_objects_with_feature.hpp>
 #include <sensor_msgs/msg/camera_info.hpp>
 
@@ -21,6 +22,8 @@
 
 namespace vision_roi_object_detector
 {
+using autoware_auto_perception_msgs::msg::DetectedObjects;
+using autoware_auto_perception_msgs::msg::DetectedObject;
 using tier4_perception_msgs::msg::DetectedObjectsWithFeature;
 using tier4_perception_msgs::msg::DetectedObjectWithFeature;
 using sensor_msgs::msg::CameraInfo;
@@ -52,7 +55,7 @@ private:
 
   // Publisher
   std::string output_frame_id_;
-  rclcpp::Publisher<DetectedObjectsWithFeature>::SharedPtr pub_objects_;
+  rclcpp::Publisher<DetectedObjects>::SharedPtr pub_objects_;
 };
 
 }  // namespace vision_roi_object_detector
