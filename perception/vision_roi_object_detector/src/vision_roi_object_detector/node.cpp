@@ -75,13 +75,12 @@ void RoiObjectDetectorNode::objectsCallback(
     return;
   }
   // camera height from the ground is calculated from the translation z coordinate of the tf
-  const double camera_height = camera_to_base_link_tf.transform.translation.z;
-  // camera pitch angle is calculated from the rotation quaternion
-  // while the euler angels in 3-2-1 rotation order
-  const auto & camera_rotation_quaternion = camera_to_base_link_tf.transform.rotation;
-  const double camera_pitch = std::asin(
-    2.0 * (camera_rotation_quaternion.w * camera_rotation_quaternion.y -
-           camera_rotation_quaternion.z * camera_rotation_quaternion.x));
+  geometry_msgs::msg::PointStamped camera_position;
+  camera_position.header = camera_to_base_link_tf.header;
+  camera_position.point.x = camera_to_base_link_tf.transform.translation.x;
+  camera_position.point.y = camera_to_base_link_tf.transform.translation.y;
+  camera_position.point.z = camera_to_base_link_tf.transform.translation.z;
+  const double & camera_height = camera_position.point.z;
 
   // camera focal length
   const double c_x = camera_info_msg->k[2];
@@ -90,8 +89,8 @@ void RoiObjectDetectorNode::objectsCallback(
   const double f_y = camera_info_msg->k[4];
 
   RCLCPP_INFO(
-    get_logger(), "camera_pitch: %f, camera_height: %f, focal length y: %f", camera_pitch,
-    camera_height, f_y);
+    get_logger(), "camera position: %f,  %f,  %f", camera_position.point.x, camera_position.point.y,
+    camera_position.point.z);
 
   // for each feature object
   for (const auto & feature_object : input_rois_msg->feature_objects) {
@@ -104,43 +103,79 @@ void RoiObjectDetectorNode::objectsCallback(
     double object_size_y = 2.0;
     double object_size_z = 1.5;
 
-    double object_bottom_to_center =
-      0.5 * std::sqrt(object_size_x * object_size_x + object_size_y * object_size_y);
+    // double object_bottom_to_center =
+    //   0.5 * std::sqrt(object_size_x * object_size_x + object_size_y * object_size_y);
 
     // Distance from camera to object
     // roi box bottom y coordinate
     auto & roi = feature_object.feature.roi;
-    double roi_bottom = roi.y_offset + roi.height - c_y;
+    double roi_x = roi.x_offset + roi.width / 2 - c_x;  // center x coordinate
+    double roi_y = roi.y_offset + roi.height - c_y;     // bottom y coordinate
 
-    // roi view angle
-    double roi_view_angle = camera_pitch + std::atan2(roi_bottom, f_y);
-    // if the view angle is above the horizon, the object is not detected
-    if (roi_view_angle > 0) {
-      // continue;
+    // point ray vector
+    // the vector from the camera center to the roi box bottom
+    // the vector is normalized
+    geometry_msgs::msg::PointStamped ray_vector_head;
+    ray_vector_head.header = input_rois_msg->header;
+    ray_vector_head.header.frame_id = camera_frame_id;
+    ray_vector_head.point.x = roi_x / f_x;
+    ray_vector_head.point.y = roi_y / f_y;
+    ray_vector_head.point.z = 1.0;
+
+    // ray vector is rotated by the camera tf
+    geometry_msgs::msg::PointStamped ray_vector_head_base_link;
+    try {
+      tf_buffer_.transform(ray_vector_head, ray_vector_head_base_link, "base_link");
+    } catch (tf2::TransformException & ex) {
+      RCLCPP_ERROR(get_logger(), "%s", ex.what());
+      return;
     }
-    RCLCPP_INFO(get_logger(), "roi_bottom: %f, roi_view_angle: %f", roi_bottom, roi_view_angle);
 
-    // object distance
-    double distance = camera_height / std::tan(roi_view_angle) + object_bottom_to_center;
-    RCLCPP_INFO(get_logger(), "distance: %f", distance);
+    // calculate the ray vector
+    geometry_msgs::msg::PointStamped ray_vector;
+    ray_vector.point.x = ray_vector_head_base_link.point.x - camera_position.point.x;
+    ray_vector.point.y = ray_vector_head_base_link.point.y - camera_position.point.y;
+    ray_vector.point.z = ray_vector_head_base_link.point.z - camera_position.point.z;
 
-    // Object azimuth angle
-    // roi box center x coordinate
-    double roi_center_x = roi.x_offset + roi.width / 2 - c_x;
+    // if the ray vector is pointing over the horizon, the object is ignored
+    if (ray_vector.point.z > 0) {
+      continue;
+    }
 
-    // Object position in the camera frame
+    // distance and azimuth angle from camera to object
+    double ray_vector_norm = std::sqrt(
+      ray_vector.point.x * ray_vector.point.x + ray_vector.point.y * ray_vector.point.y +
+      ray_vector.point.z * ray_vector.point.z);
+
+    double distance = camera_height / (-ray_vector.point.z) * ray_vector_norm;
+    double azimuth_angle = std::atan2(ray_vector.point.y, ray_vector.point.x);
+    // double elevation_angle = std::atan2(ray_vector.point.z, std::sqrt(
+    //   ray_vector.point.x * ray_vector.point.x + ray_vector.point.y * ray_vector.point.y));
+
+    // calculate ground point
+    // the ground point is the intersection of the ray vector and the ground plane
     geometry_msgs::msg::PointStamped estimated_object_position;
     estimated_object_position.header = input_rois_msg->header;
-    estimated_object_position.header.frame_id = output_frame_id_;
-    estimated_object_position.point.x = distance;
-    estimated_object_position.point.y = -roi_center_x * distance / f_x;
-    estimated_object_position.point.z = object_size_z / 2;
+    estimated_object_position.header.frame_id = "base_link";
+    estimated_object_position.point.x =
+      camera_position.point.x - camera_height / ray_vector.point.z * ray_vector.point.x;
+    estimated_object_position.point.y =
+      camera_position.point.y - camera_height / ray_vector.point.z * ray_vector.point.y;
+    estimated_object_position.point.z = object_size_z / 2.0;
+
+    // double check
+    estimated_object_position.point.x =
+      camera_position.point.x + distance * std::cos(azimuth_angle);
+    estimated_object_position.point.y =
+      camera_position.point.y + distance * std::sin(azimuth_angle);
 
     // Object position in the publishing frame
-    geometry_msgs::msg::PointStamped estimated_object_position_base_link;
+    geometry_msgs::msg::PointStamped estimated_object_position_target_link;
+    estimated_object_position_target_link.header.frame_id = output_frame_id_;
+
     try {
       tf_buffer_.transform(
-        estimated_object_position, estimated_object_position_base_link, output_frame_id_);
+        estimated_object_position, estimated_object_position_target_link, output_frame_id_);
     } catch (tf2::TransformException & ex) {
       RCLCPP_ERROR(get_logger(), "%s", ex.what());
       return;
@@ -172,7 +207,7 @@ void RoiObjectDetectorNode::objectsCallback(
 
     output_object.kinematics.has_position_covariance = true;
     output_object.kinematics.pose_with_covariance.pose.position =
-      estimated_object_position_base_link.point;
+      estimated_object_position_target_link.point;
     output_object.kinematics.pose_with_covariance.covariance = object_pose_covariance;
 
     output_object.kinematics.has_twist = false;
