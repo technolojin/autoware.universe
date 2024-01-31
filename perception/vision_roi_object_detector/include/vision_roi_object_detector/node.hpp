@@ -22,6 +22,9 @@
 #include "tier4_autoware_utils/ros/transform_listener.hpp"
 
 #include <autoware_auto_perception_msgs/msg/detected_objects.hpp>
+#include <geometry_msgs/msg/point.hpp>
+#include <geometry_msgs/msg/point_stamped.hpp>
+#include <geometry_msgs/msg/vector3.hpp>
 #include <sensor_msgs/msg/camera_info.hpp>
 #include <tier4_perception_msgs/msg/detected_objects_with_feature.hpp>
 
@@ -71,6 +74,17 @@ private:
 
   // DEBUG roi box
   rclcpp::Publisher<DetectedObjects>::SharedPtr pub_debug_roi_;
+
+  bool get_camera_position(
+    const std::string & camera_frame_id, geometry_msgs::msg::Point & position);
+  geometry_msgs::msg::Vector3 get_object_size(const DetectedObjectWithFeature & object);
+  bool get_ray_vector(
+    const geometry_msgs::msg::Point & camera_position,
+    const geometry_msgs::msg::PointStamped & ray_head, geometry_msgs::msg::Vector3 & ray_vector);
+  bool get_object_position(
+    const geometry_msgs::msg::Point & camera_position,
+    const geometry_msgs::msg::Vector3 & ray_vector, const geometry_msgs::msg::Vector3 & object_size,
+    geometry_msgs::msg::Point & object_position);
 };
 
 }  // namespace vision_roi_object_detector
