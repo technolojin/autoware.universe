@@ -88,10 +88,6 @@ void RoiObjectDetectorNode::objectsCallback(
   const double f_x = camera_info_msg->k[0];
   const double f_y = camera_info_msg->k[4];
 
-  RCLCPP_INFO(
-    get_logger(), "camera position: %f,  %f,  %f", camera_position.point.x, camera_position.point.y,
-    camera_position.point.z);
-
   // for each feature object
   for (const auto & feature_object : input_rois_msg->feature_objects) {
     // Object size
@@ -102,9 +98,10 @@ void RoiObjectDetectorNode::objectsCallback(
     double object_size_x = 5.0;
     double object_size_y = 2.0;
     double object_size_z = 1.5;
+    
 
-    // double object_bottom_to_center =
-    //   0.5 * std::sqrt(object_size_x * object_size_x + object_size_y * object_size_y);
+
+
 
     // Distance from camera to object
     // roi box bottom y coordinate
@@ -142,16 +139,6 @@ void RoiObjectDetectorNode::objectsCallback(
       continue;
     }
 
-    // distance and azimuth angle from camera to object
-    double ray_vector_norm = std::sqrt(
-      ray_vector.point.x * ray_vector.point.x + ray_vector.point.y * ray_vector.point.y +
-      ray_vector.point.z * ray_vector.point.z);
-
-    double distance = camera_height / (-ray_vector.point.z) * ray_vector_norm;
-    double azimuth_angle = std::atan2(ray_vector.point.y, ray_vector.point.x);
-    // double elevation_angle = std::atan2(ray_vector.point.z, std::sqrt(
-    //   ray_vector.point.x * ray_vector.point.x + ray_vector.point.y * ray_vector.point.y));
-
     // calculate ground point
     // the ground point is the intersection of the ray vector and the ground plane
     geometry_msgs::msg::PointStamped estimated_object_position;
@@ -162,12 +149,6 @@ void RoiObjectDetectorNode::objectsCallback(
     estimated_object_position.point.y =
       camera_position.point.y - camera_height / ray_vector.point.z * ray_vector.point.y;
     estimated_object_position.point.z = object_size_z / 2.0;
-
-    // double check
-    estimated_object_position.point.x =
-      camera_position.point.x + distance * std::cos(azimuth_angle);
-    estimated_object_position.point.y =
-      camera_position.point.y + distance * std::sin(azimuth_angle);
 
     // Object position in the publishing frame
     geometry_msgs::msg::PointStamped estimated_object_position_target_link;
@@ -181,16 +162,46 @@ void RoiObjectDetectorNode::objectsCallback(
       return;
     }
 
+
     // Covariance matrix
     // when the roi has a certain uncertainty, the covariance matrix of the object is calculated
     // from the covariance matrix of the roi box and the distance
-
-    // for test, the covariance matrix is set to default
     std::array<double, 36> object_pose_covariance{};
     using POSE_IDX = tier4_autoware_utils::xyzrpy_covariance_index::XYZRPY_COV_IDX;
 
-    object_pose_covariance[POSE_IDX::X_X] = 1.0;          // x-x
-    object_pose_covariance[POSE_IDX::Y_Y] = 1.0;          // y-y
+    // uncertainty in cylindrical coordinate system
+    const double ray_vector_norm = std::sqrt(
+      ray_vector.point.x * ray_vector.point.x + ray_vector.point.y * ray_vector.point.y +
+      ray_vector.point.z * ray_vector.point.z);
+    double distance = camera_height / (-ray_vector.point.z) * ray_vector_norm;
+    double azimuth_angle = std::atan2(ray_vector.point.y, ray_vector.point.x);
+    double vertical_angle = std::atan2(-ray_vector.point.z, std::sqrt(
+      ray_vector.point.x * ray_vector.point.x + ray_vector.point.y * ray_vector.point.y));
+
+    const double vertical_angle_uncertainty = 1.0 / 180.0 * M_PI;    // 1 degree
+    const double horizontal_angle_uncertainty = 0.5 / 180.0 * M_PI;  // 0.5 degree
+    const double vertical_roi_uncertainty = 3.0 / f_x; // 3 pixel
+    const double horizontal_roi_uncertainty = 3.0 / f_y ; // 3 pixel
+
+    const double distance_error = distance - camera_height / std::tan(vertical_angle + vertical_angle_uncertainty);
+    const double horizontal_uncertainty = distance * (std::tan(horizontal_angle_uncertainty) + horizontal_roi_uncertainty) + 0.5;  // angular + roi uncertainty + size error
+    const double longitudinal_uncertainty = distance_error + distance * vertical_roi_uncertainty + 1.0;   // angular distance uncertainty +  roi uncertainty + size error
+
+
+    // rotate covariance vector by azimuth angle
+    Eigen::Vector2d uncertainty_vector_radial(
+      longitudinal_uncertainty * longitudinal_uncertainty,
+      horizontal_uncertainty * horizontal_uncertainty);
+    Eigen::Matrix2d rotation_matrix;
+    rotation_matrix << std::cos(azimuth_angle), -std::sin(azimuth_angle),
+      std::sin(azimuth_angle), std::cos(azimuth_angle);
+    Eigen::Matrix2d horizontal_covariance_matrix =
+      rotation_matrix * uncertainty_vector_radial.asDiagonal() * rotation_matrix.transpose();
+
+    object_pose_covariance[POSE_IDX::X_X] = horizontal_covariance_matrix(0,0);          // x-x
+    object_pose_covariance[POSE_IDX::X_Y] = horizontal_covariance_matrix(0,1);          // x-y
+    object_pose_covariance[POSE_IDX::Y_X] = horizontal_covariance_matrix(1,0);          // y-x
+    object_pose_covariance[POSE_IDX::Y_Y] = horizontal_covariance_matrix(1,1);          // y-y
     object_pose_covariance[POSE_IDX::Z_Z] = 0.1;          // z-z
     object_pose_covariance[POSE_IDX::ROLL_ROLL] = 0.1;    // roll-roll
     object_pose_covariance[POSE_IDX::PITCH_PITCH] = 0.1;  // pitch-pitch
@@ -242,6 +253,12 @@ void RoiObjectDetectorNode::objectsCallback(
   // DEBUG roi box
   pub_debug_roi_->publish(output_debug_rois);
 }
+
+
+
+
+
+
 }  // namespace vision_roi_object_detector
 
 #include "rclcpp_components/register_node_macro.hpp"
