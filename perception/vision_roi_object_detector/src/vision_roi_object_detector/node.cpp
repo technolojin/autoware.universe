@@ -90,17 +90,42 @@ void RoiObjectDetectorNode::objectsCallback(
 
   // for each feature object
   for (const auto & feature_object : input_rois_msg->feature_objects) {
+
     // Object size
     // calculate object size based on roi box size on the image, distance, and camera focal length
     // The original object size is estimated by the object class
 
-    // for test, the object size is set to default
-    double object_size_x = 5.0;
-    double object_size_y = 2.0;
-    double object_size_z = 1.5;
-    
+    // get highest probability classification
+    const auto & classification =
+      object_recognition_utils::getHighestProbClassification(feature_object.object.classification);
+    using autoware_auto_perception_msgs::msg::ObjectClassification;
 
+    // initial values
+    geometry_msgs::msg::Vector3 object_size;
 
+    // object size is estimated by the object class
+    // the object size is based on typical vehicle size
+    if (classification.label == ObjectClassification::PEDESTRIAN) {
+      object_size.x = 0.5;
+      object_size.y = 0.5;
+      object_size.z = 1.5;
+
+    } else if (classification.label == ObjectClassification::BICYCLE ||
+               classification.label == ObjectClassification::MOTORCYCLE) {
+      object_size.x = 1.8;
+      object_size.y = 0.6;
+      object_size.z = 1.5;
+    } else if (classification.label == ObjectClassification::BUS ||
+               classification.label == ObjectClassification::TRUCK ||
+               classification.label == ObjectClassification::TRAILER) {
+      object_size.x = 12.0;
+      object_size.y = 2.5;
+      object_size.z = 3.0;
+    } else {
+      object_size.x = 4.0;
+      object_size.y = 1.8;
+      object_size.z = 1.5;
+    }
 
 
     // Distance from camera to object
@@ -148,7 +173,7 @@ void RoiObjectDetectorNode::objectsCallback(
       camera_position.point.x - camera_height / ray_vector.point.z * ray_vector.point.x;
     estimated_object_position.point.y =
       camera_position.point.y - camera_height / ray_vector.point.z * ray_vector.point.y;
-    estimated_object_position.point.z = object_size_z / 2.0;
+    estimated_object_position.point.z = object_size.z / 2.0;
 
     // Object position in the publishing frame
     geometry_msgs::msg::PointStamped estimated_object_position_target_link;
@@ -212,9 +237,7 @@ void RoiObjectDetectorNode::objectsCallback(
     output_object.classification = feature_object.object.classification;
 
     output_object.shape.type = autoware_auto_perception_msgs::msg::Shape::BOUNDING_BOX;
-    output_object.shape.dimensions.x = object_size_x;
-    output_object.shape.dimensions.y = object_size_y;
-    output_object.shape.dimensions.z = object_size_z;
+    output_object.shape.dimensions = object_size;
 
     output_object.kinematics.has_position_covariance = true;
     output_object.kinematics.pose_with_covariance.pose.position =
