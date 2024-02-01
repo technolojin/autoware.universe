@@ -70,7 +70,6 @@ void RoiObjectDetectorNode::objectsCallback(
     return;
   }
 
-  const double & camera_height = camera_position.z;
   // camera focal length
   const double c_x = camera_info_msg->k[2];
   const double c_y = camera_info_msg->k[5];
@@ -88,7 +87,6 @@ void RoiObjectDetectorNode::objectsCallback(
     auto & roi = feature_object.feature.roi;
     double roi_base_x = roi.x_offset + roi.width / 2 - c_x;  // center x coordinate
     double roi_base_y = roi.y_offset + roi.height - c_y;     // bottom y coordinate
-
     // roi base point ray vector
     // the vector from the camera center to the roi box bottom center
     geometry_msgs::msg::PointStamped ray_vector_head;
@@ -96,7 +94,6 @@ void RoiObjectDetectorNode::objectsCallback(
     ray_vector_head.point.x = roi_base_x / f_x;
     ray_vector_head.point.y = roi_base_y / f_y;
     ray_vector_head.point.z = 1.0;
-
     // calculate the ray vector
     geometry_msgs::msg::Vector3 ray_vector;
     if (!get_ray_vector(camera_position, ray_vector_head, ray_vector)) {
@@ -106,7 +103,6 @@ void RoiObjectDetectorNode::objectsCallback(
     if (ray_vector.z > 0) {
       continue;
     }
-
     // calculate object position
     geometry_msgs::msg::Point object_position;
     if (!get_object_position(camera_position, ray_vector, object_size, object_position)) {
@@ -125,68 +121,26 @@ void RoiObjectDetectorNode::objectsCallback(
 
     // double yaw_angle = std::atan2()
 
-    // Covariance matrix
-    // when the roi has a certain uncertainty, the covariance matrix of the object is calculated
-    // from the covariance matrix of the roi box and the distance
-    std::array<double, 36> object_pose_covariance{};
-    using POSE_IDX = tier4_autoware_utils::xyzrpy_covariance_index::XYZRPY_COV_IDX;
-
-    // uncertainty in cylindrical coordinate system
-    const double ray_vector_norm = std::sqrt(
-      ray_vector.x * ray_vector.x + ray_vector.y * ray_vector.y + ray_vector.z * ray_vector.z);
-    double distance = camera_height / (-ray_vector.z) * ray_vector_norm;
-    double azimuth_angle = std::atan2(ray_vector.y, ray_vector.x);
-    double vertical_angle = std::atan2(
-      -ray_vector.z, std::sqrt(ray_vector.x * ray_vector.x + ray_vector.y * ray_vector.y));
-
+    // Calculate pose covariance
     const double vertical_angle_uncertainty = 1.0 / 180.0 * M_PI;    // 1 degree
     const double horizontal_angle_uncertainty = 0.5 / 180.0 * M_PI;  // 0.5 degree
     const double vertical_roi_uncertainty = 3.0 / f_x;               // 3 pixel
     const double horizontal_roi_uncertainty = 3.0 / f_y;             // 3 pixel
-
-    const double distance_error =
-      distance - camera_height / std::tan(vertical_angle + vertical_angle_uncertainty);
-    const double horizontal_uncertainty =
-      distance * (std::tan(horizontal_angle_uncertainty) + horizontal_roi_uncertainty) +
-      0.5;  // angular + roi uncertainty + size error
-    const double longitudinal_uncertainty =
-      distance_error + distance * vertical_roi_uncertainty +
-      1.0;  // angular distance uncertainty +  roi uncertainty + size error
-
-    // rotate covariance vector by azimuth angle and the camera tf
-    Eigen::Vector2d uncertainty_vector_radial(
-      longitudinal_uncertainty * longitudinal_uncertainty,
-      horizontal_uncertainty * horizontal_uncertainty);
-    Eigen::Matrix2d rotation_matrix;
-    rotation_matrix << std::cos(azimuth_angle), -std::sin(azimuth_angle), std::sin(azimuth_angle),
-      std::cos(azimuth_angle);
-    Eigen::Matrix2d horizontal_covariance_matrix =
-      rotation_matrix * uncertainty_vector_radial.asDiagonal() * rotation_matrix.transpose();
-
-    object_pose_covariance[POSE_IDX::X_X] = horizontal_covariance_matrix(0, 0);  // x-x
-    object_pose_covariance[POSE_IDX::X_Y] = horizontal_covariance_matrix(0, 1);  // x-y
-    object_pose_covariance[POSE_IDX::Y_X] = horizontal_covariance_matrix(1, 0);  // y-x
-    object_pose_covariance[POSE_IDX::Y_Y] = horizontal_covariance_matrix(1, 1);  // y-y
-    object_pose_covariance[POSE_IDX::Z_Z] = 0.1;                                 // z-z
-    object_pose_covariance[POSE_IDX::ROLL_ROLL] = 0.1;                           // roll-roll
-    object_pose_covariance[POSE_IDX::PITCH_PITCH] = 0.1;                         // pitch-pitch
-    object_pose_covariance[POSE_IDX::YAW_YAW] = 3.14;                            // yaw-yaw
+    auto object_pose_covariance = get_object_pose_covariance(
+      camera_position, ray_vector, vertical_angle_uncertainty, horizontal_angle_uncertainty,
+      vertical_roi_uncertainty, horizontal_roi_uncertainty);
 
     // Fill in the output_objects
     DetectedObject output_object;
     output_object.classification = feature_object.object.classification;
-
     output_object.shape.type = autoware_auto_perception_msgs::msg::Shape::BOUNDING_BOX;
     output_object.shape.dimensions = object_size;
-
     output_object.kinematics.has_position_covariance = true;
     output_object.kinematics.pose_with_covariance.pose.position = object_position;
     output_object.kinematics.pose_with_covariance.covariance = object_pose_covariance;
-
     output_object.kinematics.has_twist = false;
     output_object.kinematics.has_twist_covariance = false;
     output_object.kinematics.orientation_availability = false;
-
     output_objects.objects.push_back(output_object);
 
     // DEBUG roi box
@@ -246,7 +200,6 @@ geometry_msgs::msg::Vector3 RoiObjectDetectorNode::get_object_size(
     object_size.x = 0.5;
     object_size.y = 0.5;
     object_size.z = 1.5;
-
   } else if (
     classification.label == ObjectClassification::BICYCLE ||
     classification.label == ObjectClassification::MOTORCYCLE) {
@@ -318,6 +271,50 @@ bool RoiObjectDetectorNode::get_object_position(
     object_position = object_position_target_link.point;
     return true;
   }
+}
+
+std::array<double, 36> RoiObjectDetectorNode::get_object_pose_covariance(
+  const geometry_msgs::msg::Point & camera_position, const geometry_msgs::msg::Vector3 & ray_vector,
+  const double vertical_angle_uncertainty, const double horizontal_angle_uncertainty,
+  const double vertical_roi_uncertainty, const double horizontal_roi_uncertainty)
+{
+  std::array<double, 36> object_pose_covariance{};
+  using POSE_IDX = tier4_autoware_utils::xyzrpy_covariance_index::XYZRPY_COV_IDX;
+
+  const double azimuth_angle = std::atan2(ray_vector.y, ray_vector.x);
+  const double vertical_angle =
+    std::atan2(-ray_vector.z, std::sqrt(ray_vector.x * ray_vector.x + ray_vector.y * ray_vector.y));
+
+  const double distance = camera_position.z / std::tan(vertical_angle);
+  const double distance_error =
+    distance - camera_position.z / std::tan(vertical_angle + vertical_angle_uncertainty);
+
+  const double horizontal_uncertainty =
+    distance * (std::tan(horizontal_angle_uncertainty) + horizontal_roi_uncertainty) +
+    0.5;  // angular + roi uncertainty + size error
+  const double longitudinal_uncertainty =
+    distance_error + distance * vertical_roi_uncertainty +
+    1.0;  // angular distance uncertainty +  roi uncertainty + size error
+
+  Eigen::Vector2d uncertainty_vector_radial(
+    longitudinal_uncertainty * longitudinal_uncertainty,
+    horizontal_uncertainty * horizontal_uncertainty);
+  Eigen::Matrix2d rotation_matrix;
+  rotation_matrix << std::cos(azimuth_angle), -std::sin(azimuth_angle), std::sin(azimuth_angle),
+    std::cos(azimuth_angle);
+  Eigen::Matrix2d horizontal_covariance_matrix =
+    rotation_matrix * uncertainty_vector_radial.asDiagonal() * rotation_matrix.transpose();
+
+  object_pose_covariance[POSE_IDX::X_X] = horizontal_covariance_matrix(0, 0);  // x-x
+  object_pose_covariance[POSE_IDX::X_Y] = horizontal_covariance_matrix(0, 1);  // x-y
+  object_pose_covariance[POSE_IDX::Y_X] = horizontal_covariance_matrix(1, 0);  // y-x
+  object_pose_covariance[POSE_IDX::Y_Y] = horizontal_covariance_matrix(1, 1);  // y-y
+  object_pose_covariance[POSE_IDX::Z_Z] = 0.1;                                 // z-z
+  object_pose_covariance[POSE_IDX::ROLL_ROLL] = 0.1;                           // roll-roll
+  object_pose_covariance[POSE_IDX::PITCH_PITCH] = 0.1;                         // pitch-pitch
+  object_pose_covariance[POSE_IDX::YAW_YAW] = 3.14;                            // yaw-yaw
+
+  return object_pose_covariance;
 }
 
 }  // namespace vision_roi_object_detector

@@ -85,6 +85,11 @@ private:
     const geometry_msgs::msg::Point & camera_position,
     const geometry_msgs::msg::Vector3 & ray_vector, const geometry_msgs::msg::Vector3 & object_size,
     geometry_msgs::msg::Point & object_position);
+  std::array<double, 36> get_object_pose_covariance(
+    const geometry_msgs::msg::Point & camera_position,
+    const geometry_msgs::msg::Vector3 & ray_vector, const double vertical_angle_uncertainty,
+    const double horizontal_angle_uncertainty, const double vertical_roi_uncertainty,
+    const double horizontal_roi_uncertainty);
 };
 
 }  // namespace vision_roi_object_detector
