@@ -16,6 +16,14 @@
 // Author: v1.0 Yukihiro Saito
 //
 
+#include "multi_object_tracker/tracker/model/big_vehicle_tracker.hpp"
+
+#include "multi_object_tracker/utils/utils.hpp"
+
+#include <tier4_autoware_utils/geometry/boost_polygon_utils.hpp>
+#include <tier4_autoware_utils/math/normalization.hpp>
+#include <tier4_autoware_utils/math/unit_conversion.hpp>
+
 #include <bits/stdc++.h>
 #include <tf2/LinearMath/Matrix3x3.h>
 #include <tf2/LinearMath/Quaternion.h>
@@ -26,17 +34,11 @@
 #else
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #endif
-
-#define EIGEN_MPL2_ONLY
-#include "multi_object_tracker/tracker/model/big_vehicle_tracker.hpp"
-#include "multi_object_tracker/utils/utils.hpp"
 #include "object_recognition_utils/object_recognition_utils.hpp"
 
+#define EIGEN_MPL2_ONLY
 #include <Eigen/Core>
 #include <Eigen/Geometry>
-#include <tier4_autoware_utils/geometry/boost_polygon_utils.hpp>
-#include <tier4_autoware_utils/math/normalization.hpp>
-#include <tier4_autoware_utils/math/unit_conversion.hpp>
 
 using Label = autoware_auto_perception_msgs::msg::ObjectClassification;
 
@@ -52,16 +54,16 @@ BigVehicleTracker::BigVehicleTracker(
   object_ = object;
 
   // Initialize parameters
-  // measurement noise covariance
-  float r_stddev_x = 1.5;                                  // [m]
-  float r_stddev_y = 0.5;                                  // [m]
+  // measurement noise covariance: detector uncertainty + ego vehicle motion uncertainty
+  float r_stddev_x = 0.5;                                  // in vehicle coordinate [m]
+  float r_stddev_y = 0.4;                                  // in vehicle coordinate [m]
   float r_stddev_yaw = tier4_autoware_utils::deg2rad(20);  // [rad]
   float r_stddev_vel = 1.0;                                // [m/s]
   ekf_params_.r_cov_x = std::pow(r_stddev_x, 2.0);
   ekf_params_.r_cov_y = std::pow(r_stddev_y, 2.0);
   ekf_params_.r_cov_yaw = std::pow(r_stddev_yaw, 2.0);
   ekf_params_.r_cov_vel = std::pow(r_stddev_vel, 2.0);
-  // initial covariance
+  // initial state covariance
   float p0_stddev_x = 1.5;                                     // [m]
   float p0_stddev_y = 0.5;                                     // [m]
   float p0_stddev_yaw = tier4_autoware_utils::deg2rad(25);     // in map coordinate [rad]
@@ -73,23 +75,25 @@ BigVehicleTracker::BigVehicleTracker(
   ekf_params_.p0_cov_vel = std::pow(p0_stddev_vel, 2.0);
   ekf_params_.p0_cov_slip = std::pow(p0_stddev_slip, 2.0);
   // process noise covariance
-  ekf_params_.q_stddev_acc_long = 9.8 * 0.3;  // [m/(s*s)] uncertain longitudinal acceleration
-  ekf_params_.q_stddev_acc_lat = 9.8 * 0.1;   // [m/(s*s)] uncertain lateral acceleration
+  ekf_params_.q_stddev_acc_long = 9.8 * 0.35;  // [m/(s*s)] uncertain longitudinal acceleration
+  ekf_params_.q_stddev_acc_lat = 9.8 * 0.15;   // [m/(s*s)] uncertain lateral acceleration
   ekf_params_.q_stddev_yaw_rate_min =
-    tier4_autoware_utils::deg2rad(0.8);  // [rad/s] uncertain yaw change rate
+    tier4_autoware_utils::deg2rad(1.5);  // [rad/s] uncertain yaw change rate
   ekf_params_.q_stddev_yaw_rate_max =
-    tier4_autoware_utils::deg2rad(13.0);  // [rad/s] uncertain yaw change rate
-  ekf_params_.q_stddev_slip_rate_min =
-    tier4_autoware_utils::deg2rad(0.2);  // [rad/s] uncertain slip angle change rate
-  ekf_params_.q_stddev_slip_rate_max =
-    tier4_autoware_utils::deg2rad(5.0);  // [rad/s] uncertain slip angle change rate
+    tier4_autoware_utils::deg2rad(15.0);  // [rad/s] uncertain yaw change rate
+  float q_stddev_slip_rate_min =
+    tier4_autoware_utils::deg2rad(0.3);  // [rad/s] uncertain slip angle change rate
+  float q_stddev_slip_rate_max =
+    tier4_autoware_utils::deg2rad(10.0);  // [rad/s] uncertain slip angle change rate
+  ekf_params_.q_cov_slip_rate_min = std::pow(q_stddev_slip_rate_min, 2.0);
+  ekf_params_.q_cov_slip_rate_max = std::pow(q_stddev_slip_rate_max, 2.0);
   ekf_params_.q_max_slip_angle = tier4_autoware_utils::deg2rad(30);  // [rad] max slip angle
   // limitations
   max_vel_ = tier4_autoware_utils::kmph2mps(100);                      // [m/s]
   max_slip_ = tier4_autoware_utils::deg2rad(30);                       // [rad]
   velocity_deviation_threshold_ = tier4_autoware_utils::kmph2mps(10);  // [m/s]
 
-  // initialize X matrix
+  // initialize state vector X
   Eigen::MatrixXd X(ekf_params_.dim_x, 1);
   X(IDX::X) = object.kinematics.pose_with_covariance.pose.position.x;
   X(IDX::Y) = object.kinematics.pose_with_covariance.pose.position.y;
@@ -97,12 +101,11 @@ BigVehicleTracker::BigVehicleTracker(
   X(IDX::SLIP) = 0.0;
   if (object.kinematics.has_twist) {
     X(IDX::VEL) = object.kinematics.twist_with_covariance.twist.linear.x;
-    // X(IDX::YAW) = object.kinematics.twist_with_covariance.twist.angular.z;
   } else {
     X(IDX::VEL) = 0.0;
   }
 
-  // initialize P matrix
+  // initialize state covariance matrix P
   Eigen::MatrixXd P = Eigen::MatrixXd::Zero(ekf_params_.dim_x, ekf_params_.dim_x);
   if (!object.kinematics.has_position_covariance) {
     const double cos_yaw = std::cos(X(IDX::YAW));
@@ -147,9 +150,7 @@ BigVehicleTracker::BigVehicleTracker(
     bounding_box_ = {
       bbox_object.shape.dimensions.x, bbox_object.shape.dimensions.y,
       bbox_object.shape.dimensions.z};
-    last_input_bounding_box_ = {
-      bbox_object.shape.dimensions.x, bbox_object.shape.dimensions.y,
-      bbox_object.shape.dimensions.z};
+    last_input_bounding_box_ = bounding_box_;
   }
   ekf_.init(X, P);
 
@@ -212,30 +213,31 @@ bool BigVehicleTracker::predict(const double dt, KalmanFilter & ekf) const
    *
    */
 
-  // X t
+  // Current state vector X t
   Eigen::MatrixXd X_t(ekf_params_.dim_x, 1);  // predicted state
   ekf.getX(X_t);
   const double cos_yaw = std::cos(X_t(IDX::YAW) + X_t(IDX::SLIP));
   const double sin_yaw = std::sin(X_t(IDX::YAW) + X_t(IDX::SLIP));
+  const double vel = X_t(IDX::VEL);
   const double cos_slip = std::cos(X_t(IDX::SLIP));
   const double sin_slip = std::sin(X_t(IDX::SLIP));
-  const double vel = X_t(IDX::VEL);
+
+  double w = vel * sin_slip / lr_;
   const double sin_2yaw = std::sin(2.0f * X_t(IDX::YAW));
-  const double w = vel * sin_slip / lr_;
   const double w_dtdt = w * dt * dt;
   const double vv_dtdt__lr = vel * vel * dt * dt / lr_;
 
-  // X t+1
+  // Predict state vector X t+1
   Eigen::MatrixXd X_next_t(ekf_params_.dim_x, 1);  // predicted state
   X_next_t(IDX::X) =
-    X_t(IDX::X) + vel * cos_yaw * dt - 0.5 * vel * sin_slip * w_dtdt;  // dx = v * cos(yaw)
+    X_t(IDX::X) + vel * cos_yaw * dt - 0.5 * vel * sin_slip * w_dtdt;  // dx = v * cos(yaw) * dt
   X_next_t(IDX::Y) =
-    X_t(IDX::Y) + vel * sin_yaw * dt + 0.5 * vel * cos_slip * w_dtdt;  // dy = v * sin(yaw)
-  X_next_t(IDX::YAW) = X_t(IDX::YAW) + vel / lr_ * sin_slip * dt;      // dyaw = omega
+    X_t(IDX::Y) + vel * sin_yaw * dt + 0.5 * vel * cos_slip * w_dtdt;  // dy = v * sin(yaw) * dt
+  X_next_t(IDX::YAW) = X_t(IDX::YAW) + w * dt;                         // d(yaw) = w * dt
   X_next_t(IDX::VEL) = X_t(IDX::VEL);
-  X_next_t(IDX::SLIP) = X_t(IDX::SLIP);
+  X_next_t(IDX::SLIP) = X_t(IDX::SLIP);  // slip_angle = asin(lr * w / v)
 
-  // A
+  // State transition matrix A
   Eigen::MatrixXd A = Eigen::MatrixXd::Identity(ekf_params_.dim_x, ekf_params_.dim_x);
   A(IDX::X, IDX::YAW) = -vel * sin_yaw * dt - 0.5 * vel * cos_yaw * w_dtdt;
   A(IDX::X, IDX::VEL) = cos_yaw * dt - sin_yaw * w_dtdt;
@@ -248,37 +250,38 @@ bool BigVehicleTracker::predict(const double dt, KalmanFilter & ekf) const
   A(IDX::YAW, IDX::VEL) = 1.0 / lr_ * sin_slip * dt;
   A(IDX::YAW, IDX::SLIP) = vel / lr_ * cos_slip * dt;
 
-  // Q
+  // Process noise covariance Q
   float q_stddev_yaw_rate{0.0};
   if (vel <= 0.01) {
     q_stddev_yaw_rate = ekf_params_.q_stddev_yaw_rate_min;
   } else {
-    // uncertain yaw rate limited by
-    // centripetal acceleration w = a_lat/v
-    // or slip angle w = v*sin(slip)/l_r
+    // uncertainty of the yaw rate is limited by
+    // centripetal acceleration a_lat : d(yaw)/dt = w = a_lat/v
+    // or maximum slip angle slip_max : w = v*sin(slip_max)/l_r
     q_stddev_yaw_rate = std::min(
       ekf_params_.q_stddev_acc_lat / vel,
       vel * std::sin(ekf_params_.q_max_slip_angle) / lr_);  // [rad/s]
     q_stddev_yaw_rate = std::min(q_stddev_yaw_rate, ekf_params_.q_stddev_yaw_rate_max);
     q_stddev_yaw_rate = std::max(q_stddev_yaw_rate, ekf_params_.q_stddev_yaw_rate_min);
   }
-  float q_cov_slip_rate{0.0};
+  float q_cov_slip_rate{0.0f};
   if (vel <= 0.01) {
-    q_cov_slip_rate = ekf_params_.q_stddev_slip_rate_min * ekf_params_.q_stddev_slip_rate_min;
+    q_cov_slip_rate = ekf_params_.q_cov_slip_rate_min;
   } else {
-    // sin(slip) = w*l_r/v
-    // d(slip)/dt = - w*l_r/v^2 * d(v)/dt + l_r/v * d(w)/dt
-    q_cov_slip_rate = std::pow(sin_slip * ekf_params_.q_stddev_acc_lat / vel, 2) +
-                      std::pow(q_stddev_yaw_rate * lr_ / vel, 2);
-    q_cov_slip_rate = std::min(
-      q_cov_slip_rate, ekf_params_.q_stddev_slip_rate_max * ekf_params_.q_stddev_slip_rate_max);
-    q_cov_slip_rate = std::max(
-      q_cov_slip_rate, ekf_params_.q_stddev_slip_rate_min * ekf_params_.q_stddev_slip_rate_min);
+    // The slip angle rate uncertainty is modeled as follows:
+    // d(slip)/dt ~ - sin(slip)/v * d(v)/dt + l_r/v * d(w)/dt
+    // where sin(slip) = w * l_r / v
+    // d(w)/dt is assumed to be proportional to w (more uncertain when slip is large)
+    // d(v)/dt and d(w)/t are considered to be uncorrelated
+    q_cov_slip_rate =
+      std::pow(ekf_params_.q_stddev_acc_lat * sin_slip / vel, 2) + std::pow(sin_slip * 1.5, 2);
+    q_cov_slip_rate = std::min(q_cov_slip_rate, ekf_params_.q_cov_slip_rate_max);
+    q_cov_slip_rate = std::max(q_cov_slip_rate, ekf_params_.q_cov_slip_rate_min);
   }
-  const float q_cov_x = std::pow(0.5 * ekf_params_.q_stddev_acc_long * dt * dt, 2.0);
-  const float q_cov_y = std::pow(0.5 * ekf_params_.q_stddev_acc_lat * dt * dt, 2.0);
-  const float q_cov_yaw = std::pow(q_stddev_yaw_rate * dt, 2.0);
-  const float q_cov_vel = std::pow(ekf_params_.q_stddev_acc_long * dt, 2.0);
+  const float q_cov_x = std::pow(0.5 * ekf_params_.q_stddev_acc_long * dt * dt, 2);
+  const float q_cov_y = std::pow(0.5 * ekf_params_.q_stddev_acc_lat * dt * dt, 2);
+  const float q_cov_yaw = std::pow(q_stddev_yaw_rate * dt, 2);
+  const float q_cov_vel = std::pow(ekf_params_.q_stddev_acc_long * dt, 2);
   const float q_cov_slip = q_cov_slip_rate * dt * dt;
 
   Eigen::MatrixXd Q = Eigen::MatrixXd::Zero(ekf_params_.dim_x, ekf_params_.dim_x);
@@ -291,8 +294,10 @@ bool BigVehicleTracker::predict(const double dt, KalmanFilter & ekf) const
   Q(IDX::YAW, IDX::YAW) = q_cov_yaw;
   Q(IDX::VEL, IDX::VEL) = q_cov_vel;
   Q(IDX::SLIP, IDX::SLIP) = q_cov_slip;
-  Eigen::MatrixXd B = Eigen::MatrixXd::Zero(ekf_params_.dim_x, ekf_params_.dim_x);
-  Eigen::MatrixXd u = Eigen::MatrixXd::Zero(ekf_params_.dim_x, 1);
+
+  // control-input model B and control-input u are not used
+  // Eigen::MatrixXd B = Eigen::MatrixXd::Zero(ekf_params_.dim_x, ekf_params_.dim_x);
+  // Eigen::MatrixXd u = Eigen::MatrixXd::Zero(ekf_params_.dim_x, 1);
 
   if (!ekf.predict(X_next_t, A, Q)) {
     RCLCPP_WARN(logger_, "Cannot predict");
@@ -310,14 +315,14 @@ bool BigVehicleTracker::measureWithPose(
   float r_cov_y;
   const uint8_t label = object_recognition_utils::getHighestProbLabel(object.classification);
 
-  if (label == Label::CAR) {
-    constexpr float r_stddev_x = 8.0;  // [m]
-    constexpr float r_stddev_y = 0.8;  // [m]
-    r_cov_x = std::pow(r_stddev_x, 2.0);
-    r_cov_y = std::pow(r_stddev_y, 2.0);
-  } else if (utils::isLargeVehicleLabel(label)) {
+  if (utils::isLargeVehicleLabel(label)) {
     r_cov_x = ekf_params_.r_cov_x;
     r_cov_y = ekf_params_.r_cov_y;
+  } else if (label == Label::CAR) {
+    constexpr float r_stddev_x = 2.0;  // [m]
+    constexpr float r_stddev_y = 2.0;  // [m]
+    r_cov_x = std::pow(r_stddev_x, 2.0);
+    r_cov_y = std::pow(r_stddev_y, 2.0);
   } else {
     r_cov_x = ekf_params_.r_cov_x;
     r_cov_y = ekf_params_.r_cov_y;
@@ -357,7 +362,7 @@ bool BigVehicleTracker::measureWithPose(
     last_input_bounding_box_.width, last_input_bounding_box_.length, last_nearest_corner_index_,
     bbox_object, X_t(IDX::YAW), offset_object, tracking_offset_);
 
-  /* Set measurement matrix */
+  /* Set measurement matrix and noise covariance*/
   Eigen::MatrixXd Y(dim_y, 1);
   Eigen::MatrixXd C = Eigen::MatrixXd::Zero(dim_y, ekf_params_.dim_x);
   Eigen::MatrixXd R = Eigen::MatrixXd::Zero(dim_y, dim_y);
@@ -391,6 +396,7 @@ bool BigVehicleTracker::measureWithPose(
     R(2, 2) = object.kinematics.pose_with_covariance.covariance[utils::MSG_COV_IDX::YAW_YAW];
   }
 
+  // Update the velocity when necessary
   if (dim_y == 4) {
     Y(IDX::VEL, 0) = object.kinematics.twist_with_covariance.twist.linear.x;
     C(3, IDX::VEL) = 1.0;  // for vel
@@ -402,7 +408,7 @@ bool BigVehicleTracker::measureWithPose(
     }
   }
 
-  /* ekf tracks constant tracking point */
+  // ekf update
   if (!ekf_.update(Y, C, R)) {
     RCLCPP_WARN(logger_, "Cannot update");
   }
@@ -433,9 +439,8 @@ bool BigVehicleTracker::measureWithPose(
 bool BigVehicleTracker::measureWithShape(
   const autoware_auto_perception_msgs::msg::DetectedObject & object)
 {
+  // if the input shape is convex type, convert it to bbox type
   autoware_auto_perception_msgs::msg::DetectedObject bbox_object;
-
-  // if input is convex shape convert it to bbox shape
   if (object.shape.type != autoware_auto_perception_msgs::msg::Shape::BOUNDING_BOX) {
     utils::convertConvexHullToBoundingBox(object, bbox_object);
   } else {
@@ -592,7 +597,6 @@ bool BigVehicleTracker::getTrackedObject(
   const auto ekf_pose_yaw = tf2::getYaw(pose_with_cov.pose.orientation);
   object.shape.footprint =
     tier4_autoware_utils::rotatePolygon(object.shape.footprint, origin_yaw - ekf_pose_yaw);
-
   return true;
 }
 

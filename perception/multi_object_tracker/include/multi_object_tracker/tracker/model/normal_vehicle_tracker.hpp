@@ -42,8 +42,8 @@ private:
     float q_stddev_acc_lat;
     float q_stddev_yaw_rate_min;
     float q_stddev_yaw_rate_max;
-    float q_stddev_slip_rate_min;
-    float q_stddev_slip_rate_max;
+    float q_cov_slip_rate_min;
+    float q_cov_slip_rate_max;
     float q_max_slip_angle;
     float p0_cov_vel;
     float p0_cov_slip;
@@ -90,6 +90,7 @@ public:
     const rclcpp::Time & time,
     autoware_auto_perception_msgs::msg::TrackedObject & object) const override;
   void setNearestCornerOrSurfaceIndex(const geometry_msgs::msg::Transform & self_transform);
+  double getMeasurementYaw(const autoware_auto_perception_msgs::msg::DetectedObject & object);
   virtual ~NormalVehicleTracker() {}
 };
 
