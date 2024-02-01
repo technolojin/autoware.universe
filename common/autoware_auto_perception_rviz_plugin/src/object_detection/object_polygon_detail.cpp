@@ -12,7 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License..
 
-#include <object_detection/object_polygon_detail.hpp>
+#include "autoware_auto_perception_rviz_plugin/object_detection/object_polygon_detail.hpp"
+
+#include <Eigen/Core>
+#include <Eigen/Eigen>
 
 #include <geometry_msgs/msg/transform_stamped.hpp>
 
@@ -413,47 +416,6 @@ visualization_msgs::msg::Marker::SharedPtr get_yaw_covariance_marker_ptr(
   double yaw_vector_length = std::max(length, 1.0);
   double yaw_sigma =
     std::sqrt(pose_with_covariance.covariance[35]) * confidence_interval_coefficient;
-  // get arc points
-  if (yaw_sigma > M_PI) {
-    yaw_vector_length = 1.0;
-  }
-  // first point
-  point.x = 0;
-  point.y = 0;
-  point.z = 0;
-  marker_ptr->points.push_back(point);
-  // arc points
-  calc_arc_line_strip(-yaw_sigma, yaw_sigma, yaw_vector_length, marker_ptr->points);
-  // last point
-  point.x = 0;
-  point.y = 0;
-  point.z = 0;
-  marker_ptr->points.push_back(point);
-
-  // marker configuration
-  marker_ptr->lifetime = rclcpp::Duration::from_seconds(0.5);
-  marker_ptr->color.a = 0.9;
-  marker_ptr->color.r = 1.0;
-  marker_ptr->color.g = 1.0;
-  marker_ptr->color.b = 1.0;
-  return marker_ptr;
-}
-
-visualization_msgs::msg::Marker::SharedPtr get_yaw_covariance_marker_ptr(
-  const geometry_msgs::msg::PoseWithCovariance & pose_with_covariance, const double & length,
-  const double & line_width)
-{
-  auto marker_ptr = std::make_shared<Marker>();
-  marker_ptr->type = visualization_msgs::msg::Marker::LINE_STRIP;
-  marker_ptr->ns = std::string("yaw covariance");
-  marker_ptr->scale.x = line_width;
-  marker_ptr->action = visualization_msgs::msg::Marker::MODIFY;
-  marker_ptr->pose = pose_with_covariance.pose;
-  geometry_msgs::msg::Point point;
-
-  // orientation covariance
-  double yaw_vector_length = std::max(length, 1.0);
-  double yaw_sigma = std::sqrt(pose_with_covariance.covariance[35]);  // 2.448 sigma is 95%
   // get arc points
   if (yaw_sigma > M_PI) {
     yaw_vector_length = 1.0;
