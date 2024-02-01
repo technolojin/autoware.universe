@@ -109,7 +109,7 @@ void RoiObjectDetectorNode::objectsCallback(
       return;
     }
 
-    // Usage:
+    // Pseudo yaw angle from roi box and projected 3d bounding box
     double yaw_angle = get_pseudo_yaw_angle(ray_vector, roi, object_size);
 
     // Calculate pose covariance
@@ -157,6 +157,7 @@ void RoiObjectDetectorNode::objectsCallback(
   // debug message
   RCLCPP_INFO(get_logger(), "converted objects: %ld", output_objects.objects.size());
 
+  // Publish
   pub_objects_->publish(output_objects);
 
   // DEBUG roi box
@@ -341,7 +342,7 @@ double RoiObjectDetectorNode::get_pseudo_yaw_angle(
   // determine the yaw direction
   double yaw_angle = azimuth_angle;
   double yaw_direction = (visible_yaw_angle > M_PI / 4.0) ? 1.0 : -1.0;
-  double azimuth_zone_width = M_PI / 2.0;
+  const double azimuth_zone_width = M_PI / 2.0;
   if (azimuth_angle < 0.0) yaw_direction *= -1.0;
   bool is_azimuth_zone_even =
     std::abs(std::fmod(azimuth_angle, azimuth_zone_width)) > azimuth_zone_width / 2.0;
@@ -351,7 +352,6 @@ double RoiObjectDetectorNode::get_pseudo_yaw_angle(
 
   // calculate the yaw angle
   yaw_angle += visible_yaw_angle * yaw_direction;
-
   return yaw_angle;
 }
 }  // namespace vision_roi_object_detector
