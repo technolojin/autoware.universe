@@ -26,6 +26,7 @@
 #include <geometry_msgs/msg/point_stamped.hpp>
 #include <geometry_msgs/msg/vector3.hpp>
 #include <sensor_msgs/msg/camera_info.hpp>
+#include <sensor_msgs/msg/region_of_interest.hpp>
 #include <tier4_perception_msgs/msg/detected_objects_with_feature.hpp>
 
 #include <tf2_ros/buffer.h>
@@ -90,6 +91,9 @@ private:
     const geometry_msgs::msg::Vector3 & ray_vector, const double vertical_angle_uncertainty,
     const double horizontal_angle_uncertainty, const double vertical_roi_uncertainty,
     const double horizontal_roi_uncertainty);
+  double get_pseudo_yaw_angle(
+    const geometry_msgs::msg::Vector3 & ray_vector, const sensor_msgs::msg::RegionOfInterest & roi,
+    const geometry_msgs::msg::Vector3 & object_size);
 };
 
 }  // namespace vision_roi_object_detector

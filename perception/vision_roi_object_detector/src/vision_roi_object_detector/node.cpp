@@ -109,17 +109,8 @@ void RoiObjectDetectorNode::objectsCallback(
       return;
     }
 
-    // Yaw angle from roi box and projected 3d bounding box
-    // the yaw angle is calculated from the roi box and the projected 3d bounding box
-
-    // // aspect ratio
-    // double aspect_ratio = roi.width / roi.height;
-    // // expected aspect ratio
-    // double expected_aspect_ratio = object_size.x / object_size.z;
-
-    // // yaw angle
-
-    // double yaw_angle = std::atan2()
+    // Usage:
+    double yaw_angle = get_pseudo_yaw_angle(ray_vector, roi, object_size);
 
     // Calculate pose covariance
     const double vertical_angle_uncertainty = 1.0 / 180.0 * M_PI;    // 1 degree
@@ -137,6 +128,8 @@ void RoiObjectDetectorNode::objectsCallback(
     output_object.shape.dimensions = object_size;
     output_object.kinematics.has_position_covariance = true;
     output_object.kinematics.pose_with_covariance.pose.position = object_position;
+    output_object.kinematics.pose_with_covariance.pose.orientation =
+      tf2::toMsg(tf2::Quaternion(tf2::Vector3(0, 0, 1), yaw_angle));
     output_object.kinematics.pose_with_covariance.covariance = object_pose_covariance;
     output_object.kinematics.has_twist = false;
     output_object.kinematics.has_twist_covariance = false;
@@ -199,24 +192,31 @@ geometry_msgs::msg::Vector3 RoiObjectDetectorNode::get_object_size(
   if (classification.label == ObjectClassification::PEDESTRIAN) {
     object_size.x = 0.5;
     object_size.y = 0.5;
-    object_size.z = 1.5;
+    object_size.z = 1.7;
   } else if (
     classification.label == ObjectClassification::BICYCLE ||
     classification.label == ObjectClassification::MOTORCYCLE) {
     object_size.x = 1.8;
-    object_size.y = 0.6;
+    object_size.y = 0.5;
     object_size.z = 1.5;
   } else if (
     classification.label == ObjectClassification::BUS ||
-    classification.label == ObjectClassification::TRUCK ||
     classification.label == ObjectClassification::TRAILER) {
     object_size.x = 12.0;
     object_size.y = 2.5;
     object_size.z = 3.0;
-  } else {
-    object_size.x = 4.0;
+  } else if (classification.label == ObjectClassification::TRUCK) {
+    object_size.x = 8.0;
+    object_size.y = 2.5;
+    object_size.z = 3.0;
+  } else if (classification.label == ObjectClassification::CAR) {
+    object_size.x = 4.5;
     object_size.y = 1.8;
     object_size.z = 1.5;
+  } else {
+    object_size.x = 2.0;
+    object_size.y = 2.0;
+    object_size.z = 2.0;
   }
   return object_size;
 }
@@ -317,6 +317,43 @@ std::array<double, 36> RoiObjectDetectorNode::get_object_pose_covariance(
   return object_pose_covariance;
 }
 
+double RoiObjectDetectorNode::get_pseudo_yaw_angle(
+  const geometry_msgs::msg::Vector3 & ray_vector, const sensor_msgs::msg::RegionOfInterest & roi,
+  const geometry_msgs::msg::Vector3 & object_size)
+{
+  // Function to calculate the yaw angle based on the roi box and projected 3d bounding box
+  // Pseudo yaw angle from roi box and projected 3d bounding box
+  // aspect ratio
+  const double azimuth_angle = std::atan2(ray_vector.y, ray_vector.x);
+  double visible_yaw_angle{0.0};
+  double roi_aspect_ratio = roi.width / roi.height;
+  // expected aspect ratio
+  double object_long_aspect_ratio = object_size.x / object_size.z;
+  double object_lat_aspect_ratio = object_size.y / object_size.z;
+  if (roi_aspect_ratio > object_long_aspect_ratio) {
+    visible_yaw_angle = M_PI / 2.0;
+  } else if (roi_aspect_ratio < object_lat_aspect_ratio) {
+    visible_yaw_angle = 0.0;
+  } else {
+    visible_yaw_angle = std::atan2(object_long_aspect_ratio, roi_aspect_ratio);
+  }
+
+  // determine the yaw direction
+  double yaw_angle = azimuth_angle;
+  double yaw_direction = (visible_yaw_angle > M_PI / 4.0) ? 1.0 : -1.0;
+  double azimuth_zone_width = M_PI / 2.0;
+  if (azimuth_angle < 0.0) yaw_direction *= -1.0;
+  bool is_azimuth_zone_even =
+    std::abs(std::fmod(azimuth_angle, azimuth_zone_width)) > azimuth_zone_width / 2.0;
+  if (is_azimuth_zone_even) {
+    yaw_direction *= -1.0;
+  }
+
+  // calculate the yaw angle
+  yaw_angle += visible_yaw_angle * yaw_direction;
+
+  return yaw_angle;
+}
 }  // namespace vision_roi_object_detector
 
 #include "rclcpp_components/register_node_macro.hpp"
