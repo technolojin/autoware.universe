@@ -76,22 +76,22 @@ private:
   // DEBUG roi box
   rclcpp::Publisher<DetectedObjects>::SharedPtr pub_debug_roi_;
 
-  bool get_camera_position(
+  bool getCameraPosition(
     const std::string & camera_frame_id, geometry_msgs::msg::Point & position);
   geometry_msgs::msg::Vector3 get_object_size(const DetectedObjectWithFeature & object);
-  bool get_ray_vector(
+  bool getRayVector(
     const geometry_msgs::msg::Point & camera_position,
     const geometry_msgs::msg::PointStamped & ray_head, geometry_msgs::msg::Vector3 & ray_vector);
-  bool get_object_position(
+  bool getObjectPosition(
     const geometry_msgs::msg::Point & camera_position,
     const geometry_msgs::msg::Vector3 & ray_vector, const geometry_msgs::msg::Vector3 & object_size,
     geometry_msgs::msg::Point & object_position);
-  std::array<double, 36> get_object_pose_covariance(
+  std::array<double, 36> getObjectPoseCovariance(
     const geometry_msgs::msg::Point & camera_position,
     const geometry_msgs::msg::Vector3 & ray_vector, const double vertical_angle_uncertainty,
     const double horizontal_angle_uncertainty, const double vertical_roi_uncertainty,
     const double horizontal_roi_uncertainty);
-  double get_pseudo_yaw_angle(
+  double getPseudoYawAngle(
     const geometry_msgs::msg::Vector3 & ray_vector, const sensor_msgs::msg::RegionOfInterest & roi,
     const geometry_msgs::msg::Vector3 & object_size);
 };

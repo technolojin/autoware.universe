@@ -1,27 +1,28 @@
-# cluster merger
+# Vision ROI object detector
 
 ## Purpose
 
-cluster_merger is a package for merging pointcloud clusters as detected objects with feature type.
-
+vision_roi_object_detector is a package to detect 3D bounding box object from 2D region of interest (ROI).
+This 
+ 
 ## Inner-working / Algorithms
 
-The clusters of merged topics are simply concatenated from clusters of input topics.
+Object position on the image is projected to the ground and the object position is estimated.
 
 ## Input / Output
 
 ### Input
 
-| Name             | Type                                                     | Description         |
-| ---------------- | -------------------------------------------------------- | ------------------- |
-| `input/cluster0` | `tier4_perception_msgs::msg::DetectedObjectsWithFeature` | pointcloud clusters |
-| `input/cluster1` | `tier4_perception_msgs::msg::DetectedObjectsWithFeature` | pointcloud clusters |
+| Name                | Type                                                     | Description         |
+| ------------------- | -------------------------------------------------------- | ------------------- |
+| `input/rois`        | `tier4_perception_msgs::msg::DetectedObjectsWithFeature` | ROI Detections      |
+| `input/camera_info` | `sensor_msgs::msg::CameraInfo`                           | Camera Infos        |
 
 ### Output
 
-| Name              | Type                                                  | Description     |
-| ----------------- | ----------------------------------------------------- | --------------- |
-| `output/clusters` | `autoware_auto_perception_msgs::msg::DetectedObjects` | merged clusters |
+| Name                 | Type                                                  | Description     |
+| -------------------- | ----------------------------------------------------- | --------------- |
+| `output/roi_objects` | `autoware_auto_perception_msgs::msg::DetectedObjects` | 3D Objects      |
 
 ## Parameters
 

@@ -66,7 +66,7 @@ void RoiObjectDetectorNode::objectsCallback(
   // Camera information
   // camera position
   geometry_msgs::msg::Point camera_position;
-  if (!get_camera_position(camera_info_msg->header.frame_id, camera_position)) {
+  if (!getCameraPosition(camera_info_msg->header.frame_id, camera_position)) {
     return;
   }
 
@@ -96,7 +96,7 @@ void RoiObjectDetectorNode::objectsCallback(
     ray_vector_head.point.z = 1.0;
     // calculate the ray vector
     geometry_msgs::msg::Vector3 ray_vector;
-    if (!get_ray_vector(camera_position, ray_vector_head, ray_vector)) {
+    if (!getRayVector(camera_position, ray_vector_head, ray_vector)) {
       return;
     }
     // if the ray vector is pointing over the horizon, the object is ignored
@@ -105,19 +105,19 @@ void RoiObjectDetectorNode::objectsCallback(
     }
     // calculate object position
     geometry_msgs::msg::Point object_position;
-    if (!get_object_position(camera_position, ray_vector, object_size, object_position)) {
+    if (!getObjectPosition(camera_position, ray_vector, object_size, object_position)) {
       return;
     }
 
     // Pseudo yaw angle from roi box and projected 3d bounding box
-    double yaw_angle = get_pseudo_yaw_angle(ray_vector, roi, object_size);
+    double yaw_angle = getPseudoYawAngle(ray_vector, roi, object_size);
 
     // Calculate pose covariance
     const double vertical_angle_uncertainty = 1.0 / 180.0 * M_PI;    // 1 degree
     const double horizontal_angle_uncertainty = 0.5 / 180.0 * M_PI;  // 0.5 degree
     const double vertical_roi_uncertainty = 3.0 / f_x;               // 3 pixel
     const double horizontal_roi_uncertainty = 3.0 / f_y;             // 3 pixel
-    auto object_pose_covariance = get_object_pose_covariance(
+    auto object_pose_covariance = getObjectPoseCovariance(
       camera_position, ray_vector, vertical_angle_uncertainty, horizontal_angle_uncertainty,
       vertical_roi_uncertainty, horizontal_roi_uncertainty);
 
@@ -164,7 +164,7 @@ void RoiObjectDetectorNode::objectsCallback(
   pub_debug_roi_->publish(output_debug_rois);
 }
 
-bool RoiObjectDetectorNode::get_camera_position(
+bool RoiObjectDetectorNode::getCameraPosition(
   const std::string & camera_frame_id, geometry_msgs::msg::Point & camera_position)
 {
   geometry_msgs::msg::TransformStamped camera_to_base_link_tf;
@@ -222,7 +222,7 @@ geometry_msgs::msg::Vector3 RoiObjectDetectorNode::get_object_size(
   return object_size;
 }
 
-bool RoiObjectDetectorNode::get_ray_vector(
+bool RoiObjectDetectorNode::getRayVector(
   const geometry_msgs::msg::Point & camera_position,
   const geometry_msgs::msg::PointStamped & ray_head, geometry_msgs::msg::Vector3 & ray_vector)
 {
@@ -240,7 +240,7 @@ bool RoiObjectDetectorNode::get_ray_vector(
   return true;
 }
 
-bool RoiObjectDetectorNode::get_object_position(
+bool RoiObjectDetectorNode::getObjectPosition(
   const geometry_msgs::msg::Point & camera_position, const geometry_msgs::msg::Vector3 & ray_vector,
   const geometry_msgs::msg::Vector3 & object_size, geometry_msgs::msg::Point & object_position)
 {
@@ -274,7 +274,7 @@ bool RoiObjectDetectorNode::get_object_position(
   }
 }
 
-std::array<double, 36> RoiObjectDetectorNode::get_object_pose_covariance(
+std::array<double, 36> RoiObjectDetectorNode::getObjectPoseCovariance(
   const geometry_msgs::msg::Point & camera_position, const geometry_msgs::msg::Vector3 & ray_vector,
   const double vertical_angle_uncertainty, const double horizontal_angle_uncertainty,
   const double vertical_roi_uncertainty, const double horizontal_roi_uncertainty)
@@ -318,7 +318,7 @@ std::array<double, 36> RoiObjectDetectorNode::get_object_pose_covariance(
   return object_pose_covariance;
 }
 
-double RoiObjectDetectorNode::get_pseudo_yaw_angle(
+double RoiObjectDetectorNode::getPseudoYawAngle(
   const geometry_msgs::msg::Vector3 & ray_vector, const sensor_msgs::msg::RegionOfInterest & roi,
   const geometry_msgs::msg::Vector3 & object_size)
 {
