@@ -205,10 +205,6 @@ bool RadarTracksMsgsConverterNode::isStaticObject(
   const radar_msgs::msg::RadarTrack & radar_track,
   const geometry_msgs::msg::Vector3 & compensated_velocity)
 {
-  if (!(node_param_.use_twist_compensation && odometry_data_)) {
-    return false;
-  }
-
   // Calculate azimuth angle of the object in the vehicle coordinate
   const double sensor_yaw = tf2::getYaw(transform_->transform.rotation);
   const double radar_azimuth = std::atan2(radar_track.position.y, radar_track.position.x);
