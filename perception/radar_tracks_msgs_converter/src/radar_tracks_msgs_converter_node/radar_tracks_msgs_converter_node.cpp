@@ -87,7 +87,7 @@ RadarTracksMsgsConverterNode::RadarTracksMsgsConverterNode(const rclcpp::NodeOpt
 
   // Subscriber
   sub_radar_ = create_subscription<RadarTracks>(
-    "~/input/radar_objects", rclcpp::QoS{1},
+    "~/input/radar_objects", rclcpp::QoS{1}.best_effort(),
     std::bind(&RadarTracksMsgsConverterNode::onRadarTracks, this, _1));
   sub_odometry_ = create_subscription<Odometry>(
     "~/input/odometry", rclcpp::QoS{1},
@@ -102,15 +102,18 @@ RadarTracksMsgsConverterNode::RadarTracksMsgsConverterNode(const rclcpp::NodeOpt
   const auto update_period_ns = rclcpp::Rate(node_param_.update_rate_hz).period();
   timer_ = rclcpp::create_timer(
     this, get_clock(), update_period_ns, std::bind(&RadarTracksMsgsConverterNode::onTimer, this));
+  RCLCPP_INFO(get_logger(), "RadarTracksMsgsConverterNode has been initialized");
 }
 
 void RadarTracksMsgsConverterNode::onRadarTracks(const RadarTracks::ConstSharedPtr msg)
 {
+  RCLCPP_INFO_THROTTLE(get_logger(), *get_clock(), 100, "RadarTracksMsgsConverterNode onRadarTracks");
   radar_data_ = msg;
 }
 
 void RadarTracksMsgsConverterNode::onTwist(const Odometry::ConstSharedPtr msg)
 {
+  RCLCPP_INFO_THROTTLE(get_logger(), *get_clock(), 100, "RadarTracksMsgsConverterNode onTwist");
   odometry_data_ = msg;
 }
 
@@ -144,6 +147,8 @@ rcl_interfaces::msg::SetParametersResult RadarTracksMsgsConverterNode::onSetPara
 
 bool RadarTracksMsgsConverterNode::isDataReady()
 {
+  RCLCPP_INFO_THROTTLE(get_logger(), *get_clock(), 100, "RadarTracksMsgsConverterNode isDataReady");
+
   if (!radar_data_) {
     RCLCPP_INFO_THROTTLE(get_logger(), *get_clock(), 1000, "waiting for radar msg...");
     return false;
@@ -154,6 +159,8 @@ bool RadarTracksMsgsConverterNode::isDataReady()
 
 void RadarTracksMsgsConverterNode::onTimer()
 {
+  //debug message
+  RCLCPP_INFO(get_logger(), "RadarTracksMsgsConverterNode onTimer");
   if (!isDataReady()) {
     return;
   }

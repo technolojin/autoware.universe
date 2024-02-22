@@ -23,11 +23,14 @@ VehicleVelocityConverter::VehicleVelocityConverter() : Node("vehicle_velocity_co
   speed_scale_factor_ = declare_parameter<double>("speed_scale_factor");
 
   vehicle_report_sub_ = create_subscription<autoware_auto_vehicle_msgs::msg::VelocityReport>(
-    "velocity_status", rclcpp::QoS{100},
+    "input/velocity_status", rclcpp::QoS{100},
     std::bind(&VehicleVelocityConverter::callbackVelocityReport, this, std::placeholders::_1));
 
   twist_with_covariance_pub_ = create_publisher<geometry_msgs::msg::TwistWithCovarianceStamped>(
-    "twist_with_covariance", rclcpp::QoS{10});
+    "output/twist_with_covariance", rclcpp::QoS{10});
+
+  twist_only_odometry_pub_ = create_publisher<nav_msgs::msg::Odometry>(
+    "output/twist_only_odometry", rclcpp::QoS{10});
 }
 
 void VehicleVelocityConverter::callbackVelocityReport(
@@ -51,4 +54,15 @@ void VehicleVelocityConverter::callbackVelocityReport(
   twist_with_covariance_msg.twist.covariance[5 + 5 * 6] = stddev_wz_ * stddev_wz_;
 
   twist_with_covariance_pub_->publish(twist_with_covariance_msg);
+
+  // set twist only odometry msg from vehicle report msg
+  nav_msgs::msg::Odometry twist_only_odometry_msg;
+  twist_only_odometry_msg.header = msg->header;
+  twist_only_odometry_msg.child_frame_id = "base_link";
+  twist_only_odometry_msg.twist.twist.linear.x = msg->longitudinal_velocity * speed_scale_factor_;
+  twist_only_odometry_msg.twist.twist.linear.y = msg->lateral_velocity;
+  twist_only_odometry_msg.twist.twist.angular.z = msg->heading_rate;
+
+  twist_only_odometry_pub_->publish(twist_only_odometry_msg);
+
 }

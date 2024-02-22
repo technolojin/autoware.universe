@@ -20,6 +20,7 @@
 #include "autoware_auto_vehicle_msgs/msg/velocity_report.hpp"
 #include <geometry_msgs/msg/twist_stamped.hpp>
 #include <geometry_msgs/msg/twist_with_covariance_stamped.hpp>
+#include "nav_msgs/msg/odometry.hpp"
 
 #include <array>
 #include <string>
@@ -39,6 +40,9 @@ private:
 
   rclcpp::Publisher<geometry_msgs::msg::TwistWithCovarianceStamped>::SharedPtr
     twist_with_covariance_pub_;
+
+  rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr
+    twist_only_odometry_pub_;
 
   std::string frame_id_;
   double stddev_vx_;
