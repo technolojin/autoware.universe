@@ -150,7 +150,7 @@ void DefaultPlanner::initialize_common(rclcpp::Node * node)
 
   const auto durable_qos = rclcpp::QoS(1).transient_local();
   pub_goal_footprint_marker_ =
-    node_->create_publisher<MarkerArray>("debug/goal_footprint", durable_qos);
+    node_->create_publisher<MarkerArray>("~/debug/goal_footprint", durable_qos);
 
   vehicle_info_ = vehicle_info_util::VehicleInfoUtil(*node_).getVehicleInfo();
   param_.goal_angle_threshold_deg = node_->declare_parameter<double>("goal_angle_threshold_deg");
@@ -164,7 +164,7 @@ void DefaultPlanner::initialize(rclcpp::Node * node)
 {
   initialize_common(node);
   map_subscriber_ = node_->create_subscription<HADMapBin>(
-    "input/vector_map", rclcpp::QoS{10}.transient_local(),
+    "~/input/vector_map", rclcpp::QoS{10}.transient_local(),
     std::bind(&DefaultPlanner::map_callback, this, std::placeholders::_1));
 }
 
@@ -212,11 +212,11 @@ PlannerPlugin::MarkerArray DefaultPlanner::visualize(const LaneletRoute & route)
   const std_msgs::msg::ColorRGBA cl_route =
     tier4_autoware_utils::createMarkerColor(0.8, 0.99, 0.8, 0.15);
   const std_msgs::msg::ColorRGBA cl_ll_borders =
-    tier4_autoware_utils::createMarkerColor(0.2, 0.4, 0.4, 0.05);
+    tier4_autoware_utils::createMarkerColor(1.0, 1.0, 1.0, 0.999);
   const std_msgs::msg::ColorRGBA cl_end =
     tier4_autoware_utils::createMarkerColor(0.2, 0.2, 0.4, 0.05);
   const std_msgs::msg::ColorRGBA cl_goal =
-    tier4_autoware_utils::createMarkerColor(1.0, 1.0, 1.0, 0.999);
+    tier4_autoware_utils::createMarkerColor(0.2, 0.4, 0.4, 0.05);
 
   visualization_msgs::msg::MarkerArray route_marker_array;
   insert_marker_array(
