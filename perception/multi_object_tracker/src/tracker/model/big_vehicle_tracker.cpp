@@ -562,6 +562,7 @@ bool BigVehicleTracker::getTrackedObject(
    * wz = vel * sin(slip) / l_r = vy / l_r
    *
    */
+
   constexpr double vz_cov = 0.1 * 0.1;  // TODO(yukkysaito) Currently tentative
   constexpr double wx_cov = 0.1 * 0.1;  // TODO(yukkysaito) Currently tentative
   constexpr double wy_cov = 0.1 * 0.1;  // TODO(yukkysaito) Currently tentative
@@ -596,6 +597,7 @@ bool BigVehicleTracker::getTrackedObject(
   const auto ekf_pose_yaw = tf2::getYaw(pose_with_cov.pose.orientation);
   object.shape.footprint =
     tier4_autoware_utils::rotatePolygon(object.shape.footprint, origin_yaw - ekf_pose_yaw);
+
   return true;
 }
 
