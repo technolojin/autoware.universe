@@ -119,6 +119,8 @@
     description="if use_radar_tracking_fusion:=true, radar information is merged in tracking launch. Otherwise, radar information is merged in detection launch."
   />
 
+  <let name="use_radar_tracking_fusion" value="false" if="$(eval '&quot;$(var mode)&quot;==&quot;radar&quot;')"/>
+
   <!-- Perception module -->
   <group>
     <push-ros-namespace namespace="perception"/>
