@@ -316,11 +316,20 @@ bool BigVehicleTracker::measureWithShape(
 
   // update motion model
   motion_model_.updateExtendedState(bounding_box_.length);
+
   // update offset into object position
-  motion_model_.adjustPosition(gain * tracking_offset_.x(), gain * tracking_offset_.y());
-  // update offset
-  tracking_offset_.x() = gain_inv * tracking_offset_.x();
-  tracking_offset_.y() = gain_inv * tracking_offset_.y();
+  {
+    // rotate offset from object coordinate to global coordinate
+    const double yaw = motion_model_.getStateElement(IDX::YAW);
+    const double offset_x_global =
+      tracking_offset_.x() * std::cos(yaw) - tracking_offset_.y() * std::sin(yaw);
+    const double offset_y_global =
+      tracking_offset_.x() * std::sin(yaw) + tracking_offset_.y() * std::cos(yaw);
+    motion_model_.adjustPosition(gain * offset_x_global, gain * offset_y_global);
+    // update offset (object coordinate)
+    tracking_offset_.x() = gain_inv * tracking_offset_.x();
+    tracking_offset_.y() = gain_inv * tracking_offset_.y();
+  }
 
   return true;
 }
