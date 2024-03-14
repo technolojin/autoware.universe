@@ -220,13 +220,23 @@ bool CTRVMotionModel::limitStates()
   Eigen::MatrixXd P_t(DIM, DIM);
   ekf_.getX(X_t);
   ekf_.getP(P_t);
-  X_t(IDX::YAW) = tier4_autoware_utils::normalizeRadian(X_t(IDX::YAW));
-  if (!(-motion_params_.max_vel <= X_t(IDX::VEL) && X_t(IDX::VEL) <= motion_params_.max_vel)) {
-    X_t(IDX::VEL) = X_t(IDX::VEL) < 0 ? -motion_params_.max_vel : motion_params_.max_vel;
+
+  // limit the velocity
+  // if the velocity is negative and too fast, flip the yaw angle
+  const double max_reverse_vel = -motion_params_.max_vel * 0.2;
+  if (X_t(IDX::VEL) < max_reverse_vel) {
+    X_t(IDX::VEL) = -X_t(IDX::VEL);
+    X_t(IDX::YAW) += M_PI;
   }
+  if (X_t(IDX::VEL) > motion_params_.max_vel) {
+    X_t(IDX::VEL) = motion_params_.max_vel;
+  }
+
+  // limit the turning rate
   if (!(-motion_params_.max_wz <= X_t(IDX::WZ) && X_t(IDX::WZ) <= motion_params_.max_wz)) {
     X_t(IDX::WZ) = X_t(IDX::WZ) < 0 ? -motion_params_.max_wz : motion_params_.max_wz;
   }
+  X_t(IDX::YAW) = tier4_autoware_utils::normalizeRadian(X_t(IDX::YAW));
   ekf_.init(X_t, P_t);
 
   return true;
