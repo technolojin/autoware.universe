@@ -49,6 +49,7 @@ private:
     double q_cov_vel;
     double q_cov_wz;
     double max_vel;
+    double max_reverse_vel;
     double max_wz;
   } motion_params_;
 
@@ -69,7 +70,8 @@ public:
     const double & q_stddev_x, const double & q_stddev_y, const double & q_stddev_yaw,
     const double & q_stddev_vx, const double & q_stddev_wz);
 
-  void setMotionLimits(const double & max_vel, const double & max_wz);
+  void setMotionLimits(
+    const double & max_vel, const double & max_reverse_vel, const double & max_wz);
 
   bool updateStatePose(const double & x, const double & y, const std::array<double, 36> & pose_cov);
 

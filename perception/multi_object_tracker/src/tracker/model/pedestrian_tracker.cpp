@@ -87,10 +87,13 @@ PedestrianTracker::PedestrianTracker(
   }
 
   // Set motion limits
-  motion_model_.setMotionLimits(
-    tier4_autoware_utils::kmph2mps(100), /* [m/s] maximum velocity */
-    30.0                                 /* [deg/s] maximum turn rate */
-  );
+  {
+    constexpr double max_vel = tier4_autoware_utils::kmph2mps(100);  // [m/s] maximum velocity
+    constexpr double max_reverse_vel =
+      tier4_autoware_utils::kmph2mps(0.5);  // [m/s] maximum reverse velocity
+    constexpr double max_wz = 30;           // [deg/s maximum turn rate
+    motion_model_.setMotionLimits(max_vel, max_reverse_vel, max_wz);
+  }
 
   // Set initial state
   {

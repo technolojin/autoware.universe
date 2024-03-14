@@ -49,9 +49,11 @@ void CTRVMotionModel::setDefaultParams()
   setMotionParams(q_stddev_x, q_stddev_y, q_stddev_yaw, q_stddev_vel, q_stddev_wz);
 
   // set motion limitations
-  constexpr double max_vel = tier4_autoware_utils::kmph2mps(10);  // [m/s] maximum velocity
-  constexpr double max_wz = 30.0;                                 // [deg] maximum yaw rate
-  setMotionLimits(max_vel, max_wz);
+  constexpr double max_vel = tier4_autoware_utils::kmph2mps(60);  // [m/s] maximum velocity
+  constexpr double max_reverse_vel =
+    tier4_autoware_utils::kmph2mps(6);  // [m/s] maximum reverse velocity
+  constexpr double max_wz = 30.0;       // [deg] maximum yaw rate
+  setMotionLimits(max_vel, max_reverse_vel, max_wz);
 
   // set prediction parameters
   constexpr double dt_max = 0.11;  // [s] maximum time interval for prediction
@@ -70,10 +72,12 @@ void CTRVMotionModel::setMotionParams(
   motion_params_.q_cov_wz = std::pow(q_stddev_wz, 2.0);
 }
 
-void CTRVMotionModel::setMotionLimits(const double & max_vel, const double & max_wz)
+void CTRVMotionModel::setMotionLimits(
+  const double & max_vel, const double & max_reverse_vel, const double & max_wz)
 {
   // set motion limitations
   motion_params_.max_vel = max_vel;
+  motion_params_.max_reverse_vel = -std::abs(max_reverse_vel);
   motion_params_.max_wz = tier4_autoware_utils::deg2rad(max_wz);
 }
 
@@ -223,8 +227,7 @@ bool CTRVMotionModel::limitStates()
 
   // limit the velocity
   // if the velocity is negative and too fast, flip the yaw angle
-  const double max_reverse_vel = -motion_params_.max_vel * 0.2;
-  if (X_t(IDX::VEL) < max_reverse_vel) {
+  if (X_t(IDX::VEL) < motion_params_.max_reverse_vel) {
     X_t(IDX::VEL) = -X_t(IDX::VEL);
     X_t(IDX::YAW) += M_PI;
   }

@@ -61,8 +61,10 @@ void BicycleMotionModel::setDefaultParams()
 
   // set motion limitations
   constexpr double max_vel = tier4_autoware_utils::kmph2mps(100);  // [m/s] maximum velocity
-  constexpr double max_slip = 30.0;                                // [deg] maximum slip angle
-  setMotionLimits(max_vel, max_slip);
+  constexpr double max_reverse_vel =
+    tier4_autoware_utils::kmph2mps(10);  // [m/s] maximum reverse velocity
+  constexpr double max_slip = 30.0;      // [deg] maximum slip angle
+  setMotionLimits(max_vel, max_reverse_vel, max_slip);
 
   // set prediction parameters
   constexpr double dt_max = 0.11;  // [s] maximum time interval for prediction
@@ -99,10 +101,12 @@ void BicycleMotionModel::setMotionParams(
   motion_params_.lr_ratio = lr_ratio;
 }
 
-void BicycleMotionModel::setMotionLimits(const double & max_vel, const double & max_slip)
+void BicycleMotionModel::setMotionLimits(
+  const double & max_vel, const double & max_reverse_vel, const double & max_slip)
 {
   // set motion limitations
   motion_params_.max_vel = max_vel;
+  motion_params_.max_reverse_vel = -std::abs(max_reverse_vel);
   motion_params_.max_slip = tier4_autoware_utils::deg2rad(max_slip);
 }
 
@@ -254,9 +258,8 @@ bool BicycleMotionModel::limitStates()
   ekf_.getP(P_t);
 
   // limit the velocity
-  // if the velocity is negative and too fast, flip the yaw angle
-  const double max_reverse_vel = -motion_params_.max_vel * 0.2;
-  if (X_t(IDX::VEL) < max_reverse_vel) {
+  // if the velocity is negative and too fast, flip the yaw angle and fix the slip angle
+  if (X_t(IDX::VEL) < motion_params_.max_reverse_vel) {
     X_t(IDX::VEL) = -X_t(IDX::VEL);
     X_t(IDX::YAW) += M_PI;
     X_t(IDX::SLIP) = -X_t(IDX::SLIP);

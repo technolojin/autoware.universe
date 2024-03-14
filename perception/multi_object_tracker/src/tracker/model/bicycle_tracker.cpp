@@ -97,8 +97,10 @@ BicycleTracker::BicycleTracker(
   // Set motion limits
   {
     constexpr double max_vel = tier4_autoware_utils::kmph2mps(100);  // [m/s] maximum velocity
-    constexpr double max_slip = 30;                                  // [deg] maximum slip angle
-    motion_model_.setMotionLimits(max_vel, max_slip);  // maximum velocity and slip angle
+    constexpr double max_reverse_vel =
+      tier4_autoware_utils::kmph2mps(10);  // [m/s] maximum reverse velocity
+    constexpr double max_slip = 30;        // [deg] maximum slip angle
+    motion_model_.setMotionLimits(max_vel, max_reverse_vel, max_slip);
   }
 
   // Set initial state

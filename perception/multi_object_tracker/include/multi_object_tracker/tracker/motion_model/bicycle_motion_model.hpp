@@ -57,6 +57,7 @@ private:
     double lf_min;
     double lr_min;
     double max_vel;
+    double max_reverse_vel;
     double max_slip;
   } motion_params_;
 
@@ -80,7 +81,8 @@ public:
     const double & q_max_slip_angle, const double & lf_ratio, const double & lf_min,
     const double & lr_ratio, const double & lr_min);
 
-  void setMotionLimits(const double & max_vel, const double & max_slip);
+  void setMotionLimits(
+    const double & max_vel, const double & max_reverse_vel, const double & max_slip);
 
   bool updateStatePose(const double & x, const double & y, const std::array<double, 36> & pose_cov);
 
