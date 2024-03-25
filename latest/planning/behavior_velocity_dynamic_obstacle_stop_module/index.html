@@ -14708,8 +14708,10 @@ and it increases the range where dynamic objects are considered close enough to 
 <li>it is a vehicle (pedestrians are ignored);</li>
 <li>it is moving at a velocity higher than defined by the <code>minimum_object_velocity</code> parameter;</li>
 <li>it is not too close to the current position of the ego vehicle;</li>
+<li>it is not unavoidable (only if parameter <code>ignore_unavoidable_collisions</code> is set to <code>true</code>);</li>
 <li>it is close to the ego path.</li>
 </ul>
+<p>An object is considered unavoidable if it is heading towards the ego vehicle such that even if ego stops, a collision would still occur (assuming the object keeps driving in a straight line).</p>
 <p>For the last condition,
 the object is considered close enough if its lateral distance from the ego path is less than the threshold parameter <code>minimum_object_distance_from_ego_path</code> plus half the width of ego and of the object (including the <code>extra_object_width</code> parameter).
 In addition, the value of the <code>hysteresis</code> parameter is added to the minimum distance if a stop point was inserted in the previous iteration.</p>
@@ -14775,6 +14777,11 @@ the stop point arc length is calculated to be the arc length of the previously f
 <td><code>minimum_object_distance_from_ego_path</code></td>
 <td>double</td>
 <td>[m] minimum distance between the footprints of ego and an object to consider for collision</td>
+</tr>
+<tr>
+<td><code>ignore_unavoidable_collisions</code></td>
+<td>bool</td>
+<td>[-] if true, ignore collisions that cannot be avoided by stopping (assuming the obstacle continues going straight)</td>
 </tr>
 </tbody>
 </table></div>
