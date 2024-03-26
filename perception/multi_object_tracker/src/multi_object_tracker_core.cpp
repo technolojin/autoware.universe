@@ -146,8 +146,8 @@ void TrackerDebugger::publishProcessingTime(const rclcpp::Time & object_time)
 {
   const auto current_time = node_.now();
   if (debug_settings_.publish_processing_time) {
-    elapsed_time_from_sensor_input_ = (current_time - last_input_stamp_).seconds() * 1e3;
-
+    // calculate processing time
+    double measurement_to_publish = (current_time - last_input_stamp_).seconds() * 1e3;
     double input_to_publish_ms = (current_time - stamp_process_start_).seconds() * 1e3;
     double cyclic_time_ms = (current_time - stamp_publish_output_).seconds() * 1e3;
     double measurement_to_object_ms = (object_time - last_input_stamp_).seconds() * 1e3;
@@ -156,9 +156,11 @@ void TrackerDebugger::publishProcessingTime(const rclcpp::Time & object_time)
     double process_latency_ms = process_latency_.seconds() * 1e3;
     double publish_latency_ms = publish_latency_.seconds() * 1e3;
 
+    elapsed_time_from_sensor_input_ = measurement_to_publish;
+
+    // limit the value
     const double LIMIT = 2000;
-    elapsed_time_from_sensor_input_ =
-      elapsed_time_from_sensor_input_ > LIMIT ? 0 : elapsed_time_from_sensor_input_;
+    measurement_to_publish = measurement_to_publish > LIMIT ? 0 : measurement_to_publish;
     input_to_publish_ms = input_to_publish_ms > LIMIT ? 0 : input_to_publish_ms;
     cyclic_time_ms = cyclic_time_ms > LIMIT ? 0 : cyclic_time_ms;
     measurement_to_object_ms = measurement_to_object_ms > LIMIT ? 0 : measurement_to_object_ms;
@@ -169,7 +171,7 @@ void TrackerDebugger::publishProcessingTime(const rclcpp::Time & object_time)
 
     // starting from the measurement time
     processing_time_publisher_->publish<tier4_debug_msgs::msg::Float64Stamped>(
-      "debug/total/pipeline_latency_ms", elapsed_time_from_sensor_input_ * 1e3);
+      "debug/total/pipeline_latency_ms", elapsed_time_from_sensor_input_);
     processing_time_publisher_->publish<tier4_debug_msgs::msg::Float64Stamped>(
       "debug/meas/input_latency_ms", input_latency_ms);
     processing_time_publisher_->publish<tier4_debug_msgs::msg::Float64Stamped>(
