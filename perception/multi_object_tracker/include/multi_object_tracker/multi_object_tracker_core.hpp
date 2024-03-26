@@ -61,11 +61,12 @@ class TrackerDebugger
 {
 public:
   explicit TrackerDebugger(rclcpp::Node & node);
-  void publishProcessingTime();
+  void publishProcessingTime(const rclcpp::Time & object_time);
   void publishTentativeObjects(
     const autoware_auto_perception_msgs::msg::TrackedObjects & tentative_objects) const;
   void startStopWatch();
   void startMeasurementTime(const rclcpp::Time & measurement_header_stamp);
+  void endMeasurementTime();
   void setupDiagnostics();
   void checkDelay(diagnostic_updater::DiagnosticStatusWrapper & stat);
   struct DEBUG_SETTINGS
@@ -86,6 +87,13 @@ private:
   std::unique_ptr<tier4_autoware_utils::StopWatch<std::chrono::milliseconds>> stop_watch_ptr_;
   std::unique_ptr<tier4_autoware_utils::DebugPublisher> processing_time_publisher_;
   rclcpp::Time last_input_stamp_;
+
+  rclcpp::Time stamp_process_start_;
+  rclcpp::Time stamp_process_end_;
+  rclcpp::Time stamp_publish_output_;
+  rclcpp::Duration input_latency_;
+  rclcpp::Duration process_latency_;
+  rclcpp::Duration publish_latency_;
 };
 
 class MultiObjectTracker : public rclcpp::Node
