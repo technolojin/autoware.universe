@@ -67,17 +67,19 @@ boost::optional<geometry_msgs::msg::Transform> getTransformAnonymous(
 }  // namespace
 
 TrackerDebugger::TrackerDebugger(rclcpp::Node & node)
-: diagnostic_updater_(&node), node_(node), 
-last_input_stamp_(node.now()), 
+: diagnostic_updater_(&node),
+  node_(node),
+  last_input_stamp_(node.now()),
   stamp_process_start_(node_.now()),
-  stamp_process_end_ (node_.now()),
-  stamp_publish_output_ (node_.now()),
-input_latency_(0, 0), process_latency_(0, 0)
+  stamp_process_end_(node_.now()),
+  stamp_publish_output_(node_.now()),
+  input_latency_(0, 0),
+  process_latency_(0, 0),
+  publish_latency_(0, 0)
 {
   // declare debug parameters to decide whether to publish debug topics
   loadParameters();
   // initialize debug publishers
-  // stop_watch_ptr_ = std::make_unique<tier4_autoware_utils::StopWatch<std::chrono::milliseconds>>();
   if (debug_settings_.publish_processing_time) {
     processing_time_publisher_ =
       std::make_unique<tier4_autoware_utils::DebugPublisher>(&node_, "multi_object_tracker");
@@ -90,7 +92,6 @@ input_latency_(0, 0), process_latency_(0, 0)
   }
 
   // initialize stop watch and diagnostics
-  startStopWatch();
   setupDiagnostics();
 }
 
@@ -143,20 +144,34 @@ void TrackerDebugger::checkDelay(diagnostic_updater::DiagnosticStatusWrapper & s
 
 void TrackerDebugger::publishProcessingTime(const rclcpp::Time & object_time)
 {
-  // const double processing_time_ms = stop_watch_ptr_->toc("processing_time", true);
-  // const double cyclic_time_ms = stop_watch_ptr_->toc("cyclic_time", true);
   const auto current_time = node_.now();
-  const double input_to_publish_ms = (current_time - stamp_process_start_).seconds()* 1e3;
-  const double cyclic_time_ms = (current_time - stamp_publish_output_).seconds()* 1e3;
-  elapsed_time_from_sensor_input_ = (current_time - last_input_stamp_).seconds();
-  const double measurement_to_object_ms = (object_time - last_input_stamp_).seconds() * 1e3;
-  const double process_to_publish_ms = (current_time - stamp_process_end_).seconds() * 1e3;
   if (debug_settings_.publish_processing_time) {
+    elapsed_time_from_sensor_input_ = (current_time - last_input_stamp_).seconds() * 1e3;
+
+    double input_to_publish_ms = (current_time - stamp_process_start_).seconds() * 1e3;
+    double cyclic_time_ms = (current_time - stamp_publish_output_).seconds() * 1e3;
+    double measurement_to_object_ms = (object_time - last_input_stamp_).seconds() * 1e3;
+    double process_to_publish_ms = (current_time - stamp_process_end_).seconds() * 1e3;
+    double input_latency_ms = input_latency_.seconds() * 1e3;
+    double process_latency_ms = process_latency_.seconds() * 1e3;
+    double publish_latency_ms = publish_latency_.seconds() * 1e3;
+
+    const double LIMIT = 2000;
+    elapsed_time_from_sensor_input_ =
+      elapsed_time_from_sensor_input_ > LIMIT ? 0 : elapsed_time_from_sensor_input_;
+    input_to_publish_ms = input_to_publish_ms > LIMIT ? 0 : input_to_publish_ms;
+    cyclic_time_ms = cyclic_time_ms > LIMIT ? 0 : cyclic_time_ms;
+    measurement_to_object_ms = measurement_to_object_ms > LIMIT ? 0 : measurement_to_object_ms;
+    process_to_publish_ms = process_to_publish_ms > LIMIT ? 0 : process_to_publish_ms;
+    input_latency_ms = input_latency_ms > LIMIT ? 0 : input_latency_ms;
+    process_latency_ms = process_latency_ms > LIMIT ? 0 : process_latency_ms;
+    publish_latency_ms = publish_latency_ms > LIMIT ? 0 : publish_latency_ms;
+
     // starting from the measurement time
     processing_time_publisher_->publish<tier4_debug_msgs::msg::Float64Stamped>(
       "debug/total/pipeline_latency_ms", elapsed_time_from_sensor_input_ * 1e3);
     processing_time_publisher_->publish<tier4_debug_msgs::msg::Float64Stamped>(
-      "debug/meas/input_latency_ms", input_latency_.seconds() * 1e3);
+      "debug/meas/input_latency_ms", input_latency_ms);
     processing_time_publisher_->publish<tier4_debug_msgs::msg::Float64Stamped>(
       "debug/meas/to_tracked_object_ms", measurement_to_object_ms);
     // inter-process time
@@ -164,9 +179,11 @@ void TrackerDebugger::publishProcessingTime(const rclcpp::Time & object_time)
       "debug/internal/cyclic_time_ms", cyclic_time_ms);
     // processing time
     processing_time_publisher_->publish<tier4_debug_msgs::msg::Float64Stamped>(
-      "debug/internal/processing_time_ms", process_latency_.seconds() * 1e3);
+      "debug/internal/processing_time_ms", process_latency_ms);
     processing_time_publisher_->publish<tier4_debug_msgs::msg::Float64Stamped>(
       "debug/internal/process_to_publish_ms", process_to_publish_ms);
+    processing_time_publisher_->publish<tier4_debug_msgs::msg::Float64Stamped>(
+      "debug/internal/publish_latency_ms", publish_latency_ms);
     processing_time_publisher_->publish<tier4_debug_msgs::msg::Float64Stamped>(
       "debug/internal/input_to_publish_ms", input_to_publish_ms);
   }
@@ -181,15 +198,6 @@ void TrackerDebugger::publishTentativeObjects(
   }
 }
 
-void TrackerDebugger::startStopWatch()
-{
-  // initialization
-  last_input_stamp_ = node_.now();
-  stamp_process_start_ = node_.now();
-  stamp_process_end_ = node_.now();
-  stamp_publish_output_ = node_.now();
-}
-
 void TrackerDebugger::startMeasurementTime(const rclcpp::Time & measurement_header_stamp)
 {
   last_input_stamp_ = measurement_header_stamp;
@@ -202,6 +210,11 @@ void TrackerDebugger::endMeasurementTime()
 {
   stamp_process_end_ = node_.now();
   process_latency_ = stamp_process_end_ - stamp_process_start_;
+}
+
+void TrackerDebugger::startPublishTime()
+{
+  publish_latency_ = node_.now() - stamp_process_end_;
 }
 
 MultiObjectTracker::MultiObjectTracker(const rclcpp::NodeOptions & node_options)
@@ -476,6 +489,8 @@ inline bool MultiObjectTracker::shouldTrackerPublish(
 
 void MultiObjectTracker::publish(const rclcpp::Time & time) const
 {
+  debugger_->startPublishTime();
+
   const auto subscriber_count = tracked_objects_pub_->get_subscription_count() +
                                 tracked_objects_pub_->get_intra_process_subscription_count();
   if (subscriber_count < 1) {

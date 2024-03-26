@@ -64,9 +64,9 @@ public:
   void publishProcessingTime(const rclcpp::Time & object_time);
   void publishTentativeObjects(
     const autoware_auto_perception_msgs::msg::TrackedObjects & tentative_objects) const;
-  void startStopWatch();
   void startMeasurementTime(const rclcpp::Time & measurement_header_stamp);
   void endMeasurementTime();
+  void startPublishTime();
   void setupDiagnostics();
   void checkDelay(diagnostic_updater::DiagnosticStatusWrapper & stat);
   struct DEBUG_SETTINGS
