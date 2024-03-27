@@ -110,7 +110,11 @@ private:
     tracked_objects_pub_;
   rclcpp::Subscription<autoware_auto_perception_msgs::msg::DetectedObjects>::SharedPtr
     detected_object_sub_;
-  rclcpp::TimerBase::SharedPtr publish_timer_;  // publish timer
+
+  // publish timer
+  rclcpp::TimerBase::SharedPtr publish_timer_;
+  rclcpp::Time last_published_time_;
+  double publisher_period_;
 
   // debugger class
   std::unique_ptr<TrackerDebugger> debugger_;
@@ -138,6 +142,7 @@ private:
     const autoware_auto_perception_msgs::msg::DetectedObject & object, const rclcpp::Time & time,
     const geometry_msgs::msg::Transform & self_transform) const;
 
+  void checkAndPublish(const rclcpp::Time & time);
   void publish(const rclcpp::Time & time) const;
   inline bool shouldTrackerPublish(const std::shared_ptr<const Tracker> tracker) const;
 };
