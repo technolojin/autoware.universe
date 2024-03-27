@@ -131,8 +131,7 @@ private:
   std::unique_ptr<DataAssociation> data_association_;
 
   void checkTrackerLifeCycle(
-    std::list<std::shared_ptr<Tracker>> & list_tracker, const rclcpp::Time & time,
-    const geometry_msgs::msg::Transform & self_transform);
+    std::list<std::shared_ptr<Tracker>> & list_tracker, const rclcpp::Time & time);
   void sanitizeTracker(
     std::list<std::shared_ptr<Tracker>> & list_tracker, const rclcpp::Time & time);
   std::shared_ptr<Tracker> createNewTracker(

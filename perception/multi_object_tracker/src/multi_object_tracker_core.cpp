@@ -355,7 +355,7 @@ void MultiObjectTracker::onMeasurement(
   }
 
   /* life cycle check */
-  checkTrackerLifeCycle(list_tracker_, measurement_time, *self_transform);
+  checkTrackerLifeCycle(list_tracker_, measurement_time);
   /* sanitize trackers */
   sanitizeTracker(list_tracker_, measurement_time);
 
@@ -372,13 +372,13 @@ void MultiObjectTracker::onMeasurement(
 
   if (publish_timer_ == nullptr) {
     // publish for measurement time
-    // publish(measurement_time);
+    publish(measurement_time);
 
     // publish for current time
     // publish(this->now());
 
     // triggering onTimer
-    onTimer();
+    // onTimer();
   }
 }
 
@@ -412,14 +412,9 @@ std::shared_ptr<Tracker> MultiObjectTracker::createNewTracker(
 void MultiObjectTracker::onTimer()
 {
   const rclcpp::Time current_time = this->now();
-  const auto self_transform =
-    getTransformAnonymous(tf_buffer_, world_frame_id_, "base_link", current_time);
-  if (!self_transform) {
-    return;
-  }
 
   /* life cycle check */
-  checkTrackerLifeCycle(list_tracker_, current_time, *self_transform);
+  checkTrackerLifeCycle(list_tracker_, current_time);
   /* sanitize trackers */
   sanitizeTracker(list_tracker_, current_time);
 
@@ -428,8 +423,7 @@ void MultiObjectTracker::onTimer()
 }
 
 void MultiObjectTracker::checkTrackerLifeCycle(
-  std::list<std::shared_ptr<Tracker>> & list_tracker, const rclcpp::Time & time,
-  [[maybe_unused]] const geometry_msgs::msg::Transform & self_transform)
+  std::list<std::shared_ptr<Tracker>> & list_tracker, const rclcpp::Time & time)
 {
   /* params */
   constexpr float max_elapsed_time = 1.0;
