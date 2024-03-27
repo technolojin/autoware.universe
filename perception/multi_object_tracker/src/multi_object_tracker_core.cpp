@@ -153,17 +153,18 @@ void TrackerDebugger::publishTentativeObjects(
   }
 }
 
-void TrackerDebugger::startMeasurementTime(const rclcpp::Time & measurement_header_stamp)
+void TrackerDebugger::startMeasurementTime(
+  const rclcpp::Time & now, const rclcpp::Time & measurement_header_stamp)
 {
   last_input_stamp_ = measurement_header_stamp;
   // start measuring processing time
-  stamp_process_start_ = node_.now();
+  stamp_process_start_ = now;
   input_latency_ = stamp_process_start_ - last_input_stamp_;
 }
 
-void TrackerDebugger::endMeasurementTime()
+void TrackerDebugger::endMeasurementTime(const rclcpp::Time & now)
 {
-  stamp_process_end_ = node_.now();
+  stamp_process_end_ = now;
   process_latency_ = stamp_process_end_ - stamp_process_start_;
   if (debug_settings_.publish_processing_time) {
     double input_latency_ms = input_latency_.seconds() * 1e3;
@@ -182,15 +183,15 @@ void TrackerDebugger::endMeasurementTime()
   }
 }
 
-void TrackerDebugger::startPublishTime()
+void TrackerDebugger::startPublishTime(const rclcpp::Time & now)
 {
-  publish_interprocess_latency_ = node_.now() - stamp_process_end_;
-  stamp_publish_start_ = node_.now();
+  publish_interprocess_latency_ = now - stamp_process_end_;
+  stamp_publish_start_ = now;
 }
 
-void TrackerDebugger::endPublishTime(const rclcpp::Time & object_time)
+void TrackerDebugger::endPublishTime(const rclcpp::Time & now, const rclcpp::Time & object_time)
 {
-  const auto current_time = node_.now();
+  const auto current_time = now;
   stamp_publish_end_ = current_time;
   publish_latency_ = stamp_publish_end_ - stamp_publish_start_;
   if (debug_settings_.publish_processing_time) {
@@ -314,7 +315,7 @@ void MultiObjectTracker::onMeasurement(
   const autoware_auto_perception_msgs::msg::DetectedObjects::ConstSharedPtr input_objects_msg)
 {
   /* keep the latest input stamp and check transform*/
-  debugger_->startMeasurementTime(rclcpp::Time(input_objects_msg->header.stamp));
+  debugger_->startMeasurementTime(this->now(), rclcpp::Time(input_objects_msg->header.stamp));
   const auto self_transform = getTransformAnonymous(
     tf_buffer_, "base_link", world_frame_id_, input_objects_msg->header.stamp);
   if (!self_transform) {
@@ -367,15 +368,17 @@ void MultiObjectTracker::onMeasurement(
       createNewTracker(transformed_objects.objects.at(i), measurement_time, *self_transform);
     if (tracker) list_tracker_.push_back(tracker);
   }
-  debugger_->endMeasurementTime();
+  debugger_->endMeasurementTime(this->now());
 
   if (publish_timer_ == nullptr) {
     // publish for measurement time
     // publish(measurement_time);
 
     // publish for current time
-    const rclcpp::Time current_time = this->now();
-    publish(current_time);
+    // publish(this->now());
+
+    // triggering onTimer
+    onTimer();
   }
 }
 
@@ -521,7 +524,7 @@ inline bool MultiObjectTracker::shouldTrackerPublish(
 
 void MultiObjectTracker::publish(const rclcpp::Time & time) const
 {
-  debugger_->startPublishTime();
+  debugger_->startPublishTime(this->now());
 
   const auto subscriber_count = tracked_objects_pub_->get_subscription_count() +
                                 tracked_objects_pub_->get_intra_process_subscription_count();
@@ -551,7 +554,7 @@ void MultiObjectTracker::publish(const rclcpp::Time & time) const
   published_time_publisher_->publish_if_subscribed(tracked_objects_pub_, output_msg.header.stamp);
 
   // Debugger Publish if enabled
-  debugger_->endPublishTime(time);
+  debugger_->endPublishTime(this->now(), time);
   debugger_->publishTentativeObjects(tentative_objects_msg);
 }
 

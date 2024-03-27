@@ -63,10 +63,11 @@ public:
   explicit TrackerDebugger(rclcpp::Node & node);
   void publishTentativeObjects(
     const autoware_auto_perception_msgs::msg::TrackedObjects & tentative_objects) const;
-  void startMeasurementTime(const rclcpp::Time & measurement_header_stamp);
-  void endMeasurementTime();
-  void startPublishTime();
-  void endPublishTime(const rclcpp::Time & object_time);
+  void startMeasurementTime(
+    const rclcpp::Time & now, const rclcpp::Time & measurement_header_stamp);
+  void endMeasurementTime(const rclcpp::Time & now);
+  void startPublishTime(const rclcpp::Time & now);
+  void endPublishTime(const rclcpp::Time & now, const rclcpp::Time & object_time);
   void setupDiagnostics();
   void checkDelay(diagnostic_updater::DiagnosticStatusWrapper & stat);
   struct DEBUG_SETTINGS
