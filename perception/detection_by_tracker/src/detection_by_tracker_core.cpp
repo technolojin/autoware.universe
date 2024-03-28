@@ -254,7 +254,7 @@ void DetectionByTracker::onObjects(
 
   objects_pub_->publish(detected_objects);
   published_time_publisher_->publish_if_subscribed(objects_pub_, detected_objects.header.stamp);
-  debugger_->publishProcessingTime();
+  debugger_->publishProcessingTime(this->now(), input_msg->header.stamp);
 }
 
 void DetectionByTracker::divideUnderSegmentedObjects(

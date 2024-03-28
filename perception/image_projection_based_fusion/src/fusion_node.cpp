@@ -172,12 +172,12 @@ void FusionNode<Msg, Obj, Msg2D>::subCallback(const typename Msg::ConstSharedPtr
     // add processing time for debug
     if (debug_publisher_) {
       const double cyclic_time_ms = stop_watch_ptr_->toc("cyclic_time", true);
-      const double pipeline_latency_ms = (this->now() - input_msg->header.stamp).seconds() * 1e3;
       debug_publisher_->publish<tier4_debug_msgs::msg::Float64Stamped>(
         "debug/cyclic_time_ms", cyclic_time_ms);
       debug_publisher_->publish<tier4_debug_msgs::msg::Float64Stamped>(
         "debug/processing_time_ms",
         processing_time_ms + stop_watch_ptr_->toc("processing_time", true));
+      const double pipeline_latency_ms = (this->now() - input_msg->header.stamp).seconds() * 1e3;
       debug_publisher_->publish<tier4_debug_msgs::msg::Float64Stamped>(
         "debug/pipeline_latency_ms", pipeline_latency_ms);
       processing_time_ms = 0;
@@ -382,9 +382,10 @@ void FusionNode<Msg, Obj, Msg2D>::timer_callback()
         debug_publisher_->publish<tier4_debug_msgs::msg::Float64Stamped>(
           "debug/processing_time_ms",
           processing_time_ms + stop_watch_ptr_->toc("processing_time", true));
-        const double pipeline_latency_ms = (this->now() - cached_msg_.second->header.stamp).seconds() * 1e3;
+        const double pipeline_latency_ms =
+          (this->now() - cached_msg_.second->header.stamp).seconds() * 1e3;
         debug_publisher_->publish<tier4_debug_msgs::msg::Float64Stamped>(
-            "debug/pipeline_latency_ms", pipeline_latency_ms);
+          "debug/pipeline_latency_ms", pipeline_latency_ms);
         processing_time_ms = 0;
       }
     }
