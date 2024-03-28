@@ -229,6 +229,9 @@ void DecorativeTrackerMergerNode::mainObjectsCallback(
     "debug/cyclic_time_ms", stop_watch_ptr_->toc("cyclic_time", true));
   processing_time_publisher_->publish<tier4_debug_msgs::msg::Float64Stamped>(
     "debug/processing_time_ms", stop_watch_ptr_->toc("processing_time", true));
+  const double total_latency =  (this->now() - rclcpp::Time(main_objects->header.stamp)).seconds()*1e3;
+  processing_time_publisher_->publish<tier4_debug_msgs::msg::Float64Stamped>(
+    "debug/pipeline_latency_ms", total_latency);
 }
 
 /**
