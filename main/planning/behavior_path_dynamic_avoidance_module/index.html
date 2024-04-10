@@ -14748,14 +14748,15 @@
 <div><h1 id="dynamic-avoidance-design">Dynamic avoidance design<a class="headerlink" href="#dynamic-avoidance-design" title="Permanent link">#</a></h1>
 <p>This module is under development.</p>
 <h2 id="purpose-role">Purpose / Role<a class="headerlink" href="#purpose-role" title="Permanent link">#</a></h2>
-<p>This module provides avoidance functions for vehicles, pedestrians, and obstacles in the vicinity of the ego's path in combination with the obstacle_avoidance module.
+<p>This module provides avoidance functions for vehicles, pedestrians, and obstacles in the vicinity of the ego's path in combination with the <a href="https://autowarefoundation.github.io/autoware.universe/main/planning/obstacle_avoidance_planner/">obstacle_avoidance_planner</a>.
 Each module performs the following roles.
-Dynamic Avoidance module: This module cuts off the drivable area according to the position and velocity of the target to be avoided.
-Obstacle Avoidance module: This module modifies the path to be followed so that it fits within the drivable area received.</p>
-<p>Avoidance functions are also provided by the Avoidance module, which allows avoidance through the outside of own lanes but not against moving objects.
+Dynamic Avoidance module cuts off the drivable area according to the position and velocity of the target to be avoided.
+Obstacle Avoidance module modifies the path to be followed so that it fits within the received drivable area.</p>
+<p>Avoidance functions are also provided by the <a href="https://autowarefoundation.github.io/autoware.universe/main/planning/behavior_path_avoidance_module/">Avoidance module</a>, but these modules have different roles.
+The Avoidance module performs avoidance through the outside of own lanes but cannot avoid the moving objects.
 On the other hand, this module can avoid moving objects.
-For this reason, the word "dynamic" is used in its name.
-The table below lists the avoidance modules that can be used for each situation.</p>
+For this reason, the word "dynamic" is used in the modules's name.
+The table below lists the avoidance modules that can handle each situation.</p>
 <table>
 <thead>
 <tr>
@@ -14779,17 +14780,15 @@ The table below lists the avoidance modules that can be used for each situation.
 </table>
 <h2 id="policy-of-algorithms">Policy of algorithms<a class="headerlink" href="#policy-of-algorithms" title="Permanent link">#</a></h2>
 <p>Here, we describe the policy of inner algorithms.
-The inner algorithms can be separated into two parts: The first decide whether to avoid the obstacles and the second cuts off the drivable area against the corresponding obstacle.
-If you are interested in more details, please see the code itself.</p>
+The inner algorithms can be separated into two parts: The first decide whether to avoid the obstacles and the second cuts off the drivable area against the corresponding obstacle.</p>
 <h3 id="select-obstacles-to-avoid">Select obstacles to avoid<a class="headerlink" href="#select-obstacles-to-avoid" title="Permanent link">#</a></h3>
 <p>To decide whether to avoid an object, both the predicted path and the state (pose and twist) of each object are used.
 The type of objects the user wants this module to avoid is also required.
 Using this information, the module decides to <em>avoid</em> objects that <em>obstruct the ego's passage</em> and <em>can be avoided</em>.</p>
-<p>The definition of <em>obstruct own passage</em> is implemented as the object that collides within seconds.
-This process wastes computational cost by doing it for all objects; thus, filtering by the relative position and speed of the object with respect to the ego's path is also done as an auxiliary process.
-The other, <em>can be avoided</em> denotes whether it can be avoided without risk to passengers or other vehicles.
-For this purpose, it is judged whether the obstacle can be avoided by satisfying the constraints of lateral acceleration and lateral jerk.
-For example, the module decides not to avoid an object that is too close or fast in the lateral direction because it cannot be avoided.</p>
+<p>The definition of <em>obstruct the ego's passage</em> is implemented as the object that collides within seconds.
+The other, <em>can be avoided</em> denotes whether it can be avoided without risk to the passengers or the other vehicles.
+For this purpose, the module judges whether the obstacle can be avoided with satisfying the constraints of lateral acceleration and lateral jerk.
+For example, the module decides not to avoid an object that is too close or fast in the lateral direction.</p>
 <h3 id="cuts-off-the-drivable-area-against-the-selected-obstacles">Cuts off the drivable area against the selected obstacles<a class="headerlink" href="#cuts-off-the-drivable-area-against-the-selected-obstacles" title="Permanent link">#</a></h3>
 <p>For the selected obstacles to be avoided, the module cuts off the drivable area.
 As inputs to decide the shapes of cut-off polygons, poses of the obstacles are mainly used, assuming they move in parallel to the ego's path, instead of its predicted path.
