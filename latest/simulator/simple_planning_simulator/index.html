@@ -11,7 +11,7 @@
         <link rel="canonical" href="https://autowarefoundation.github.io/autoware.universe/latest/simulator/simple_planning_simulator/">
       
       
-        <link rel="prev" href="../fault_injection/">
+        <link rel="prev" href="../learning_based_vehicle_model/">
       
       
         <link rel="next" href="../vehicle_door_simulator/">
@@ -12323,6 +12323,8 @@
         
           
         
+          
+        
       
       
         <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
@@ -12437,6 +12439,54 @@
               
   
   
+  
+    
+      
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+      
+      
+      
+        
+      
+      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_10_3" >
+      
+      
+        
+          
+            
+          
+        
+      
+      
+        
+        
+        <div class="md-nav__link md-nav__link--index ">
+          <a href="../learning_based_vehicle_model/">Learning based vehicle model</a>
+          
+        </div>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_10_3_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_10_3">
+          <span class="md-nav__icon md-icon"></span>
+          Learning based vehicle model
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
     
   
   
@@ -12448,7 +12498,7 @@
       
       
       
-      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10_3" checked>
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10_4" checked>
       
       
         
@@ -12465,8 +12515,8 @@
           
         </div>
       
-      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_10_3_label" aria-expanded="true">
-        <label class="md-nav__title" for="__nav_10_3">
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_10_4_label" aria-expanded="true">
+        <label class="md-nav__title" for="__nav_10_4">
           <span class="md-nav__icon md-icon"></span>
           Simple planning simulator
         </label>
@@ -12496,7 +12546,7 @@
       
         
       
-      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_10_4" >
+      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_10_5" >
       
       
         
@@ -12513,8 +12563,8 @@
           
         </div>
       
-      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_10_4_label" aria-expanded="false">
-        <label class="md-nav__title" for="__nav_10_4">
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_10_5_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_10_5">
           <span class="md-nav__icon md-icon"></span>
           Vehicle door simulator
         </label>
@@ -15039,6 +15089,13 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#example-of-learned_steer_vel-model" class="md-nav__link">
+    Example of LEARNED_STEER_VEL model
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#default-tf-configuration" class="md-nav__link">
     Default TF configuration
   </a>
@@ -15213,6 +15270,7 @@
 <li><code>DELAY_STEER_ACC</code></li>
 <li><code>DELAY_STEER_ACC_GEARED</code></li>
 <li><code>DELAY_STEER_MAP_ACC_GEARED</code>: applies 1D dynamics and time delay to the steering and acceleration commands. The simulated acceleration is determined by a value converted through the provided acceleration map. This model is valuable for an accurate simulation with acceleration deviations in a real vehicle.</li>
+<li><code>LEARNED_STEER_VEL</code>: launches learned python models. More about this <a href="../learning_based_vehicle_model">here</a>.</li>
 </ul>
 <p>The <code>IDEAL</code> model moves ideally as commanded, while the <code>DELAY</code> model moves based on a 1st-order with time delay model. The <code>STEER</code> means the model receives the steer command. The <code>VEL</code> means the model receives the target velocity command, while the <code>ACC</code> model receives the target acceleration command. The <code>GEARED</code> suffix means that the motion will consider the gear command: the vehicle moves only one direction following the gear.</p>
 <p>The table below shows which models correspond to what parameters. The model names are written in abbreviated form (e.g. IDEAL_STEER_VEL = I_ST_V).</p>
@@ -15229,6 +15287,7 @@
 <th align="left">D_ST_A</th>
 <th align="left">D_ST_A_G</th>
 <th align="left">D_ST_M_ACC_G</th>
+<th align="left">L_S_V</th>
 <th align="left">Default value</th>
 <th align="left">unit</th>
 </tr>
@@ -15245,6 +15304,7 @@
 <td align="left">o</td>
 <td align="left">o</td>
 <td align="left">o</td>
+<td align="left">x</td>
 <td align="left">0.1</td>
 <td align="left">[s]</td>
 </tr>
@@ -15259,6 +15319,7 @@
 <td align="left">o</td>
 <td align="left">o</td>
 <td align="left">o</td>
+<td align="left">x</td>
 <td align="left">0.24</td>
 <td align="left">[s]</td>
 </tr>
@@ -15270,6 +15331,7 @@
 <td align="left">x</td>
 <td align="left">x</td>
 <td align="left">o</td>
+<td align="left">x</td>
 <td align="left">x</td>
 <td align="left">x</td>
 <td align="left">x</td>
@@ -15287,6 +15349,7 @@
 <td align="left">o</td>
 <td align="left">o</td>
 <td align="left">o</td>
+<td align="left">x</td>
 <td align="left">0.1</td>
 <td align="left">[s]</td>
 </tr>
@@ -15301,6 +15364,7 @@
 <td align="left">o</td>
 <td align="left">o</td>
 <td align="left">o</td>
+<td align="left">x</td>
 <td align="left">0.27</td>
 <td align="left">[s]</td>
 </tr>
@@ -15315,6 +15379,7 @@
 <td align="left">o</td>
 <td align="left">o</td>
 <td align="left">x</td>
+<td align="left">x</td>
 <td align="left">0.0</td>
 <td align="left">[rad]</td>
 </tr>
@@ -15326,6 +15391,7 @@
 <td align="left">x</td>
 <td align="left">x</td>
 <td align="left">o</td>
+<td align="left">x</td>
 <td align="left">x</td>
 <td align="left">x</td>
 <td align="left">x</td>
@@ -15343,6 +15409,7 @@
 <td align="left">o</td>
 <td align="left">o</td>
 <td align="left">o</td>
+<td align="left">x</td>
 <td align="left">50.0</td>
 <td align="left">[m/s]</td>
 </tr>
@@ -15357,6 +15424,7 @@
 <td align="left">o</td>
 <td align="left">o</td>
 <td align="left">o</td>
+<td align="left">x</td>
 <td align="left">7.0</td>
 <td align="left">[m/ss]</td>
 </tr>
@@ -15371,6 +15439,7 @@
 <td align="left">o</td>
 <td align="left">o</td>
 <td align="left">o</td>
+<td align="left">x</td>
 <td align="left">1.0</td>
 <td align="left">[rad]</td>
 </tr>
@@ -15385,6 +15454,7 @@
 <td align="left">o</td>
 <td align="left">o</td>
 <td align="left">o</td>
+<td align="left">x</td>
 <td align="left">5.0</td>
 <td align="left">[rad/s]</td>
 </tr>
@@ -15399,6 +15469,7 @@
 <td align="left">o</td>
 <td align="left">o</td>
 <td align="left">o</td>
+<td align="left">x</td>
 <td align="left">0.0</td>
 <td align="left">[rad]</td>
 </tr>
@@ -15412,6 +15483,7 @@
 <td align="left">x</td>
 <td align="left">o</td>
 <td align="left">o</td>
+<td align="left">x</td>
 <td align="left">x</td>
 <td align="left">1.0</td>
 <td align="left">[-]</td>
@@ -15427,6 +15499,7 @@
 <td align="left">o</td>
 <td align="left">o</td>
 <td align="left">x</td>
+<td align="left">x</td>
 <td align="left">1.0</td>
 <td align="left">[-]</td>
 </tr>
@@ -15441,11 +15514,58 @@
 <td align="left">x</td>
 <td align="left">x</td>
 <td align="left">o</td>
+<td align="left">x</td>
+<td align="left">-</td>
+<td align="left">[-]</td>
+</tr>
+<tr>
+<td align="left">model_module_paths</td>
+<td align="left">string</td>
+<td align="left">path to a python module where the model is implemented</td>
+<td align="left">x</td>
+<td align="left">x</td>
+<td align="left">x</td>
+<td align="left">x</td>
+<td align="left">x</td>
+<td align="left">x</td>
+<td align="left">x</td>
+<td align="left">o</td>
+<td align="left">-</td>
+<td align="left">[-]</td>
+</tr>
+<tr>
+<td align="left">model_param_paths</td>
+<td align="left">string</td>
+<td align="left">path to the file where model parameters are stored (can be empty string if no parameter file is required)</td>
+<td align="left">x</td>
+<td align="left">x</td>
+<td align="left">x</td>
+<td align="left">x</td>
+<td align="left">x</td>
+<td align="left">x</td>
+<td align="left">x</td>
+<td align="left">o</td>
+<td align="left">-</td>
+<td align="left">[-]</td>
+</tr>
+<tr>
+<td align="left">model_class_names</td>
+<td align="left">string</td>
+<td align="left">name of the class that implements the model</td>
+<td align="left">x</td>
+<td align="left">x</td>
+<td align="left">x</td>
+<td align="left">x</td>
+<td align="left">x</td>
+<td align="left">x</td>
+<td align="left">x</td>
+<td align="left">o</td>
 <td align="left">-</td>
 <td align="left">[-]</td>
 </tr>
 </tbody>
 </table>
+<p><em>Note:</em> Parameters <code>model_module_paths</code>, <code>model_param_paths</code>, and <code>model_class_names</code> need to have the same length.</p>
 <p>The <code>acceleration_map</code> is used only for <code>DELAY_STEER_MAP_ACC_GEARED</code> and it shows the acceleration command on the vertical axis and the current velocity on the horizontal axis, with each cell representing the converted acceleration command that is actually used in the simulator's motion calculation. Values in between are linearly interpolated.</p>
 <p>Example of <code>acceleration_map.csv</code></p>
 <div class="highlight"><pre><span></span><code>default,  0.00,  1.39,  2.78,  4.17,  5.56,  6.94,  8.33,  9.72, 11.11, 12.50, 13.89, 15.28, 16.67
@@ -15473,6 +15593,25 @@
 <!-- deadzone_delta_steer | double | dead zone for the steering dynamics                  | x      | x      | x        | o      | o      | 0.0      | [rad]         |         | -->
 
 <p><em>Note</em>: The steering/velocity/acceleration dynamics is modeled by a first order system with a deadtime in a <em>delay</em> model. The definition of the <em>time constant</em> is the time it takes for the step response to rise up to 63% of its final value. The <em>deadtime</em> is a delay in the response to a control input.</p>
+<h3 id="example-of-learned_steer_vel-model">Example of LEARNED_STEER_VEL model<a class="headerlink" href="#example-of-learned_steer_vel-model" title="Permanent link">#</a></h3>
+<p>We created a few basic models to showcase how <code>LEARNED_STEER_VEL</code> works.</p>
+<ol>
+<li>
+<p>Install <a href="https://github.com/atomyks/control_analysis_pipeline/tree/v0.1_autoware">a library</a> that contains basic Python models. (branch: <code>v0.1_autoware</code>)</p>
+</li>
+<li>
+<p>In a file <code>src/vehicle/sample_vehicle_launch/sample_vehicle_description/config/simulator_model.param.yaml</code> set <code>vehicle_model_type</code> to <code>LEARNED_STEER_VEL</code>. In the same file set the following parameters. These models are for testing and do not require any parameter file.</p>
+</li>
+</ol>
+<div class="highlight"><pre><span></span><code><span class="nt">model_module_paths</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">[</span>
+<span class="w">    </span><span class="s">"control_analysis_pipeline.autoware_models.vehicle.kinematic"</span><span class="p p-Indicator">,</span>
+<span class="w">    </span><span class="s">"control_analysis_pipeline.autoware_models.steering.steer_example"</span><span class="p p-Indicator">,</span>
+<span class="w">    </span><span class="s">"control_analysis_pipeline.autoware_models.drive.drive_example"</span><span class="p p-Indicator">,</span>
+<span class="w">  </span><span class="p p-Indicator">]</span>
+<span class="nt">model_param_paths</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">""</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">""</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">""</span><span class="p p-Indicator">]</span>
+<span class="nt">model_class_names</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">"KinematicModel"</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">"SteerExample"</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">"DriveExample"</span><span class="p p-Indicator">]</span>
+</code></pre></div>
 <h3 id="default-tf-configuration">Default TF configuration<a class="headerlink" href="#default-tf-configuration" title="Permanent link">#</a></h3>
 <p>Since the vehicle outputs <code>odom</code>-&gt;<code>base_link</code> tf, this simulator outputs the tf with the same frame_id configuration.
 In the simple_planning_simulator.launch.py, the node that outputs the <code>map</code>-&gt;<code>odom</code> tf, that usually estimated by the localization module (e.g. NDT), will be launched as well. Since the tf output by this simulator module is an ideal value, <code>odom</code>-&gt;<code>map</code> will always be 0.</p>
@@ -15526,7 +15665,7 @@ In the simple_planning_simulator.launch.py, the node that outputs the <code>map<
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../fault_injection/" class="md-footer__link md-footer__link--prev" aria-label="Previous: fault_injection" rel="prev">
+          <a href="../learning_based_vehicle_model/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Learned Model" rel="prev">
             <div class="md-footer__button md-icon">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
             </div>
@@ -15535,7 +15674,7 @@ In the simple_planning_simulator.launch.py, the node that outputs the <code>map<
                 Previous
               </span>
               <div class="md-ellipsis">
-                fault_injection
+                Learned Model
               </div>
             </div>
           </a>

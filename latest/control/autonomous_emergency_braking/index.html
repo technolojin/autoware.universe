@@ -12323,6 +12323,8 @@
         
           
         
+          
+        
       
       
         <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
@@ -12461,14 +12463,14 @@
         
         
         <div class="md-nav__link md-nav__link--index ">
-          <a href="../../simulator/simple_planning_simulator/">Simple planning simulator</a>
+          <a href="../../simulator/learning_based_vehicle_model/">Learning based vehicle model</a>
           
         </div>
       
       <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_10_3_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_10_3">
           <span class="md-nav__icon md-icon"></span>
-          Simple planning simulator
+          Learning based vehicle model
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -12509,12 +12511,60 @@
         
         
         <div class="md-nav__link md-nav__link--index ">
-          <a href="../../simulator/vehicle_door_simulator/">Vehicle door simulator</a>
+          <a href="../../simulator/simple_planning_simulator/">Simple planning simulator</a>
           
         </div>
       
       <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_10_4_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_10_4">
+          <span class="md-nav__icon md-icon"></span>
+          Simple planning simulator
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+      
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+      
+      
+      
+        
+      
+      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_10_5" >
+      
+      
+        
+          
+            
+          
+        
+      
+      
+        
+        
+        <div class="md-nav__link md-nav__link--index ">
+          <a href="../../simulator/vehicle_door_simulator/">Vehicle door simulator</a>
+          
+        </div>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_10_5_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_10_5">
           <span class="md-nav__icon md-icon"></span>
           Vehicle door simulator
         </label>
@@ -15277,13 +15327,17 @@ y_{k+1} = y_k + v sin(\theta_k) dt \\
 \]</div>
 <p>where <span class="arithmatex">\(v\)</span> and <span class="arithmatex">\(\omega\)</span> are current longitudinal velocity and angular velocity respectively. <span class="arithmatex">\(dt\)</span> is time interval that users can define in advance.</p>
 <h3 id="3-get-target-obstacles-from-the-input-point-cloud">3. Get target obstacles from the input point cloud<a class="headerlink" href="#3-get-target-obstacles-from-the-input-point-cloud" title="Permanent link">#</a></h3>
-<p>After generating the ego predicted path, we select target obstacles from the input point cloud. This obstacle filtering has two major steps, which are rough filtering and rigorous filtering.</p>
+<p>After generating the ego predicted path, we select target obstacles from the input point cloud. This obstacle filtering has three major steps, which are rough filtering, noise filtering with clustering and rigorous filtering.</p>
 <h4 id="rough-filtering">Rough filtering<a class="headerlink" href="#rough-filtering" title="Permanent link">#</a></h4>
-<p>In rough filtering step, we select target obstacle with simple filter. Create a search area up to a certain distance (default 5[m]) away from the predicted path of the ego vehicle and ignore the point cloud (obstacles) that are not within it. The image of the rough filtering is illustrated below.</p>
+<p>In rough filtering step, we select target obstacle with simple filter. Create a search area up to a certain distance (default is half of the ego vehicle width plus the <code>path_footprint_extra_margin</code> parameter) away from the predicted path of the ego vehicle and ignore the point cloud that are not within it. The image of the rough filtering is illustrated below.</p>
 <p><img alt="rough_filtering" src="image/obstacle_filtering_1.drawio.svg"></p>
+<h4 id="noise-filtering-with-clustering-and-convex-hulls">Noise filtering with clustering and convex hulls<a class="headerlink" href="#noise-filtering-with-clustering-and-convex-hulls" title="Permanent link">#</a></h4>
+<p>To prevent the AEB from considering noisy points, euclidean clustering is performed on the filtered point cloud. The points in the point cloud that are not close enough to other points to form a cluster are discarded. The parameters <code>cluster_tolerance</code>, <code>minimum_cluster_size</code> and <code>maximum_cluster_size</code> can be used to tune the clustering and the size of objects to be ignored, for more information about the clustering method used by the AEB module, please check the official documentation on euclidean clustering of the PCL library: <a href="https://pcl.readthedocs.io/projects/tutorials/en/master/cluster_extraction.html">https://pcl.readthedocs.io/projects/tutorials/en/master/cluster_extraction.html</a>.</p>
+<p>Furthermore, a 2D convex hull is created around each detected cluster, the vertices of each hull represent the most extreme/outside points of the cluster. These vertices are then checked in the next step.</p>
 <h4 id="rigorous-filtering">Rigorous filtering<a class="headerlink" href="#rigorous-filtering" title="Permanent link">#</a></h4>
-<p>After rough filtering, it performs a geometric collision check to determine whether the filtered obstacles actually have possibility to collide with the ego vehicle. In this check, the ego vehicle is represented as a rectangle, and the point cloud obstacles are represented as points.</p>
+<p>After Noise filtering, it performs a geometric collision check to determine whether the filtered obstacles/hull vertices actually have possibility to collide with the ego vehicle. In this check, the ego vehicle is represented as a rectangle, and the point cloud obstacles are represented as points. Only the vertices with a possibility of collision are kept.</p>
 <p><img alt="rigorous_filtering" src="image/obstacle_filtering_2.drawio.svg"></p>
+<p>Finally, the vertex that is closest to the ego vehicle is chosen as the candidate for collision checking: Since rss distance is used to judge if a collision will happen or not, if the closest vertex to the ego is deemed to be safe, the rest of the vertices (and the points in the clusters) will also be safe.</p>
 <h3 id="4-collision-check-with-target-obstacles">4. Collision check with target obstacles<a class="headerlink" href="#4-collision-check-with-target-obstacles" title="Permanent link">#</a></h3>
 <p>In the fourth step, it checks the collision with filtered obstacles using RSS distance. RSS is formulated as:</p>
 <div class="arithmatex">\[

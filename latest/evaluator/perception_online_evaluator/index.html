@@ -12323,6 +12323,8 @@
         
           
         
+          
+        
       
       
         <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
@@ -12461,14 +12463,14 @@
         
         
         <div class="md-nav__link md-nav__link--index ">
-          <a href="../../simulator/simple_planning_simulator/">Simple planning simulator</a>
+          <a href="../../simulator/learning_based_vehicle_model/">Learning based vehicle model</a>
           
         </div>
       
       <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_10_3_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_10_3">
           <span class="md-nav__icon md-icon"></span>
-          Simple planning simulator
+          Learning based vehicle model
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -12509,12 +12511,60 @@
         
         
         <div class="md-nav__link md-nav__link--index ">
-          <a href="../../simulator/vehicle_door_simulator/">Vehicle door simulator</a>
+          <a href="../../simulator/simple_planning_simulator/">Simple planning simulator</a>
           
         </div>
       
       <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_10_4_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_10_4">
+          <span class="md-nav__icon md-icon"></span>
+          Simple planning simulator
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+      
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+      
+      
+      
+        
+      
+      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_10_5" >
+      
+      
+        
+          
+            
+          
+        
+      
+      
+        
+        
+        <div class="md-nav__link md-nav__link--index ">
+          <a href="../../simulator/vehicle_door_simulator/">Vehicle door simulator</a>
+          
+        </div>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_10_5_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_10_5">
           <span class="md-nav__icon md-icon"></span>
           Vehicle door simulator
         </label>
@@ -15011,6 +15061,13 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#object-counts" class="md-nav__link">
+    Object Counts
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -15074,6 +15131,9 @@
 <li>lateral_deviation</li>
 <li>yaw_deviation</li>
 <li>yaw_rate</li>
+<li>total_objects_count</li>
+<li>average_objects_count</li>
+<li>interval_objects_count</li>
 </ul>
 <h3 id="predicted-path-deviation-predicted-path-deviation-variance">Predicted Path Deviation / Predicted Path Deviation Variance<a class="headerlink" href="#predicted-path-deviation-predicted-path-deviation-variance" title="Permanent link">#</a></h3>
 <p>Compare the predicted path of past objects with their actual traveled path to determine the deviation for <strong>MOVING OBJECTS</strong>. For each object, calculate the mean distance between the predicted path points and the corresponding points on the actual path, up to the specified time step. In other words, this calculates the Average Displacement Error (ADE). The target object to be evaluated is the object from <span class="arithmatex">\(T_N\)</span> seconds ago, where <span class="arithmatex">\(T_N\)</span> is the maximum value of the prediction time horizon <span class="arithmatex">\([T_1, T_2, ..., T_N]\)</span>.</p>
@@ -15133,6 +15193,55 @@ For stopped objects, the smoothed traveled trajectory is unstable, so this metri
 <h3 id="yaw-rate">Yaw Rate<a class="headerlink" href="#yaw-rate" title="Permanent link">#</a></h3>
 <p>Calculates the yaw rate of an object based on the change in yaw angle from the previous time step. It is evaluated for <strong>STATIONARY OBJECTS</strong> and assesses the stability of yaw rate recognition. The yaw rate is calculated by comparing the yaw angle of the past object with the yaw angle of the object received in the previous cycle. Here, t2 is the timestamp that is <span class="arithmatex">\(T_n\)</span> seconds ago.</p>
 <p><img alt="yaw_rate" src="images/yaw_rate.drawio.svg"></p>
+<h3 id="object-counts">Object Counts<a class="headerlink" href="#object-counts" title="Permanent link">#</a></h3>
+<p>Counts the number of detections for each object class within the specified detection range. These metrics are measured for the most recent object not past objects.</p>
+<p><img alt="detection_counts" src="images/detection_counts.drawio.svg"></p>
+<p>In the provided illustration, the range <span class="arithmatex">\(R\)</span> is determined by a combination of lists of radii (e.g., <span class="arithmatex">\(r_1, r_2, \ldots\)</span>) and heights (e.g., <span class="arithmatex">\(h_1, h_2, \ldots\)</span>).
+For example,</p>
+<ul>
+<li>the number of CAR in range <span class="arithmatex">\(R = (r_1, h_1)\)</span> equals 1</li>
+<li>the number of CAR in range <span class="arithmatex">\(R = (r_1, h_2)\)</span> equals 2</li>
+<li>the number of CAR in range <span class="arithmatex">\(R = (r_2, h_1)\)</span> equals 3</li>
+<li>the number of CAR in range <span class="arithmatex">\(R = (r_2, h_2)\)</span> equals 4</li>
+</ul>
+<h4 id="total-object-count">Total Object Count<a class="headerlink" href="#total-object-count" title="Permanent link">#</a></h4>
+<p>Counts the number of unique objects for each class within the specified detection range. The total object count is calculated as follows:</p>
+<div class="arithmatex">\[
+\begin{align}
+\text{Total Object Count (Class, Range)} = \left| \bigcup_{t=0}^{T_{\text{now}}} \{ \text{uuid} \mid \text{class}(t, \text{uuid}) = C \wedge \text{position}(t, \text{uuid}) \in R \} \right|
+\end{align}
+\]</div>
+<p>where:</p>
+<ul>
+<li><span class="arithmatex">\(\bigcup\)</span> represents the union across all frames from <span class="arithmatex">\(t = 0\)</span> to <span class="arithmatex">\(T_{\text{now}}\)</span>, which ensures that each uuid is counted only once.</li>
+<li><span class="arithmatex">\(\text{class}(t, \text{uuid}) = C\)</span> specifies that the object with uuid at time <span class="arithmatex">\(t\)</span> belongs to class <span class="arithmatex">\(C\)</span>.</li>
+<li><span class="arithmatex">\(\text{position}(t, \text{uuid}) \in R\)</span> indicates that the object with uuid at time <span class="arithmatex">\(t\)</span> is within the specified range <span class="arithmatex">\(R\)</span>.</li>
+<li><span class="arithmatex">\(\left| \{ \ldots \} \right|\)</span> denotes the cardinality of the set, which counts the number of unique uuids that meet the class and range criteria across all considered times.</li>
+</ul>
+<h4 id="average-object-count">Average Object Count<a class="headerlink" href="#average-object-count" title="Permanent link">#</a></h4>
+<p>Counts the average number of objects for each class within the specified detection range. This metric measures how many objects were detected in one frame, without considering uuids. The average object count is calculated as follows:</p>
+<div class="arithmatex">\[
+\begin{align}
+\text{Average Object Count (Class, Range)} = \frac{1}{N} \sum_{t=0}^{T_{\text{now}}} \left| \{ \text{object} \mid \text{class}(t, \text{object}) = C \wedge \text{position}(t, \text{object}) \in R \} \right|
+\end{align}
+\]</div>
+<p>where:</p>
+<ul>
+<li><span class="arithmatex">\(N\)</span> represents the total number of frames within the time period time to <span class="arithmatex">\(T\_{\text{now}}\)</span> (it is precisely <code>detection_count_purge_seconds</code>)</li>
+<li><span class="arithmatex">\(text{object}\)</span> denotes the number of objects that meet the class and range criteria at time <span class="arithmatex">\(t\)</span>.</li>
+</ul>
+<h4 id="interval-object-count">Interval Object Count<a class="headerlink" href="#interval-object-count" title="Permanent link">#</a></h4>
+<p>Counts the average number of objects for each class within the specified detection range over the last <code>objects_count_window_seconds</code>. This metric measures how many objects were detected in one frame, without considering uuids. The interval object count is calculated as follows:</p>
+<div class="arithmatex">\[
+\begin{align}
+\text{Interval Object Count (Class, Range)} = \frac{1}{W} \sum_{t=T_{\text{now}} - T_W}^{T_{\text{now}}} \left| \{ \text{object} \mid \text{class}(t, \text{object}) = C \wedge \text{position}(t, \text{object}) \in R \} \right|
+\end{align}
+\]</div>
+<p>where:</p>
+<ul>
+<li><span class="arithmatex">\(W\)</span> represents the total number of frames within the last <code>objects_count_window_seconds</code>.</li>
+<li><span class="arithmatex">\(T_W\)</span> represents the time window <code>objects_count_window_seconds</code></li>
+</ul>
 <h2 id="inputs-outputs">Inputs / Outputs<a class="headerlink" href="#inputs-outputs" title="Permanent link">#</a></h2>
 <table>
 <thead>
@@ -15191,9 +15300,59 @@ For stopped objects, the smoothed traveled trajectory is unstable, so this metri
 <td>threshold velocity to check if vehicle is stopped</td>
 </tr>
 <tr>
-<td><code>target_object.*.check_deviation</code></td>
+<td><code>detection_radius_list</code></td>
+<td>list[double]</td>
+<td>Detection radius for objects to be evaluated.(used for objects count only)</td>
+</tr>
+<tr>
+<td><code>detection_height_list</code></td>
+<td>list[double]</td>
+<td>Detection height for objects to be evaluated. (used for objects count only)</td>
+</tr>
+<tr>
+<td><code>detection_count_purge_seconds</code></td>
+<td>double</td>
+<td>Time window for purging object detection counts.</td>
+</tr>
+<tr>
+<td><code>objects_count_window_seconds</code></td>
+<td>double</td>
+<td>Time window for keeping object detection counts. The number of object detections within this time window is stored in <code>detection_count_vector_</code></td>
+</tr>
+<tr>
+<td><code>target_object.*.check_lateral_deviation</code></td>
 <td>bool</td>
-<td>Whether to check deviation for specific object types (car, truck, etc.).</td>
+<td>Whether to check lateral deviation for specific object types (car, truck, etc.).</td>
+</tr>
+<tr>
+<td><code>target_object.*.check_yaw_deviation</code></td>
+<td>bool</td>
+<td>Whether to check yaw deviation for specific object types (car, truck, etc.).</td>
+</tr>
+<tr>
+<td><code>target_object.*.check_predicted_path_deviation</code></td>
+<td>bool</td>
+<td>Whether to check predicted path deviation for specific object types (car, truck, etc.).</td>
+</tr>
+<tr>
+<td><code>target_object.*.check_yaw_rate</code></td>
+<td>bool</td>
+<td>Whether to check yaw rate for specific object types (car, truck, etc.).</td>
+</tr>
+<tr>
+<td><code>target_object.*.check_total_objects_count</code></td>
+<td>bool</td>
+<td>Whether to check total object count for specific object types (car, truck, etc.).</td>
+</tr>
+<tr>
+<td><code>target_object.*.check_average_objects_count</code></td>
+<td>bool</td>
+<td>Whether to check average object count for specific object types (car, truck, etc.).</td>
+</tr>
+<tr>
+<td><code>target_object.*.check_interval_average_objects_count</code></td>
+<td>bool</td>
+<td>Whether to check interval average object count for specific object types (car, truck, etc.).</td>
 </tr>
 <tr>
 <td><code>debug_marker.*</code></td>
