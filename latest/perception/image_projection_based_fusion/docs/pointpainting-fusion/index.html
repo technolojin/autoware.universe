@@ -15341,30 +15341,6 @@
 </thead>
 <tbody>
 <tr>
-<td><code>score_threshold</code></td>
-<td>float</td>
-<td><code>0.4</code></td>
-<td>detected objects with score less than threshold are ignored</td>
-</tr>
-<tr>
-<td><code>densification_world_frame_id</code></td>
-<td>string</td>
-<td><code>map</code></td>
-<td>the world frame id to fuse multi-frame pointcloud</td>
-</tr>
-<tr>
-<td><code>densification_num_past_frames</code></td>
-<td>int</td>
-<td><code>0</code></td>
-<td>the number of past frames to fuse with the current frame</td>
-</tr>
-<tr>
-<td><code>trt_precision</code></td>
-<td>string</td>
-<td><code>fp16</code></td>
-<td>TensorRT inference precision: <code>fp32</code> or <code>fp16</code></td>
-</tr>
-<tr>
 <td><code>encoder_onnx_path</code></td>
 <td>string</td>
 <td><code>""</code></td>
@@ -15393,6 +15369,60 @@
 <td>bool</td>
 <td><code>false</code></td>
 <td>shutdown the node after TensorRT engine file is built</td>
+</tr>
+<tr>
+<td><code>trt_precision</code></td>
+<td>string</td>
+<td><code>fp16</code></td>
+<td>TensorRT inference precision: <code>fp32</code> or <code>fp16</code></td>
+</tr>
+<tr>
+<td><code>post_process_params.score_threshold</code></td>
+<td>double</td>
+<td><code>0.4</code></td>
+<td>detected objects with score less than threshold are ignored</td>
+</tr>
+<tr>
+<td><code>post_process_params.yaw_norm_thresholds</code></td>
+<td>list[double]</td>
+<td>[0.3, 0.3, 0.3, 0.3, 0.0]</td>
+<td>An array of distance threshold values of norm of yaw [rad].</td>
+</tr>
+<tr>
+<td><code>post_process_params.iou_nms_target_class_names</code></td>
+<td>list[string]</td>
+<td>["CAR"]</td>
+<td>An array of class names to be target in NMS.</td>
+</tr>
+<tr>
+<td><code>post_process_params.iou_nms_search_distance_2d</code></td>
+<td>double</td>
+<td>10.0</td>
+<td>A maximum distance value to search the nearest objects.</td>
+</tr>
+<tr>
+<td><code>post_process_params.iou_nms_threshold</code></td>
+<td>double</td>
+<td>0.1</td>
+<td>A threshold value of NMS using IoU score.</td>
+</tr>
+<tr>
+<td><code>post_process_params.has_twist</code></td>
+<td>boolean</td>
+<td>false</td>
+<td>Indicates whether the model outputs twist value.</td>
+</tr>
+<tr>
+<td><code>densification_params.world_frame_id</code></td>
+<td>string</td>
+<td><code>map</code></td>
+<td>the world frame id to fuse multi-frame pointcloud</td>
+</tr>
+<tr>
+<td><code>densification_params.num_past_frames</code></td>
+<td>int</td>
+<td><code>1</code></td>
+<td>the number of past frames to fuse with the current frame</td>
 </tr>
 </tbody>
 </table>

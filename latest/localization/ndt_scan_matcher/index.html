@@ -15201,6 +15201,61 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#diagnostics" class="md-nav__link">
+    Diagnostics
+  </a>
+  
+    <nav class="md-nav" aria-label="Diagnostics">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#scan_matching_status" class="md-nav__link">
+    scan_matching_status
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#initial_pose_subscriber_status" class="md-nav__link">
+    initial_pose_subscriber_status
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#regularization_pose_subscriber_status" class="md-nav__link">
+    regularization_pose_subscriber_status
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#trigger_node_service_status" class="md-nav__link">
+    trigger_node_service_status
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ndt_align_service_status" class="md-nav__link">
+    ndt_align_service_status
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#map_update_status" class="md-nav__link">
+    map_update_status
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -15888,6 +15943,400 @@ initial_pose_offset_model_x &amp; initial_pose_offset_model_y must have the same
 <td>Offset arrangement in covariance estimation [m]. initial_pose_offset_model_x &amp; initial_pose_offset_model_y must have the same number of elements.</td>
 <td>[0.5, -0.5, 0.0, 0.0, 0.0, 0.0]</td>
 <td>N/A</td>
+</tr>
+</tbody>
+</table>
+<h2 id="diagnostics">Diagnostics<a class="headerlink" href="#diagnostics" title="Permanent link">#</a></h2>
+<h3 id="scan_matching_status">scan_matching_status<a class="headerlink" href="#scan_matching_status" title="Permanent link">#</a></h3>
+<p><img src="./media/diagnostic_scan_matching_status.png" alt="drawing" width="600"></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Description</th>
+<th>Transition condition to Warning</th>
+<th>Transition condition to Error</th>
+<th>Whether to reject the estimation result (affects <code>skipping_publish_num</code>)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>topic_time_stamp</code></td>
+<td>the time stamp of input topic</td>
+<td>none</td>
+<td>none</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>sensor_points_size</code></td>
+<td>the size of sensor points</td>
+<td>the size is 0</td>
+<td>none</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>sensor_points_delay_time_sec</code></td>
+<td>the delay time of sensor points</td>
+<td>the time is <strong>longer</strong> than <code>validation.lidar_topic_timeout_sec</code></td>
+<td>none</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>is_succeed_transform_sensor_points</code></td>
+<td>whether transform sensor points is succeed or not</td>
+<td>none</td>
+<td>failed</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>sensor_points_max_distance</code></td>
+<td>the max distance of sensor points</td>
+<td>the max distance is <strong>shorter</strong> than <code>sensor_points.required_distance</code></td>
+<td>none</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>is_activated</code></td>
+<td>whether the node is in the "activate" state or not</td>
+<td>not "activate" state</td>
+<td>none</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>is_succeed_interpolate_initial_pose</code></td>
+<td>whether the interpolate of initial pose is succeed or not</td>
+<td>failed. <br> (1) the size of <code>initial_pose_buffer_</code> is <strong>smaller</strong> than 2. <br> (2) the timestamp difference between initial_pose and sensor pointcloud is <strong>longer</strong> than <code>validation.initial_pose_timeout_sec</code>. <br> (3) distance difference between two initial poses used for linear interpolation is <strong>longer</strong> than <code>validation.initial_pose_distance_tolerance_m</code></td>
+<td>none</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>is_set_map_points</code></td>
+<td>whether the map points is set or not</td>
+<td>not set</td>
+<td>none</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>iteration_num</code></td>
+<td>the number of times calculate alignment</td>
+<td>the number of times is <strong>larger</strong> than <code>ndt.max_iterations</code></td>
+<td>none</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>local_optimal_solution_oscillation_num</code></td>
+<td>the number of times the solution is judged to be oscillating</td>
+<td>the number of times is <strong>larger</strong> than 10</td>
+<td>none</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>transform_probability</code></td>
+<td>the score of how well the map aligns with the sensor points</td>
+<td>the score is <strong>smaller</strong> than<code>score_estimation.converged_param_transform_probability</code> (only in the case of <code>score_estimation.converged_param_type</code> is 0=TRANSFORM_PROBABILITY)</td>
+<td>none</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>nearest_voxel_transformation_likelihood</code></td>
+<td>the score of how well the map aligns with the sensor points</td>
+<td>the score is <strong>smaller</strong> than <code>score_estimation.converged_param_nearest_voxel_transformation_likelihood</code> (only in the case of <code>score_estimation.converged_param_type</code> is 1=NEAREST_VOXEL_TRANSFORMATION_LIKELIHOOD)</td>
+<td>none</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>distance_initial_to_result</code></td>
+<td>the distance between the position before convergence processing and the position after</td>
+<td>the distance is <strong>longer</strong> than 3</td>
+<td>none</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>execution_time</code></td>
+<td>the time for convergence processing</td>
+<td>the time is <strong>longer</strong> than <code>validation.critical_upper_bound_exe_time_ms</code></td>
+<td>none</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>skipping_publish_num</code></td>
+<td>the number of times rejected estimation results consecutively</td>
+<td>none</td>
+<td>the number of times is 5 or more</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<p>※The <code>sensor_points_callback</code> shares the same callback group as the <code>trigger_node_service</code> and <code>ndt_align_service</code>. Consequently, if the initial pose estimation takes too long, this diagnostic may become stale.</p>
+<h3 id="initial_pose_subscriber_status">initial_pose_subscriber_status<a class="headerlink" href="#initial_pose_subscriber_status" title="Permanent link">#</a></h3>
+<p><img src="./media/diagnostic_initial_pose_subscriber_status.png" alt="drawing" width="600"></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Description</th>
+<th>Transition condition to Warning</th>
+<th>Transition condition to Error</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>topic_time_stamp</code></td>
+<td>the time stamp of input topic</td>
+<td>none</td>
+<td>none</td>
+</tr>
+<tr>
+<td><code>is_activated</code></td>
+<td>whether the node is in the "activate" state or not</td>
+<td>not "activate" state</td>
+<td>none</td>
+</tr>
+<tr>
+<td><code>is_expected_frame_id</code></td>
+<td>whether the input frame_id is the same as <code>frame.map_frame</code> or not</td>
+<td>none</td>
+<td>not the same</td>
+</tr>
+</tbody>
+</table>
+<h3 id="regularization_pose_subscriber_status">regularization_pose_subscriber_status<a class="headerlink" href="#regularization_pose_subscriber_status" title="Permanent link">#</a></h3>
+<p><img src="./media/diagnostic_regularization_pose_subscriber_status.png" alt="drawing" width="600"></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Description</th>
+<th>Transition condition to Warning</th>
+<th>Transition condition to Error</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>topic_time_stamp</code></td>
+<td>the time stamp of input topic</td>
+<td>none</td>
+<td>none</td>
+</tr>
+</tbody>
+</table>
+<h3 id="trigger_node_service_status">trigger_node_service_status<a class="headerlink" href="#trigger_node_service_status" title="Permanent link">#</a></h3>
+<p><img src="./media/diagnostic_trigger_node_service_status.png" alt="drawing" width="600"></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Description</th>
+<th>Transition condition to Warning</th>
+<th>Transition condition to Error</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>service_call_time_stamp</code></td>
+<td>the time stamp of service calling</td>
+<td>none</td>
+<td>none</td>
+</tr>
+<tr>
+<td><code>is_activated</code></td>
+<td>whether the node is in the "activate" state or not</td>
+<td>none</td>
+<td>none</td>
+</tr>
+<tr>
+<td><code>is_succeed_service</code></td>
+<td>whether the process of service is succeed or not</td>
+<td>none</td>
+<td>none</td>
+</tr>
+</tbody>
+</table>
+<p>※
+This diagnostic is only published when the service is called, so it becomes stale after the initial pose estimation is completed.</p>
+<h3 id="ndt_align_service_status">ndt_align_service_status<a class="headerlink" href="#ndt_align_service_status" title="Permanent link">#</a></h3>
+<p><img src="./media/diagnostic_ndt_align_service_status.png" alt="drawing" width="600"></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Description</th>
+<th>Transition condition to Warning</th>
+<th>Transition condition to Error</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>service_call_time_stamp</code></td>
+<td>the time stamp of service calling</td>
+<td>none</td>
+<td>none</td>
+</tr>
+<tr>
+<td><code>is_succeed_transform_initial_pose</code></td>
+<td>whether transform initial pose is succeed or not</td>
+<td>none</td>
+<td>failed</td>
+</tr>
+<tr>
+<td><code>is_need_rebuild</code></td>
+<td>whether it need to rebuild the map. If the map has not been loaded yet or if <code>distance_last_update_position_to_current_position encounters</code> is an Error state, it is considered necessary to reconstruct the map, and <code>is_need_rebuild</code> becomes <code>True</code>.</td>
+<td>none</td>
+<td>none</td>
+</tr>
+<tr>
+<td><code>maps_size_before</code></td>
+<td>the number of maps before update map</td>
+<td>none</td>
+<td>none</td>
+</tr>
+<tr>
+<td><code>is_succeed_call_pcd_loader</code></td>
+<td>whether call pcd_loader service is succeed or not</td>
+<td>failed</td>
+<td>none</td>
+</tr>
+<tr>
+<td><code>maps_to_add_size</code></td>
+<td>the number of maps to be added</td>
+<td>none</td>
+<td>none</td>
+</tr>
+<tr>
+<td><code>maps_to_remove_size</code></td>
+<td>the number of maps to be removed</td>
+<td>none</td>
+<td>none</td>
+</tr>
+<tr>
+<td><code>map_update_execution_time</code></td>
+<td>the time for map updating</td>
+<td>none</td>
+<td>none</td>
+</tr>
+<tr>
+<td><code>maps_size_after</code></td>
+<td>the number of maps after update map</td>
+<td>none</td>
+<td>none</td>
+</tr>
+<tr>
+<td><code>is_updated_map</code></td>
+<td>whether map is updated. If the map update couldn't be performed or there was no need to update the map, it becomes <code>False</code></td>
+<td>none</td>
+<td><code>is_updated_map</code> is <code>False</code> but <code>is_need_rebuild</code> is <code>True</code></td>
+</tr>
+<tr>
+<td><code>is_set_map_points</code></td>
+<td>whether the map points is set or not</td>
+<td>not set</td>
+<td>none</td>
+</tr>
+<tr>
+<td><code>is_set_sensor_points</code></td>
+<td>whether the sensor points is set or not</td>
+<td>not set</td>
+<td>none</td>
+</tr>
+<tr>
+<td><code>best_particle_score</code></td>
+<td>the best score of particle</td>
+<td>none</td>
+<td>none</td>
+</tr>
+<tr>
+<td><code>is_succeed_service</code></td>
+<td>whether the process of service is succeed or not</td>
+<td>failed</td>
+<td>none</td>
+</tr>
+</tbody>
+</table>
+<p>※
+This diagnostic is only published when the service is called, so it becomes stale after the initial pose estimation is completed.</p>
+<h3 id="map_update_status">map_update_status<a class="headerlink" href="#map_update_status" title="Permanent link">#</a></h3>
+<p><img src="./media/diagnostic_map_update_status.png" alt="drawing" width="600"></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Description</th>
+<th>Transition condition to Warning</th>
+<th>Transition condition to Error</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>timer_callback_time_stamp</code></td>
+<td>the time stamp of timer_callback calling</td>
+<td>none</td>
+<td>none</td>
+</tr>
+<tr>
+<td><code>is_activated</code></td>
+<td>whether the node is in the "activate" state or not</td>
+<td>not "activate" state</td>
+<td>none</td>
+</tr>
+<tr>
+<td><code>is_set_last_update_position</code></td>
+<td>whether the <code>last_update_position</code> is set or not</td>
+<td>not set</td>
+<td>none</td>
+</tr>
+<tr>
+<td><code>distance_last_update_position_to_current_position</code></td>
+<td>the distance of <code>last_update_position</code> to current position</td>
+<td>none</td>
+<td>(the distance + <code>dynamic_map_loading.lidar_radius</code>) is <strong>larger</strong> than <code>dynamic_map_loading.map_radius</code></td>
+</tr>
+<tr>
+<td><code>is_need_rebuild</code></td>
+<td>whether it need to rebuild the map. If the map has not been loaded yet or if <code>distance_last_update_position_to_current_position encounters</code> is an Error state, it is considered necessary to reconstruct the map, and <code>is_need_rebuild</code> becomes <code>True</code>.</td>
+<td>none</td>
+<td>none</td>
+</tr>
+<tr>
+<td><code>maps_size_before</code></td>
+<td>the number of maps before update map</td>
+<td>none</td>
+<td>none</td>
+</tr>
+<tr>
+<td><code>is_succeed_call_pcd_loader</code></td>
+<td>whether call pcd_loader service is succeed or not</td>
+<td>failed</td>
+<td>none</td>
+</tr>
+<tr>
+<td><code>maps_to_add_size</code></td>
+<td>the number of maps to be added</td>
+<td>none</td>
+<td>none</td>
+</tr>
+<tr>
+<td><code>maps_to_remove_size</code></td>
+<td>the number of maps to be removed</td>
+<td>none</td>
+<td>none</td>
+</tr>
+<tr>
+<td><code>map_update_execution_time</code></td>
+<td>the time for map updating</td>
+<td>none</td>
+<td>none</td>
+</tr>
+<tr>
+<td><code>maps_size_after</code></td>
+<td>the number of maps after update map</td>
+<td>none</td>
+<td>none</td>
+</tr>
+<tr>
+<td><code>is_updated_map</code></td>
+<td>whether map is updated. If the map update couldn't be performed or there was no need to update the map, it becomes <code>False</code></td>
+<td>none</td>
+<td><code>is_updated_map</code> is <code>False</code> but <code>is_need_rebuild</code> is <code>True</code></td>
 </tr>
 </tbody>
 </table></div>

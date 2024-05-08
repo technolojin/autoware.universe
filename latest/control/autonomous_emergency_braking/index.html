@@ -15338,6 +15338,24 @@ y_{k+1} = y_k + v sin(\theta_k) dt \\
 <p>After Noise filtering, it performs a geometric collision check to determine whether the filtered obstacles/hull vertices actually have possibility to collide with the ego vehicle. In this check, the ego vehicle is represented as a rectangle, and the point cloud obstacles are represented as points. Only the vertices with a possibility of collision are kept.</p>
 <p><img alt="rigorous_filtering" src="image/obstacle_filtering_2.drawio.svg"></p>
 <p>Finally, the vertex that is closest to the ego vehicle is chosen as the candidate for collision checking: Since rss distance is used to judge if a collision will happen or not, if the closest vertex to the ego is deemed to be safe, the rest of the vertices (and the points in the clusters) will also be safe.</p>
+<h4 id="obstacle-velocity-estimation">Obstacle velocity estimation<a class="headerlink" href="#obstacle-velocity-estimation" title="Permanent link">#</a></h4>
+<p>Once the position of the closest obstacle/point is determined, the AEB modules uses the history of previously detected objects to estimate the closest object speed using the following equations:</p>
+<div class="arithmatex">\[
+d_{t} = o_{time stamp} - prev_{time stamp}
+\]</div>
+<div class="arithmatex">\[
+d_{pos} = norm(o_{pos} - prev_{pos})
+\]</div>
+<div class="arithmatex">\[
+v_{norm} = d_{pos} / d_{t}
+\]</div>
+<p>Where <span class="arithmatex">\(o_{time stamp}\)</span> and <span class="arithmatex">\(prev_{time stamp}\)</span> are the timestamps of the point clouds used to detect the current closest object and the closest object of the previous point cloud frame, and <span class="arithmatex">\(o_{pos}\)</span> and <span class="arithmatex">\(prev_{pos}\)</span> are the positions of those objects, respectively.</p>
+<p>Finally, the velocity vector is compared against the ego's predicted path to get the longitudinal velocity <span class="arithmatex">\(v_{obj}\)</span>:</p>
+<div class="arithmatex">\[
+v_{obj} = v_{norm} * Cos(yaw_{diff}) + v_{ego}
+\]</div>
+<p>where <span class="arithmatex">\(yaw_{diff}\)</span> is the difference in yaw between the ego path and the displacement vector <script type="math/tex; mode=display">v_{pos} = o_{pos} - prev_{pos} </script> and <span class="arithmatex">\(v_{ego}\)</span> is the ego's speed, which accounts for the movement of points caused by the ego moving and not the object.
+All these equations are performed disregarding the z axis (in 2D).</p>
 <h3 id="4-collision-check-with-target-obstacles">4. Collision check with target obstacles<a class="headerlink" href="#4-collision-check-with-target-obstacles" title="Permanent link">#</a></h3>
 <p>In the fourth step, it checks the collision with filtered obstacles using RSS distance. RSS is formulated as:</p>
 <div class="arithmatex">\[
