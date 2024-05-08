@@ -16194,6 +16194,13 @@ SHIFT_{current} &gt; L_{threshold}
 <td>N/A</td>
 </tr>
 <tr>
+<td>merging_vehicle.th_overhang_distance</td>
+<td>float</td>
+<td>Distance threshold to ignore merging/deviating vehicle to/from ego driving lane. The distance represents how the object polygon overlaps ego lane, and it's calculated from polygon overhang point and lane centerline. If the distance is more than this param, the module never avoid the object. (Basically, the ego stops behind of it.)</td>
+<td>0.5</td>
+<td>N/A</td>
+</tr>
+<tr>
 <td>parked_vehicle.th_offset_from_centerline</td>
 <td>float</td>
 <td>Vehicles around the center line within this distance will be excluded from avoidance target.</td>

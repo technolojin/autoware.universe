@@ -15061,6 +15061,13 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#downsample-input-pointcloudoptional" class="md-nav__link">
+    Downsample input pointcloud(Optional)
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#test" class="md-nav__link">
     Test
   </a>
@@ -15282,6 +15289,22 @@
 </tr>
 </tbody>
 </table>
+<h3 id="downsample-input-pointcloudoptional">Downsample input pointcloud(Optional)<a class="headerlink" href="#downsample-input-pointcloudoptional" title="Permanent link">#</a></h3>
+<p>If you set <code>downsample_input_pointcloud</code> to <code>true</code>, the input pointcloud will be downsampled and following topics are also used. This feature is currently only for the pointcloud based occupancy grid map.</p>
+<ul>
+<li>pointcloud_based_occupancy_grid_map method</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="c1"># downsampled raw and obstacle pointcloud</span>
+<span class="l l-Scalar l-Scalar-Plain">/perception/occupancy_grid_map/obstacle/downsample/pointcloud</span>
+<span class="l l-Scalar l-Scalar-Plain">/perception/occupancy_grid_map/raw/downsample/pointcloud</span>
+</code></pre></div>
+<ul>
+<li>multi_lidar_pointcloud_based_point_cloud</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="c1"># downsampled raw and obstacle pointcloud</span>
+<span class="l l-Scalar l-Scalar-Plain">/perception/occupancy_grid_map/obstacle/downsample/pointcloud</span>
+<span class="l l-Scalar l-Scalar-Plain">/perception/occupancy_grid_map/&lt;sensor_name&gt;/raw/downsample/pointcloud</span>
+</code></pre></div>
 <h3 id="test">Test<a class="headerlink" href="#test" title="Permanent link">#</a></h3>
 <p>This package provides unit tests using <code>gtest</code>.
 You can run the test by the following command.</p>

@@ -15184,6 +15184,13 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#3-tune-gate-parameters" class="md-nav__link">
+    3. Tune gate parameters
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -15497,7 +15504,7 @@
 <td>pose_gate_dist</td>
 <td>float</td>
 <td>Limit of Mahalanobis distance used for outliers detection</td>
-<td>10000</td>
+<td>49.5</td>
 <td>N/A</td>
 </tr>
 </tbody>
@@ -15532,7 +15539,7 @@
 <td>twist_gate_dist</td>
 <td>float</td>
 <td>Limit of Mahalanobis distance used for outliers detection</td>
-<td>10000</td>
+<td>46.1</td>
 <td>N/A</td>
 </tr>
 </tbody>
@@ -15700,6 +15707,66 @@ Increasing the number will improve the smoothness of the estimation, but may hav
 <li><code>proc_stddev_yaw_c</code> : This parameter describes the correlation between the yaw and yaw rate. A large value means the change in yaw does not correlate to the estimated yaw rate. If this is set to 0, it means the change in estimated yaw is equal to yaw rate. Usually, this should be set to 0.</li>
 <li><code>proc_stddev_yaw_bias_c</code> : This parameter is the standard deviation for the rate of change in yaw bias. In most cases, yaw bias is constant, so it can be very small, but must be non-zero.</li>
 </ul>
+<h3 id="3-tune-gate-parameters">3. Tune gate parameters<a class="headerlink" href="#3-tune-gate-parameters" title="Permanent link">#</a></h3>
+<p>EKF performs gating using Mahalanobis distance before updating by observation. The gate size is determined by the <code>pose_gate_dist</code> parameter and the <code>twist_gate_dist</code>. If the Mahalanobis distance is larger than this value, the observation is ignored.</p>
+<p>This gating process is based on a statistical test using the chi-square distribution. As modeled, we assume that the Mahalanobis distance follows a chi-square distribution with 3 degrees of freedom for pose and 2 degrees of freedom for twist.</p>
+<p>Currently, the accuracy of covariance estimation itself is not very good, so it is recommended to set the significance level to a very small value to reduce rejection due to false positives.</p>
+<table>
+<thead>
+<tr>
+<th>Significance level</th>
+<th>Threshold for 2 dof</th>
+<th>Threshold for 3 dof</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><span class="arithmatex">\(10 ^ {-2}\)</span></td>
+<td>9.21</td>
+<td>11.3</td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(10 ^ {-3}\)</span></td>
+<td>13.8</td>
+<td>16.3</td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(10 ^ {-4}\)</span></td>
+<td>18.4</td>
+<td>21.1</td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(10 ^ {-5}\)</span></td>
+<td>23.0</td>
+<td>25.9</td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(10 ^ {-6}\)</span></td>
+<td>27.6</td>
+<td>30.7</td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(10 ^ {-7}\)</span></td>
+<td>32.2</td>
+<td>35.4</td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(10 ^ {-8}\)</span></td>
+<td>36.8</td>
+<td>40.1</td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(10 ^ {-9}\)</span></td>
+<td>41.4</td>
+<td>44.8</td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(10 ^ {-10}\)</span></td>
+<td>46.1</td>
+<td>49.5</td>
+</tr>
+</tbody>
+</table>
 <h2 id="kalman-filter-model">Kalman Filter Model<a class="headerlink" href="#kalman-filter-model" title="Permanent link">#</a></h2>
 <h3 id="kinematics-model-in-update-function">kinematics model in update function<a class="headerlink" href="#kinematics-model-in-update-function" title="Permanent link">#</a></h3>
 <p><img src="./media/ekf_dynamics.png" width="320"></p>

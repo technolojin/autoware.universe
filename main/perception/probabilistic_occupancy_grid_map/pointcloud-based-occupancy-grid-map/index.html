@@ -8720,6 +8720,13 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#related-topics" class="md-nav__link">
+    Related topics
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -15231,6 +15238,13 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#related-topics" class="md-nav__link">
+    Related topics
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -15408,6 +15422,15 @@ The ray trace is done by Bresenham's line algorithm.
 </tr>
 </tbody>
 </table>
+<h3 id="related-topics">Related topics<a class="headerlink" href="#related-topics" title="Permanent link">#</a></h3>
+<p>If you set <code>downsample_input_pointcloud</code> to <code>true</code>, the input pointcloud will be downsampled and following topics are also used.</p>
+<ul>
+<li>pointcloud_based_occupancy_grid_map method</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="c1"># downsampled raw and obstacle pointcloud</span>
+<span class="l l-Scalar l-Scalar-Plain">/perception/occupancy_grid_map/obstacle/downsample/pointcloud</span>
+<span class="l l-Scalar l-Scalar-Plain">/perception/occupancy_grid_map/raw/downsample/pointcloud</span>
+</code></pre></div>
 <h2 id="parameters">Parameters<a class="headerlink" href="#parameters" title="Permanent link">#</a></h2>
 <h3 id="node-parameters">Node Parameters<a class="headerlink" href="#node-parameters" title="Permanent link">#</a></h3>
 <table>
@@ -15448,6 +15471,26 @@ The ray trace is done by Bresenham's line algorithm.
 <td><code>grid_map_type</code></td>
 <td>string</td>
 <td>The type of grid map for estimating <code>UNKNOWN</code> region behind obstacle point clouds</td>
+</tr>
+<tr>
+<td><code>scan_origin</code></td>
+<td>string</td>
+<td>The origin of the scan. It should be a sensor frame.</td>
+</tr>
+<tr>
+<td><code>pub_debug_grid</code></td>
+<td>bool</td>
+<td>Whether to publish debug grid maps</td>
+</tr>
+<tr>
+<td><code>downsample_input_pointcloud</code></td>
+<td>bool</td>
+<td>Whether to downsample the input pointclouds. The downsampled pointclouds are used for the ray tracing.</td>
+</tr>
+<tr>
+<td><code>downsample_voxel_size</code></td>
+<td>double</td>
+<td>The voxel size for the downsampled pointclouds.</td>
 </tr>
 </tbody>
 </table>
