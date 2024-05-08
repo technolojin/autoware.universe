@@ -1114,16 +1114,15 @@ std::shared_ptr<PathWithLaneId> generateCenterLinePath(
   return centerline_path;
 }
 
-PathWithLaneId getCenterLinePathFromRootLanelet(
-  const lanelet::ConstLanelet & root_lanelet,
-  const std::shared_ptr<const PlannerData> & planner_data)
+PathWithLaneId getCenterLinePathFromLanelet(
+  const lanelet::ConstLanelet & lanelet, const std::shared_ptr<const PlannerData> & planner_data)
 {
   const auto & route_handler = planner_data->route_handler;
   const auto & current_pose = planner_data->self_odometry->pose.pose;
   const auto & p = planner_data->parameters;
 
   const auto reference_lanes = route_handler->getLaneletSequence(
-    root_lanelet, current_pose, p.backward_path_length, p.forward_path_length);
+    lanelet, current_pose, p.backward_path_length, p.forward_path_length);
 
   return getCenterLinePath(
     *route_handler, reference_lanes, current_pose, p.backward_path_length, p.forward_path_length,
@@ -1512,6 +1511,45 @@ lanelet::ConstLanelets getExtendedCurrentLanesFromPath(
   }
 
   return lanes;
+}
+
+std::vector<lanelet::ConstLanelets> getPrecedingLanelets(
+  const RouteHandler & route_handler, const lanelet::ConstLanelets & target_lanes,
+  const Pose & current_pose, const double backward_length)
+{
+  if (target_lanes.empty()) {
+    return {};
+  }
+
+  const auto arc_length = lanelet::utils::getArcCoordinates(target_lanes, current_pose);
+
+  if (arc_length.length >= backward_length) {
+    return {};
+  }
+
+  const auto & front_lane = target_lanes.front();
+  return route_handler.getPrecedingLaneletSequence(
+    front_lane, std::abs(backward_length - arc_length.length), {front_lane});
+}
+
+lanelet::ConstLanelets getBackwardLanelets(
+  const RouteHandler & route_handler, const lanelet::ConstLanelets & target_lanes,
+  const Pose & current_pose, const double backward_length)
+{
+  const auto preceding_lanes =
+    getPrecedingLanelets(route_handler, target_lanes, current_pose, backward_length);
+  const auto calc_sum = [](size_t sum, const auto & lanes) { return sum + lanes.size(); };
+  const auto num_of_lanes =
+    std::accumulate(preceding_lanes.begin(), preceding_lanes.end(), 0u, calc_sum);
+
+  lanelet::ConstLanelets backward_lanes{};
+  backward_lanes.reserve(num_of_lanes);
+
+  for (const auto & lanes : preceding_lanes) {
+    backward_lanes.insert(backward_lanes.end(), lanes.begin(), lanes.end());
+  }
+
+  return backward_lanes;
 }
 
 lanelet::ConstLanelets calcLaneAroundPose(
