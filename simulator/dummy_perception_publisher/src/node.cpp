@@ -113,6 +113,8 @@ TrackedObject ObjectInfo::toTrackedObject(
   TrackedObject tracked_object;
   tracked_object.kinematics.pose_with_covariance = pose_covariance_;
   tracked_object.kinematics.twist_with_covariance = twist_covariance_;
+  tracked_object.kinematics.orientation_availability =
+    autoware_auto_perception_msgs::msg::DetectedObjectKinematics::SIGN_UNKNOWN;
   tracked_object.classification.push_back(object.classification);
   tracked_object.shape.type = object.shape.type;
   tracked_object.shape.dimensions.x = length;
@@ -282,7 +284,7 @@ void DummyPerceptionPublisherNode::timerCallback()
       feature_object.object.kinematics.twist_with_covariance =
         object.initial_state.twist_covariance;
       feature_object.object.kinematics.orientation_availability =
-        autoware_auto_perception_msgs::msg::DetectedObjectKinematics::UNAVAILABLE;
+        autoware_auto_perception_msgs::msg::DetectedObjectKinematics::SIGN_UNKNOWN;
       feature_object.object.kinematics.has_twist = false;
       tf2::toMsg(
         tf_base_link2noised_moved_object,

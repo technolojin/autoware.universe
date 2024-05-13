@@ -932,8 +932,21 @@ void calc_path_line_list(
     point.y = paths.path.at(i + 1).position.y;
     point.z = paths.path.at(i + 1).position.z;
     points.push_back(point);
-    if (!is_simple || i % 2 == 0) {
+    {
       calc_circle_line_list(point, 0.25, points, circle_line_num);
+      // add orientation
+      point.z += 0.2;
+      geometry_msgs::msg::Point point_orientation;
+      // get yaw from paths.path.at(i).orientation, which is geometry_msgs/Quaternion
+      const auto & q = paths.path.at(i).orientation;
+      const double yaw =
+        std::atan2(2.0 * (q.w * q.z + q.x * q.y), 1.0 - 2.0 * (q.y * q.y + q.z * q.z));
+      point_orientation.x = point.x + 0.5 * std::cos(yaw);
+      point_orientation.y = point.y + 0.5 * std::sin(yaw);
+      point_orientation.z = point.z;
+
+      points.push_back(point);
+      points.push_back(point_orientation);
     }
   }
 }
