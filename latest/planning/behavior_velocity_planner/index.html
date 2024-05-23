@@ -14802,6 +14802,13 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#traffic-light-handling-in-simreal" class="md-nav__link">
+    Traffic Light Handling in sim/real
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -14952,6 +14959,44 @@ So for example, in order to stop at a stop line with the vehicles' front on the 
 <td><code>delay_response_time</code></td>
 <td>double</td>
 <td>(to be a global parameter) delay time of the vehicle's response to control commands</td>
+</tr>
+</tbody>
+</table>
+<h2 id="traffic-light-handling-in-simreal">Traffic Light Handling in sim/real<a class="headerlink" href="#traffic-light-handling-in-simreal" title="Permanent link">#</a></h2>
+<p>The handling of traffic light information varies depending on the usage. In the below table, the traffic signal topic element for the corresponding lane is denoted as <code>info</code>, and if <code>info</code> is not available, it is denoted as <code>null</code>.</p>
+<table>
+<thead>
+<tr>
+<th align="left">module \ case</th>
+<th><code>info</code> is <code>null</code></th>
+<th><code>info</code> is not <code>null</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left">intersection_occlusion(<code>is_simulation = *</code>) <ul> <li><code>info</code> is the latest non-<code>null</code> information</li></ul></td>
+<td>GO(occlusion is ignored)</td>
+<td>intersection_occlusion uses the latest non UNKNOWN observation in the queue up to present.<ul><li>If <code>info</code> is <code>GREEN or UNKNOWN</code>, occlusion is cared</li><li>If <code>info</code> is <code>RED or YELLOW</code>, occlusion is ignored(GO) </li> <li> NOTE: Currently timeout is not considered</li> </ul></td>
+</tr>
+<tr>
+<td align="left">traffic_light(sim, <code>is_simulation = true</code>) <ul> <li><code>info</code> is current information</li></ul></td>
+<td>GO</td>
+<td rowspan="2">traffic_light uses the perceived traffic light information at present directly. <ul><li>If <code>info</code> is timeout, STOP whatever the color is</li> <li>If <code>info</code> is not timeout, then act according to the color. If <code>info</code> is <code>UNKNOWN</code>, STOP</li></ul></td>
+</tr>
+<tr>
+<td align="left">traffic_light(real, <code>is_simulation = false</code>) <ul> <li><code>info</code> is current information</li></ul></td>
+<td>STOP</td>
+<td style="padding:0">⁠</td>
+</tr>
+<tr>
+<td align="left">crosswalk with Traffic Light(<code>is_simulation = *</code>) <ul> <li><code>info</code> is current information</li></ul></td>
+<td>default</td>
+<td><ul> <li>If <code>disable_yield_for_new_stopped_object</code> is true, each sub scene_module ignore newly detected pedestrians after module instantiation.</li> <li>If <code>ignore_with_traffic_light</code> is true, occlusion detection is skipped.</li></ul></td>
+</tr>
+<tr>
+<td align="left">map_based_prediction(<code>is_simulation = *</code>) <ul> <li><code>info</code> is current information</li></ul></td>
+<td>default</td>
+<td>If a pedestrian traffic light is<ul> <li>RED, surrounding pedestrians are not predicted.</li> <li>GREEN, stopped pedestrians are not predicted.</li></ul></td>
 </tr>
 </tbody>
 </table></div>
