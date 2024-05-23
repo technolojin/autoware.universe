@@ -43,8 +43,15 @@ Tracker::Tracker(
 void Tracker::initializeExistenceProbabilities(
   const uint & channel_index, const float & existence_probability)
 {
-  existence_probabilities_[channel_index] = 0.8 + 0.2 * existence_probability;
-  total_existence_probability_ = existence_probability;
+  // The initial existence probability is modeled
+  // since the incoming object's existence probability is not reliable
+  // existence probability on each channel
+  constexpr float initial_existence_probability = 0.5;
+  existence_probabilities_[channel_index] = initial_existence_probability;
+
+  // total existence probability
+  total_existence_probability_ =
+    initial_existence_probability + (1.0 - initial_existence_probability) * existence_probability;
 }
 
 bool Tracker::updateWithMeasurement(
@@ -54,30 +61,30 @@ bool Tracker::updateWithMeasurement(
 {
   // Update existence probability
   {
-    float existence_probability_from_object = object.existence_probability;
+    const float & existence_probability_from_object = object.existence_probability;
     no_measurement_count_ = 0;
     ++total_measurement_count_;
 
     // existence probability on each channel
     const double delta_time = (measurement_time - last_update_with_measurement_time_).seconds();
-    const double decay_rate = 5.0 / 10.0;
+    const double decay_rate = -log(0.5) / 0.3;  // 50% decay in 0.3s
 
-    const float gain = 0.4;
-    const float probability_detected = 0.99;
-    // existence_probabilities_[channel_index] = existence_probability_from_object;
+    constexpr float gain = 0.4;
+    constexpr float probability_detected = 0.99;
+    // update measured channel probability
     existence_probabilities_[channel_index] =
       gain * probability_detected + (1 - gain) * existence_probabilities_[channel_index];
-
+    // decay other channel probabilities
     for (size_t i = 0; i < existence_probabilities_.size(); ++i) {
       if (i == channel_index) {
         continue;
       }
-      existence_probabilities_[i] *= std::exp(-decay_rate * delta_time);
+      existence_probabilities_[i] *= std::exp(decay_rate * delta_time);
     }
 
-    // total existence probability - object is detected
-    total_existence_probability_ +=
-      (1 - total_existence_probability_) * existence_probability_from_object;
+    // update total existence probability
+    total_existence_probability_ =
+      gain * existence_probability_from_object + (1 - gain) * total_existence_probability_;
   }
 
   last_update_with_measurement_time_ = measurement_time;
@@ -96,7 +103,7 @@ bool Tracker::updateWithoutMeasurement(const rclcpp::Time & now)
   {
     // decay existence probability
     double const delta_time = (now - last_update_with_measurement_time_).seconds();
-    double const decay_rate = 5.0 / 10.0;
+    const double decay_rate = -log(0.5) / 0.3;  // 50% decay in 0.3s
     for (size_t i = 0; i < existence_probabilities_.size(); ++i) {
       existence_probabilities_[i] *= std::exp(-decay_rate * delta_time);
     }
