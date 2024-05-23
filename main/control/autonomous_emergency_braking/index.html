@@ -14790,6 +14790,13 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#imu-path-generation-steering-angle-vs-imus-angular-velocity" class="md-nav__link">
+    IMU path generation: steering angle vs IMU's angular velocity
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#limitations" class="md-nav__link">
     Limitations
   </a>
@@ -14889,6 +14896,20 @@
 <li>The current speed and angular velocity can be obtained from the sensors of the ego vehicle, and it uses point cloud as obstacles.</li>
 </ul>
 <p><img alt="aeb_range" src="image/range.drawio.svg"></p>
+<h3 id="imu-path-generation-steering-angle-vs-imus-angular-velocity">IMU path generation: steering angle vs IMU's angular velocity<a class="headerlink" href="#imu-path-generation-steering-angle-vs-imus-angular-velocity" title="Permanent link">#</a></h3>
+<p>Currently, the IMU-based path is generated using the angular velocity obtained by the IMU itself. It has been suggested that the steering angle could be used instead onf the angular velocity.</p>
+<p>The pros and cons of both approaches are:</p>
+<p>IMU angular velocity:</p>
+<ul>
+<li>(+) Usually, it has high accuracy</li>
+<li>(-)Vehicle vibration might introduce noise.</li>
+</ul>
+<p>Steering angle:</p>
+<ul>
+<li>(+) Not so noisy</li>
+<li>(-) May have a steering offset or a wrong gear ratio, and the steering angle of Autoware and the real steering may not be the same.</li>
+</ul>
+<p>For the moment, there are no plans to implement the steering angle on the path creation process of the AEB module.</p>
 <h3 id="limitations">Limitations<a class="headerlink" href="#limitations" title="Permanent link">#</a></h3>
 <ul>
 <li>AEB might not be able to react with obstacles that are close to the ground. It depends on the performance of the pre-processing methods applied to the point cloud.</li>

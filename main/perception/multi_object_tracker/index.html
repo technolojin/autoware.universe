@@ -14844,6 +14844,13 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#input-channel-parameters" class="md-nav__link">
+    Input Channel parameters
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#core-parameters" class="md-nav__link">
     Core Parameters
   </a>
@@ -14957,6 +14964,7 @@ Example:
 
 <h2 id="inputs-outputs">Inputs / Outputs<a class="headerlink" href="#inputs-outputs" title="Permanent link">#</a></h2>
 <h3 id="input">Input<a class="headerlink" href="#input" title="Permanent link">#</a></h3>
+<p>Multiple inputs are pre-defined in the input channel parameters (described below) and the inputs can be configured</p>
 <table>
 <thead>
 <tr>
@@ -14967,12 +14975,16 @@ Example:
 </thead>
 <tbody>
 <tr>
-<td><code>~/input</code></td>
-<td><code>autoware_auto_perception_msgs::msg::DetectedObjects</code></td>
-<td>obstacles</td>
+<td><code>selected_input_channels</code></td>
+<td><code>std::vector&lt;std::string&gt;</code></td>
+<td>array of channel names</td>
 </tr>
 </tbody>
 </table>
+<ul>
+<li>default value: <code>selected_input_channels:="['detected_objects']"</code>, merged DetectedObject message</li>
+<li>multi-input example: <code>selected_input_channels:="['lidar_centerpoint','camera_lidar_fusion','detection_by_tracker','radar_far']"</code></li>
+</ul>
 <h3 id="output">Output<a class="headerlink" href="#output" title="Permanent link">#</a></h3>
 <table>
 <thead>
@@ -14986,23 +14998,51 @@ Example:
 <tr>
 <td><code>~/output</code></td>
 <td><code>autoware_auto_perception_msgs::msg::TrackedObjects</code></td>
-<td>modified obstacles</td>
+<td>tracked objects</td>
 </tr>
 </tbody>
 </table>
 <h2 id="parameters">Parameters<a class="headerlink" href="#parameters" title="Permanent link">#</a></h2>
-<!-- Write parameters of this package.
-
-Example:
-  ### Node Parameters
-
-  | Name                   | Type | Description                     |
-  | ---------------------- | ---- | ------------------------------- |
-  | `output_debug_markers` | bool | whether to output debug markers |
--->
-
+<h3 id="input-channel-parameters">Input Channel parameters<a class="headerlink" href="#input-channel-parameters" title="Permanent link">#</a></h3>
+<p>Available input channels are defined in <a href="config/input_channels.param.yaml">input_channels.param.yaml</a>.</p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>&lt;channel&gt;</code></td>
+<td></td>
+<td>the name of channel</td>
+</tr>
+<tr>
+<td><code>&lt;channel&gt;.topic</code></td>
+<td><code>autoware_auto_perception_msgs::msg::DetectedObjects</code></td>
+<td>detected objects</td>
+</tr>
+<tr>
+<td><code>&lt;channel&gt;.can_spawn_new_tracker</code></td>
+<td><code>bool</code></td>
+<td>a switch allow to spawn a new tracker</td>
+</tr>
+<tr>
+<td><code>&lt;channel&gt;.optional.name</code></td>
+<td><code>std::string</code></td>
+<td>channel name for analysis</td>
+</tr>
+<tr>
+<td><code>&lt;channel&gt;.optional.short_name</code></td>
+<td><code>std::string</code></td>
+<td>short name for visualization</td>
+</tr>
+</tbody>
+</table>
 <h3 id="core-parameters">Core Parameters<a class="headerlink" href="#core-parameters" title="Permanent link">#</a></h3>
-<p>Node parameters are defined in <a href="config/multi_object_tracker.param.yaml">multi_object_tracker.param.yaml</a> and association parameters are defined in <a href="config/data_association.param.yaml">data_association.param.yaml</a>.</p>
+<p>Node parameters are defined in <a href="config/multi_object_tracker_node.param.yaml">multi_object_tracker_node.param.yaml</a> and association parameters are defined in <a href="config/data_association_matrix.param.yaml">data_association_matrix.param.yaml</a>.</p>
 <h4 id="node-parameters">Node parameters<a class="headerlink" href="#node-parameters" title="Permanent link">#</a></h4>
 <table>
 <thead>
@@ -15032,6 +15072,21 @@ Example:
 <td><code>publish_rate</code></td>
 <td>double</td>
 <td>Timer frequency to output with delay compensation</td>
+</tr>
+<tr>
+<td><code>publish_processing_time</code></td>
+<td>bool</td>
+<td>enable to publish debug message of process time information</td>
+</tr>
+<tr>
+<td><code>publish_tentative_objects</code></td>
+<td>bool</td>
+<td>enable to publish tentative tracked objects, which have lower confidence</td>
+</tr>
+<tr>
+<td><code>publish_debug_markers</code></td>
+<td>bool</td>
+<td>enable to publish debug markers, which indicates association of multi-inputs, existence probability of each detection</td>
 </tr>
 </tbody>
 </table>
@@ -15073,13 +15128,6 @@ Example:
 </tbody>
 </table>
 <h2 id="assumptions-known-limits">Assumptions / Known limits<a class="headerlink" href="#assumptions-known-limits" title="Permanent link">#</a></h2>
-<!-- Write assumptions and limitations of your implementation.
-
-Example:
-  This algorithm assumes obstacles are not moving, so if they rapidly move after the vehicle started to avoid them, it might collide with them.
-  Also, this algorithm doesn't care about blind spots. In general, since too close obstacles aren't visible due to the sensing performance limit, please take enough margin to obstacles.
--->
-
 <p>See the <a href="models/">model explanations</a>.</p>
 <h2 id="optional-error-detection-and-handling">(Optional) Error detection and handling<a class="headerlink" href="#optional-error-detection-and-handling" title="Permanent link">#</a></h2>
 <!-- Write how to detect errors and how to recover from them.
