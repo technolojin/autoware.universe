@@ -14768,6 +14768,34 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#unit-testing" class="md-nav__link">
+    Unit Testing
+  </a>
+  
+    <nav class="md-nav" aria-label="Unit Testing">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#lane-change-test-route" class="md-nav__link">
+    Lane change test route
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -14785,7 +14813,17 @@
 
 
 <div><h1 id="route-handler">route handler<a class="headerlink" href="#route-handler" title="Permanent link">#</a></h1>
-<p><code>route_handler</code> is a library for calculating driving route on the lanelet map.</p></div>
+<p><code>route_handler</code> is a library for calculating driving route on the lanelet map.</p>
+<h2 id="unit-testing">Unit Testing<a class="headerlink" href="#unit-testing" title="Permanent link">#</a></h2>
+<p>The unit testing depends on <code>planning_test_utils</code> package.
+<code>planning_test_utils</code> is a library that provides several common functions to simplify unit test creating.</p>
+<p><img alt="route_handler_test" src="images/route_handler_test.svg"></p>
+<p>By default, route file is necessary to create tests. The following illustrates the route that are used in the unit test</p>
+<h3 id="lane-change-test-route">Lane change test route<a class="headerlink" href="#lane-change-test-route" title="Permanent link">#</a></h3>
+<p><img alt="lane_change_test_route" src="images/lane_change_test_route.svg"></p>
+<ul>
+<li>The route is based on map that can be obtained from <code>planning_test_utils\test_map</code></li>
+</ul></div>
 
 
 
