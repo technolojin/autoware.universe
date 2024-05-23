@@ -21,6 +21,14 @@
 #include <algorithm>
 #include <random>
 
+namespace
+{
+double updateProbability(double prior, double likelihood)
+{
+  return (prior * likelihood) / (prior * likelihood + (1 - prior) * (1 - likelihood));
+}
+}  // namespace
+
 Tracker::Tracker(
   const rclcpp::Time & time,
   const std::vector<autoware_auto_perception_msgs::msg::ObjectClassification> & classification,
@@ -50,8 +58,7 @@ void Tracker::initializeExistenceProbabilities(
   existence_probabilities_[channel_index] = initial_existence_probability;
 
   // total existence probability
-  total_existence_probability_ =
-    initial_existence_probability + (1.0 - initial_existence_probability) * existence_probability;
+  total_existence_probability_ = existence_probability;
 }
 
 bool Tracker::updateWithMeasurement(
@@ -61,7 +68,6 @@ bool Tracker::updateWithMeasurement(
 {
   // Update existence probability
   {
-    const float & existence_probability_from_object = object.existence_probability;
     no_measurement_count_ = 0;
     ++total_measurement_count_;
 
@@ -69,11 +75,10 @@ bool Tracker::updateWithMeasurement(
     const double delta_time = (measurement_time - last_update_with_measurement_time_).seconds();
     const double decay_rate = -log(0.5) / 0.3;  // 50% decay in 0.3s
 
-    constexpr float gain = 0.4;
     constexpr float probability_detected = 0.99;
     // update measured channel probability
     existence_probabilities_[channel_index] =
-      gain * probability_detected + (1 - gain) * existence_probabilities_[channel_index];
+      updateProbability(existence_probabilities_[channel_index], probability_detected);
     // decay other channel probabilities
     for (size_t i = 0; i < existence_probabilities_.size(); ++i) {
       if (i == channel_index) {
@@ -83,8 +88,9 @@ bool Tracker::updateWithMeasurement(
     }
 
     // update total existence probability
+    const float & existence_probability_from_object = object.existence_probability;
     total_existence_probability_ =
-      gain * existence_probability_from_object + (1 - gain) * total_existence_probability_;
+      updateProbability(total_existence_probability_, existence_probability_from_object);
   }
 
   last_update_with_measurement_time_ = measurement_time;
