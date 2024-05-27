@@ -15756,7 +15756,7 @@ initial_pose_offset_model_x &amp; initial_pose_offset_model_y must have the same
 <td>whether the node is in the "activate" state or not</td>
 <td>not "activate" state</td>
 <td>none</td>
-<td>yes</td>
+<td>if <code>is_activated</code> is false, then estimation is not executed and <code>skipping_publish_num</code> is set to 0.</td>
 </tr>
 <tr>
 <td><code>is_succeed_interpolate_initial_pose</code></td>
@@ -15817,8 +15817,8 @@ initial_pose_offset_model_x &amp; initial_pose_offset_model_y must have the same
 <tr>
 <td><code>skipping_publish_num</code></td>
 <td>the number of times rejected estimation results consecutively</td>
-<td>none</td>
 <td>the number of times is 5 or more</td>
+<td>none</td>
 <td>-</td>
 </tr>
 </tbody>
