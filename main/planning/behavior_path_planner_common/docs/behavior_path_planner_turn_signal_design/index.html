@@ -8529,6 +8529,8 @@
         
           
         
+          
+        
       
       
         <label class="md-nav__link" for="__nav_8_6" id="__nav_8_6_label" tabindex="0">
@@ -8993,12 +8995,122 @@
       
       
         <label class="md-nav__link" for="__nav_8_6_8" id="__nav_8_6_8_label" tabindex="0">
-          Motion Velocity Smoother
+          Motion Velocity Planner
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_8_6_8_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_8_6_8">
+          <span class="md-nav__icon md-icon"></span>
+          Motion Velocity Planner
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../autoware_motion_velocity_planner_node/" class="md-nav__link">
+        About Motion Velocity Planner
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+        
+      
+      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8_6_8_2" >
+      
+      
+        
+          
+        
+      
+      
+        <label class="md-nav__link" for="__nav_8_6_8_2" id="__nav_8_6_8_2_label" tabindex="0">
+          Available Modules
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="4" aria-labelledby="__nav_8_6_8_2_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_8_6_8_2">
+          <span class="md-nav__icon md-icon"></span>
+          Available Modules
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../autoware_motion_velocity_planner_out_of_lane_module/" class="md-nav__link">
+        Out of Lane
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+        
+      
+      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8_6_9" >
+      
+      
+        
+          
+        
+          
+        
+      
+      
+        <label class="md-nav__link" for="__nav_8_6_9" id="__nav_8_6_9_label" tabindex="0">
+          Motion Velocity Smoother
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_8_6_9_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_8_6_9">
           <span class="md-nav__icon md-icon"></span>
           Motion Velocity Smoother
         </label>
@@ -13199,6 +13311,13 @@
 <td align="left">double</td>
 <td align="left">shift length threshold to decide activation of blinkers</td>
 <td align="left">0.3</td>
+</tr>
+<tr>
+<td align="left">turn_signal_remaining_shift_length_threshold</td>
+<td align="left">[m]</td>
+<td align="left">double</td>
+<td align="left">When the ego's current shift length minus its end shift length is less than this threshold, the turn signal will be turned off.</td>
+<td align="left">0.1</td>
 </tr>
 <tr>
 <td align="left">turn_signal_on_swerving</td>
