@@ -716,11 +716,6 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://autowarefoundation.github.io/autoware.universe/latest/perception/lidar_centerpoint_tvm/</loc>
-         <lastmod>2024-06-28</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
          <loc>https://autowarefoundation.github.io/autoware.universe/latest/perception/lidar_transfusion/</loc>
          <lastmod>2024-06-28</lastmod>
          <changefreq>daily</changefreq>
