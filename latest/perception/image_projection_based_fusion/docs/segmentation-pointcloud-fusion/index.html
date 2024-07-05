@@ -13264,13 +13264,129 @@
 <th>Name</th>
 <th>Type</th>
 <th>Description</th>
+<th>Default</th>
+<th>Range</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>rois_number</code></td>
-<td>int</td>
-<td>the number of input rois</td>
+<td>filter_semantic_label_target.UNKNOWN</td>
+<td>boolean</td>
+<td>If true, UNKNOWN class of semantic will be filtered.</td>
+<td>0</td>
+<td>N/A</td>
+</tr>
+<tr>
+<td>filter_semantic_label_target.BUILDING</td>
+<td>boolean</td>
+<td>If true, BUILDING class of semantic will be filtered.</td>
+<td>1</td>
+<td>N/A</td>
+</tr>
+<tr>
+<td>filter_semantic_label_target.WALL</td>
+<td>boolean</td>
+<td>If true, WALL class of semantic will be filtered.</td>
+<td>1</td>
+<td>N/A</td>
+</tr>
+<tr>
+<td>filter_semantic_label_target.OBSTACLE</td>
+<td>boolean</td>
+<td>If true, OBSTACLE class of semantic will be filtered.</td>
+<td>0</td>
+<td>N/A</td>
+</tr>
+<tr>
+<td>filter_semantic_label_target.TRAFFIC_LIGHT</td>
+<td>boolean</td>
+<td>If true, TRAFFIC_LIGHT class of semantic will be filtered.</td>
+<td>0</td>
+<td>N/A</td>
+</tr>
+<tr>
+<td>filter_semantic_label_target.TRAFFIC_SIGN</td>
+<td>boolean</td>
+<td>If true, TRAFFIC_SIGN class of semantic will be filtered.</td>
+<td>0</td>
+<td>N/A</td>
+</tr>
+<tr>
+<td>filter_semantic_label_target.PERSON</td>
+<td>boolean</td>
+<td>If true, PERSON class of semantic will be filtered.</td>
+<td>0</td>
+<td>N/A</td>
+</tr>
+<tr>
+<td>filter_semantic_label_target.VEHICLE</td>
+<td>boolean</td>
+<td>If true, VEHICLE class of semantic will be filtered.</td>
+<td>0</td>
+<td>N/A</td>
+</tr>
+<tr>
+<td>filter_semantic_label_target.BIKE</td>
+<td>boolean</td>
+<td>If true, BIKE class of semantic will be filtered.</td>
+<td>0</td>
+<td>N/A</td>
+</tr>
+<tr>
+<td>filter_semantic_label_target.ROAD</td>
+<td>boolean</td>
+<td>If true, ROAD class of semantic will be filtered.</td>
+<td>1</td>
+<td>N/A</td>
+</tr>
+<tr>
+<td>filter_semantic_label_target.SIDEWALK</td>
+<td>boolean</td>
+<td>If true, SIDEWALK class of semantic will be filtered.</td>
+<td>0</td>
+<td>N/A</td>
+</tr>
+<tr>
+<td>filter_semantic_label_target.ROAD_PAINT</td>
+<td>boolean</td>
+<td>If true, ROAD_PAINT class of semantic will be filtered.</td>
+<td>0</td>
+<td>N/A</td>
+</tr>
+<tr>
+<td>filter_semantic_label_target.CURBSTONE</td>
+<td>boolean</td>
+<td>If true, CURBSTONE class of semantic will be filtered.</td>
+<td>0</td>
+<td>N/A</td>
+</tr>
+<tr>
+<td>filter_semantic_label_target.CROSSWALK</td>
+<td>boolean</td>
+<td>If true, CROSSWALK class of semantic will be filtered.</td>
+<td>0</td>
+<td>N/A</td>
+</tr>
+<tr>
+<td>filter_semantic_label_target.VEGETATION</td>
+<td>boolean</td>
+<td>If true, VEGETATION class of semantic will be filtered.</td>
+<td>1</td>
+<td>N/A</td>
+</tr>
+<tr>
+<td>filter_semantic_label_target.SKY</td>
+<td>boolean</td>
+<td>If true, SKY class of semantic will be filtered.</td>
+<td>0</td>
+<td>N/A</td>
+</tr>
+<tr>
+<td>filter_distance_threshold</td>
+<td>float</td>
+<td>A maximum distance of pointcloud to apply filter [m].</td>
+<td>60</td>
+<td>≥0.0</td>
 </tr>
 </tbody>
 </table>

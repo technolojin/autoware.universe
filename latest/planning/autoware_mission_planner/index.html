@@ -13220,6 +13220,11 @@ It distributes route requests and planning results according to current MRM oper
 <td>geometry_msgs/PoseWithUuidStamped</td>
 <td>modified goal pose</td>
 </tr>
+<tr>
+<td><code>input/operation_mode_state</code></td>
+<td>autoware_adapi_v1_msgs/OperationModeState</td>
+<td>operation mode state</td>
+</tr>
 </tbody>
 </table>
 <h3 id="publications">Publications<a class="headerlink" href="#publications" title="Permanent link">#</a></h3>
@@ -13314,7 +13319,8 @@ To calculate <code>route_lanelets</code>,</p>
 <p><code>get preferred lanelets</code> extracts <code>preferred_primitive</code> from <code>route_lanelets</code> with the route handler.</p>
 <p><code>create route sections</code> extracts <code>primitives</code> from <code>route_lanelets</code> for each route section with the route handler, and creates route sections.</p>
 <h3 id="rerouting">Rerouting<a class="headerlink" href="#rerouting" title="Permanent link">#</a></h3>
-<p>Reroute here means changing the route while driving. Unlike route setting, it is required to keep a certain distance from vehicle to the point where the route is changed.</p>
+<p>Reroute here means changing the route while driving. Unlike route setting, it is required to keep a certain distance from vehicle to the point where the route is changed.
+If the ego vehicle is not on autonomous driving state, the safety checking process will be skipped.</p>
 <p><img alt="rerouting_safety" src="media/rerouting_safety.svg"></p>
 <p>And there are three use cases that require reroute.</p>
 <ul>
