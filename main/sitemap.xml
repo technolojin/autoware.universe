@@ -591,6 +591,46 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
+         <loc>https://autowarefoundation.github.io/autoware.universe/main/perception/autoware_object_range_splitter/</loc>
+         <lastmod>2024-07-10</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://autowarefoundation.github.io/autoware.universe/main/perception/autoware_object_velocity_splitter/</loc>
+         <lastmod>2024-07-10</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://autowarefoundation.github.io/autoware.universe/main/perception/autoware_radar_crossing_objects_noise_filter/</loc>
+         <lastmod>2024-07-10</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://autowarefoundation.github.io/autoware.universe/main/perception/autoware_radar_fusion_to_detected_object/</loc>
+         <lastmod>2024-07-10</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://autowarefoundation.github.io/autoware.universe/main/perception/autoware_radar_fusion_to_detected_object/docs/algorithm/</loc>
+         <lastmod>2024-07-10</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://autowarefoundation.github.io/autoware.universe/main/perception/autoware_radar_object_clustering/</loc>
+         <lastmod>2024-07-10</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://autowarefoundation.github.io/autoware.universe/main/perception/autoware_radar_object_tracker/</loc>
+         <lastmod>2024-07-10</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://autowarefoundation.github.io/autoware.universe/main/perception/autoware_radar_object_tracker/models/</loc>
+         <lastmod>2024-07-10</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
          <loc>https://autowarefoundation.github.io/autoware.universe/main/perception/bytetrack/</loc>
          <lastmod>2024-07-10</lastmod>
          <changefreq>daily</changefreq>
@@ -741,16 +781,6 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://autowarefoundation.github.io/autoware.universe/main/perception/object_range_splitter/</loc>
-         <lastmod>2024-07-10</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://autowarefoundation.github.io/autoware.universe/main/perception/object_velocity_splitter/</loc>
-         <lastmod>2024-07-10</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
          <loc>https://autowarefoundation.github.io/autoware.universe/main/perception/occupancy_grid_map_outlier_filter/</loc>
          <lastmod>2024-07-10</lastmod>
          <changefreq>daily</changefreq>
@@ -772,36 +802,6 @@
     </url>
     <url>
          <loc>https://autowarefoundation.github.io/autoware.universe/main/perception/probabilistic_occupancy_grid_map/synchronized_grid_map_fusion/</loc>
-         <lastmod>2024-07-10</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://autowarefoundation.github.io/autoware.universe/main/perception/radar_crossing_objects_noise_filter/</loc>
-         <lastmod>2024-07-10</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://autowarefoundation.github.io/autoware.universe/main/perception/radar_fusion_to_detected_object/</loc>
-         <lastmod>2024-07-10</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://autowarefoundation.github.io/autoware.universe/main/perception/radar_fusion_to_detected_object/docs/algorithm/</loc>
-         <lastmod>2024-07-10</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://autowarefoundation.github.io/autoware.universe/main/perception/radar_object_clustering/</loc>
-         <lastmod>2024-07-10</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://autowarefoundation.github.io/autoware.universe/main/perception/radar_object_tracker/</loc>
-         <lastmod>2024-07-10</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://autowarefoundation.github.io/autoware.universe/main/perception/radar_object_tracker/models/</loc>
          <lastmod>2024-07-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
