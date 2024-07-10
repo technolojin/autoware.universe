@@ -2695,6 +2695,8 @@
         
           
         
+          
+        
       
       
         <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
@@ -2785,14 +2787,14 @@
         
         
         <div class="md-nav__link md-nav__link--index ">
-          <a href="../../../../evaluator/autoware_planning_evaluator/">Autoware planning evaluator</a>
+          <a href="../../../../evaluator/autoware_evaluator_utils/">Autoware evaluator utils</a>
           
         </div>
       
       <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_2_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_3_2">
           <span class="md-nav__icon md-icon"></span>
-          Autoware planning evaluator
+          Autoware evaluator utils
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -2833,14 +2835,14 @@
         
         
         <div class="md-nav__link md-nav__link--index ">
-          <a href="../../../../evaluator/diagnostic_converter/">Diagnostic converter</a>
+          <a href="../../../../evaluator/autoware_planning_evaluator/">Autoware planning evaluator</a>
           
         </div>
       
       <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_3_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_3_3">
           <span class="md-nav__icon md-icon"></span>
-          Diagnostic converter
+          Autoware planning evaluator
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -2881,14 +2883,14 @@
         
         
         <div class="md-nav__link md-nav__link--index ">
-          <a href="../../../../evaluator/kinematic_evaluator/">Kinematic evaluator</a>
+          <a href="../../../../evaluator/diagnostic_converter/">Diagnostic converter</a>
           
         </div>
       
       <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_4_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_3_4">
           <span class="md-nav__icon md-icon"></span>
-          Kinematic evaluator
+          Diagnostic converter
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -2929,14 +2931,14 @@
         
         
         <div class="md-nav__link md-nav__link--index ">
-          <a href="../../../../evaluator/localization_evaluator/">Localization evaluator</a>
+          <a href="../../../../evaluator/kinematic_evaluator/">Kinematic evaluator</a>
           
         </div>
       
       <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_5_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_3_5">
           <span class="md-nav__icon md-icon"></span>
-          Localization evaluator
+          Kinematic evaluator
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -2977,12 +2979,60 @@
         
         
         <div class="md-nav__link md-nav__link--index ">
-          <a href="../../../../evaluator/perception_online_evaluator/">Perception online evaluator</a>
+          <a href="../../../../evaluator/localization_evaluator/">Localization evaluator</a>
           
         </div>
       
       <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_6_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_3_6">
+          <span class="md-nav__icon md-icon"></span>
+          Localization evaluator
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+      
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+      
+      
+      
+        
+      
+      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_7" >
+      
+      
+        
+          
+            
+          
+        
+      
+      
+        
+        
+        <div class="md-nav__link md-nav__link--index ">
+          <a href="../../../../evaluator/perception_online_evaluator/">Perception online evaluator</a>
+          
+        </div>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_7_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_3_7">
           <span class="md-nav__icon md-icon"></span>
           Perception online evaluator
         </label>
@@ -13203,7 +13253,7 @@
 <h2 id="inner-workings-algorithms">Inner-workings / Algorithms<a class="headerlink" href="#inner-workings-algorithms" title="Permanent link">#</a></h2>
 <p>This node can remove rain and fog by considering the light reflected from the object in two stages according to the attenuation factor. The <code>dual_return_outlier_filter</code> is named because it removes noise using data that contains two types of return values separated by attenuation factor, as shown in the figure below.</p>
 <p><img alt="outlier_filter-return_type" src="../image/outlier_filter-return_type.drawio.svg"></p>
-<p>Therefore, in order to use this node, the sensor driver must publish custom data including <code>return_type</code>. please refer to <a href="../../../common/autoware_point_types/include/autoware_point_types/types.hpp#L57-L76">PointXYZIRADRT</a> data structure.</p>
+<p>Therefore, in order to use this node, the sensor driver must publish custom data including <code>return_type</code>. please refer to <a href="../../../common/autoware_point_types/include/autoware_point_types/types.hpp#L95-L116">PointXYZIRCAEDT</a> data structure.</p>
 <p>Another feature of this node is that it publishes visibility as a diagnostic topic. With this function, for example, in heavy rain, the sensing module can notify that the processing performance has reached its limit, which can lead to ensuring the safety of the vehicle.</p>
 <p>In some complicated road scenes where normal objects also reflect the light in two stages, for instance plants, leaves, some plastic net etc, the visibility faces some drop in fine weather condition. To deal with that, optional settings of a region of interest (ROI) are added.</p>
 <ol>
@@ -13347,7 +13397,7 @@
 </table>
 <h2 id="assumptions-known-limits">Assumptions / Known limits<a class="headerlink" href="#assumptions-known-limits" title="Permanent link">#</a></h2>
 <p>Not recommended for use as it is under development.
-Input data must be <code>PointXYZIRADRT</code> type data including <code>return_type</code>.</p>
+Input data must be <a href="../../../common/autoware_point_types/include/autoware_point_types/types.hpp#L95-L116">PointXYZIRCAEDT</a> type data including <code>return_type</code>.</p>
 <h2 id="optional-error-detection-and-handling">(Optional) Error detection and handling<a class="headerlink" href="#optional-error-detection-and-handling" title="Permanent link">#</a></h2>
 <h2 id="optional-performance-characterization">(Optional) Performance characterization<a class="headerlink" href="#optional-performance-characterization" title="Permanent link">#</a></h2>
 <h2 id="referencesexternal-links">References/External links<a class="headerlink" href="#referencesexternal-links" title="Permanent link">#</a></h2>
