@@ -14642,11 +14642,11 @@ To solve that, this module provides a parameter for the minimum avoidance speed,
 <td>N/A</td>
 </tr>
 <tr>
-<td>avoidance_for_ambiguous_vehicle.enable</td>
-<td>boolean</td>
-<td>Enable avoidance maneuver for ambiguous vehicles.</td>
+<td>avoidance_for_ambiguous_vehicle.policy</td>
+<td>string</td>
+<td>Ego behavior policy for ambiguous vehicle.</td>
 <td>true</td>
-<td>N/A</td>
+<td>['auto', 'manual', 'ignore']</td>
 </tr>
 <tr>
 <td>avoidance_for_ambiguous_vehicle.closest_distance_to_wait_and_see</td>
@@ -14688,6 +14688,20 @@ To solve that, this module provides a parameter for the minimum avoidance speed,
 <td>float</td>
 <td>If the back distance between crosswalk and vehicle is less than this parameter, this module will ignore it.</td>
 <td>30.0</td>
+<td>N/A</td>
+</tr>
+<tr>
+<td>wait_and_see.target_behaviors</td>
+<td>array</td>
+<td>This module doesn't avoid these behaviors vehicle until it gets closer than threshold.</td>
+<td>['MERGING', 'DEVIATING']</td>
+<td>N/A</td>
+</tr>
+<tr>
+<td>wait_and_see.th_closest_distance</td>
+<td>float</td>
+<td>Threshold to check whether the ego gets close enough the ambiguous vehicle.</td>
+<td>10.0</td>
 <td>N/A</td>
 </tr>
 <tr>
