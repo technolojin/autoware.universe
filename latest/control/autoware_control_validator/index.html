@@ -13186,12 +13186,16 @@
 <p>The <code>control_validator</code> is a module that checks the validity of the output of the control component. The status of the validation can be viewed in the <code>/diagnostics</code> topic.</p>
 <p><img alt="control_validator" src="image/control_validator.drawio.svg"></p>
 <h2 id="supported-features">Supported features<a class="headerlink" href="#supported-features" title="Permanent link">#</a></h2>
-<p>The following features are supported for the validation and can have thresholds set by parameters:</p>
+<p>The following features are supported for the validation and can have thresholds set by parameters.
+The listed features below does not always correspond to the latest implementation.
+| Description | Arguments | Diagnostic equation | Implemented function name |
+| ---------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | :--------------------------------: | ------------------------------- |
+| Inverse velocity: Measured velocity has a different sign from the target velocity. | measured velocity <span class="arithmatex">\(v\)</span>, target velocity <span class="arithmatex">\(\hat{v}\)</span>, and threshold velocity parameter <span class="arithmatex">\(k\)</span> | $v\hat{v}&lt;0,~|v|&gt;k $       | <code>checkValidVelocityDeviation()</code> |
+| Overspeed: Measured speed exceeds target speed significantly.                      | measured velocity <span class="arithmatex">\(v\)</span>, target velocity <span class="arithmatex">\(\hat{v}\)</span>, and threshold ratio parameter <span class="arithmatex">\(r\)</span> | $| v | &gt; (1 + r) | \hat{v} | $ | <code>checkValidVelocityDeviation()</code> |</p>
 <ul>
 <li><strong>Deviation check between reference trajectory and predicted trajectory</strong> : invalid when the largest deviation between the predicted trajectory and reference trajectory is greater than the given threshold.</li>
 </ul>
 <p><img alt="trajectory_deviation" src="image/trajectory_deviation.drawio.svg"></p>
-<p>Other features are to be implemented.</p>
 <h2 id="inputsoutputs">Inputs/Outputs<a class="headerlink" href="#inputsoutputs" title="Permanent link">#</a></h2>
 <h3 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">#</a></h3>
 <p>The <code>control_validator</code> takes in the following inputs:</p>
@@ -13295,6 +13299,18 @@
 <td align="left">double</td>
 <td align="left">invalid threshold of the max distance deviation between the predicted path and the reference trajectory [m]</td>
 <td align="left">1.0</td>
+</tr>
+<tr>
+<td align="left"><code>thresholds.max_reverse_velocity</code></td>
+<td align="left">double</td>
+<td align="left">threshold velocity to valid the vehicle velocity [m/s]</td>
+<td align="left">WIP</td>
+</tr>
+<tr>
+<td align="left"><code>thresholds.max_over_velocity_ratio</code></td>
+<td align="left">double</td>
+<td align="left">threshold ratio to valid the vehicle velocity [*]</td>
+<td align="left">WIP</td>
 </tr>
 </tbody>
 </table></div>
