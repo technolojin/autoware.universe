@@ -14288,10 +14288,17 @@ Opting for <code>short_back_distance</code> aims to find a location with the lea
 </tr>
 <tr>
 <td align="left">maximum_curvature</td>
-<td align="left">[m]</td>
+<td align="left">[1/m]</td>
 <td align="left">double</td>
-<td align="left">maximum curvature. The pull out distance is calculated so that the curvature is smaller than this value.</td>
+<td align="left">maximum curvature. Calculate the required pull out distance from this maximum curvature, assuming the reference path is considered a straight line and shifted by two approximate arcs. This does not compensate for curvature in a shifted path or curve.</td>
 <td align="left">0.07</td>
+</tr>
+<tr>
+<td align="left">end_pose_curvature_threshold</td>
+<td align="left">[1/m]</td>
+<td align="left">double</td>
+<td align="left">The curvature threshold which is used for calculating the shift pull out distance. The shift end pose is shifted forward so that curvature on shift end pose is less than this value. This is to prevent the generated path from having a large curvature when the end pose is on a curve. If a shift end pose with a curvature below the threshold is not found, the shift pull out distance is used as the distance to the point with the lowest curvature among the points beyond a certain distance.</td>
+<td align="left">0.01</td>
 </tr>
 </tbody>
 </table>
