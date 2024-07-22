@@ -8,20 +8,20 @@
       
       
       
-        <link rel="canonical" href="https://autowarefoundation.github.io/autoware.universe/main/sensing/pointcloud_preprocessor/docs/downsample-filter/">
+        <link rel="canonical" href="https://autowarefoundation.github.io/autoware.universe/main/sensing/autoware_pointcloud_preprocessor/docs/radius-search-2d-outlier-filter/">
       
       
-        <link rel="prev" href="../distortion-corrector/">
+        <link rel="prev" href="../pointcloud-accumulator/">
       
       
-        <link rel="next" href="../dual-return-outlier-filter/">
+        <link rel="next" href="../ring-outlier-filter/">
       
       <link rel="icon" href="../../../../docs/assets/images/autoware-foundation.png">
       <meta name="generator" content="mkdocs-1.4.3, mkdocs-material-9.1.20">
     
     
       
-        <title>downsample_filter - Autoware Universe Documentation</title>
+        <title>radius_search_2d_outlier_filter - Autoware Universe Documentation</title>
       
     
     
@@ -77,7 +77,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#downsample_filter" class="md-skip">
+        <a href="#radius_search_2d_outlier_filter" class="md-skip">
           Skip to content
         </a>
       
@@ -116,7 +116,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              downsample_filter
+              radius_search_2d_outlier_filter
             
           </span>
         </div>
@@ -391,7 +391,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../../../gnss_poser/" class="md-tabs__link md-tabs__link--active">
+      <a href="../../" class="md-tabs__link md-tabs__link--active">
         Sensing
       </a>
     </li>
@@ -9445,286 +9445,6 @@
               
   
   
-  
-    
-      
-    
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
-      
-      
-      
-      
-        
-      
-      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9_1" >
-      
-      
-        
-          
-            
-          
-        
-      
-      
-        
-        
-        <div class="md-nav__link md-nav__link--index ">
-          <a href="../../../gnss_poser/">Gnss poser</a>
-          
-        </div>
-      
-      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_9_1_label" aria-expanded="false">
-        <label class="md-nav__title" for="__nav_9_1">
-          <span class="md-nav__icon md-icon"></span>
-          Gnss poser
-        </label>
-        <ul class="md-nav__list" data-md-scrollfix>
-          
-            
-          
-        </ul>
-      </nav>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    
-      
-    
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
-      
-      
-      
-      
-        
-      
-      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9_2" >
-      
-      
-        
-          
-            
-          
-        
-      
-      
-        
-        
-        <div class="md-nav__link md-nav__link--index ">
-          <a href="../../../image_diagnostics/">Image diagnostics</a>
-          
-        </div>
-      
-      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_9_2_label" aria-expanded="false">
-        <label class="md-nav__title" for="__nav_9_2">
-          <span class="md-nav__icon md-icon"></span>
-          Image diagnostics
-        </label>
-        <ul class="md-nav__list" data-md-scrollfix>
-          
-            
-          
-        </ul>
-      </nav>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    
-      
-    
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
-      
-      
-      
-      
-        
-      
-      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9_3" >
-      
-      
-        
-          
-            
-          
-        
-      
-      
-        
-        
-        <div class="md-nav__link md-nav__link--index ">
-          <a href="../../../image_transport_decompressor/">Image transport decompressor</a>
-          
-        </div>
-      
-      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_9_3_label" aria-expanded="false">
-        <label class="md-nav__title" for="__nav_9_3">
-          <span class="md-nav__icon md-icon"></span>
-          Image transport decompressor
-        </label>
-        <ul class="md-nav__list" data-md-scrollfix>
-          
-            
-          
-        </ul>
-      </nav>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    
-      
-    
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
-      
-      
-      
-      
-        
-      
-      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9_4" >
-      
-      
-        
-          
-            
-          
-        
-      
-      
-        
-        
-        <div class="md-nav__link md-nav__link--index ">
-          <a href="../../../imu_corrector/">Imu corrector</a>
-          
-        </div>
-      
-      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_9_4_label" aria-expanded="false">
-        <label class="md-nav__title" for="__nav_9_4">
-          <span class="md-nav__icon md-icon"></span>
-          Imu corrector
-        </label>
-        <ul class="md-nav__list" data-md-scrollfix>
-          
-            
-          
-        </ul>
-      </nav>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    
-      
-    
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
-      
-      
-      
-      
-        
-      
-      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9_5" >
-      
-      
-        
-          
-        
-      
-      
-        <label class="md-nav__link" for="__nav_9_5" id="__nav_9_5_label" tabindex="0">
-          Livox
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_9_5_label" aria-expanded="false">
-        <label class="md-nav__title" for="__nav_9_5">
-          <span class="md-nav__icon md-icon"></span>
-          Livox
-        </label>
-        <ul class="md-nav__list" data-md-scrollfix>
-          
-            
-              
-  
-  
-  
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-      
-      
-      
-        
-      
-      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9_5_1" >
-      
-      
-        
-          
-            
-          
-        
-      
-      
-        
-        
-        <div class="md-nav__link md-nav__link--index ">
-          <a href="../../../livox/autoware_livox_tag_filter/">Autoware livox tag filter</a>
-          
-        </div>
-      
-      <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_9_5_1_label" aria-expanded="false">
-        <label class="md-nav__title" for="__nav_9_5_1">
-          <span class="md-nav__icon md-icon"></span>
-          Autoware livox tag filter
-        </label>
-        <ul class="md-nav__list" data-md-scrollfix>
-          
-            
-          
-        </ul>
-      </nav>
-    </li>
-  
-
-            
-          
-        </ul>
-      </nav>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
     
   
   
@@ -9736,7 +9456,7 @@
       
       
       
-      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9_6" checked>
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9_1" checked>
       
       
         
@@ -9751,18 +9471,18 @@
         
         
         <div class="md-nav__link md-nav__link--index ">
-          <a href="../../">Pointcloud preprocessor</a>
+          <a href="../../">Autoware pointcloud preprocessor</a>
           
-            <label for="__nav_9_6">
+            <label for="__nav_9_1">
               <span class="md-nav__icon md-icon"></span>
             </label>
           
         </div>
       
-      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_9_6_label" aria-expanded="true">
-        <label class="md-nav__title" for="__nav_9_6">
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_9_1_label" aria-expanded="true">
+        <label class="md-nav__title" for="__nav_9_1">
           <span class="md-nav__icon md-icon"></span>
-          Pointcloud preprocessor
+          Autoware pointcloud preprocessor
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -9781,7 +9501,7 @@
       
       
       
-      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9_6_2" checked>
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9_1_2" checked>
       
       
         
@@ -9815,13 +9535,13 @@
         
       
       
-        <label class="md-nav__link" for="__nav_9_6_2" id="__nav_9_6_2_label" tabindex="0">
+        <label class="md-nav__link" for="__nav_9_1_2" id="__nav_9_1_2_label" tabindex="0">
           Docs
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_9_6_2_label" aria-expanded="true">
-        <label class="md-nav__title" for="__nav_9_6_2">
+      <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_9_1_2_label" aria-expanded="true">
+        <label class="md-nav__title" for="__nav_9_1_2">
           <span class="md-nav__icon md-icon"></span>
           Docs
         </label>
@@ -9887,183 +9607,11 @@
               
   
   
-    
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          downsample_filter
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../downsample-filter/" class="md-nav__link">
         downsample_filter
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#purpose" class="md-nav__link">
-    Purpose
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#inner-workings-algorithms" class="md-nav__link">
-    Inner-workings / Algorithms
-  </a>
-  
-    <nav class="md-nav" aria-label="Inner-workings / Algorithms">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#approximate-downsample-filter" class="md-nav__link">
-    Approximate Downsample Filter
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#random-downsample-filter" class="md-nav__link">
-    Random Downsample Filter
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#voxel-grid-downsample-filter" class="md-nav__link">
-    Voxel Grid Downsample Filter
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#pickup-based-voxel-grid-downsample-filter" class="md-nav__link">
-    Pickup Based Voxel Grid Downsample Filter
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#inputs-outputs" class="md-nav__link">
-    Inputs / Outputs
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#parameters" class="md-nav__link">
-    Parameters
-  </a>
-  
-    <nav class="md-nav" aria-label="Parameters">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#note-parameters" class="md-nav__link">
-    Note Parameters
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#core-parameters" class="md-nav__link">
-    Core Parameters
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#random-downsample-filter_1" class="md-nav__link">
-    Random Downsample Filter
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#voxel-grid-downsample-filter_1" class="md-nav__link">
-    Voxel Grid Downsample Filter
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#pickup-based-voxel-grid-downsample-filter_1" class="md-nav__link">
-    Pickup Based Voxel Grid Downsample Filter
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#assumptions-known-limits" class="md-nav__link">
-    Assumptions / Known limits
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#optional-error-detection-and-handling" class="md-nav__link">
-    (Optional) Error detection and handling
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#optional-performance-characterization" class="md-nav__link">
-    (Optional) Performance characterization
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#optional-referencesexternal-links" class="md-nav__link">
-    (Optional) References/External links
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#optional-future-extensions-unimplemented-parts" class="md-nav__link">
-    (Optional) Future extensions / Unimplemented parts
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -10129,11 +9677,128 @@
               
   
   
+    
   
-    <li class="md-nav__item">
-      <a href="../radius-search-2d-outlier-filter/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          radius_search_2d_outlier_filter
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         radius_search_2d_outlier_filter
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#purpose" class="md-nav__link">
+    Purpose
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#inner-workings-algorithms" class="md-nav__link">
+    Inner-workings / Algorithms
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#inputs-outputs" class="md-nav__link">
+    Inputs / Outputs
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#parameters" class="md-nav__link">
+    Parameters
+  </a>
+  
+    <nav class="md-nav" aria-label="Parameters">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#node-parameters" class="md-nav__link">
+    Node Parameters
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#core-parameters" class="md-nav__link">
+    Core Parameters
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#assumptions-known-limits" class="md-nav__link">
+    Assumptions / Known limits
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#optional-error-detection-and-handling" class="md-nav__link">
+    (Optional) Error detection and handling
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#optional-performance-characterization" class="md-nav__link">
+    (Optional) Performance characterization
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#referencesexternal-links" class="md-nav__link">
+    References/External links
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#optional-future-extensions-unimplemented-parts" class="md-nav__link">
+    (Optional) Future extensions / Unimplemented parts
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -10193,6 +9858,286 @@
     </li>
   
 
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+      
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+      
+      
+      
+        
+      
+      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9_2" >
+      
+      
+        
+          
+            
+          
+        
+      
+      
+        
+        
+        <div class="md-nav__link md-nav__link--index ">
+          <a href="../../../gnss_poser/">Gnss poser</a>
+          
+        </div>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_9_2_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_9_2">
+          <span class="md-nav__icon md-icon"></span>
+          Gnss poser
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+      
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+      
+      
+      
+        
+      
+      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9_3" >
+      
+      
+        
+          
+            
+          
+        
+      
+      
+        
+        
+        <div class="md-nav__link md-nav__link--index ">
+          <a href="../../../image_diagnostics/">Image diagnostics</a>
+          
+        </div>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_9_3_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_9_3">
+          <span class="md-nav__icon md-icon"></span>
+          Image diagnostics
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+      
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+      
+      
+      
+        
+      
+      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9_4" >
+      
+      
+        
+          
+            
+          
+        
+      
+      
+        
+        
+        <div class="md-nav__link md-nav__link--index ">
+          <a href="../../../image_transport_decompressor/">Image transport decompressor</a>
+          
+        </div>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_9_4_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_9_4">
+          <span class="md-nav__icon md-icon"></span>
+          Image transport decompressor
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+      
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+      
+      
+      
+        
+      
+      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9_5" >
+      
+      
+        
+          
+            
+          
+        
+      
+      
+        
+        
+        <div class="md-nav__link md-nav__link--index ">
+          <a href="../../../imu_corrector/">Imu corrector</a>
+          
+        </div>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_9_5_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_9_5">
+          <span class="md-nav__icon md-icon"></span>
+          Imu corrector
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+      
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+      
+      
+      
+        
+      
+      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9_6" >
+      
+      
+        
+          
+        
+      
+      
+        <label class="md-nav__link" for="__nav_9_6" id="__nav_9_6_label" tabindex="0">
+          Livox
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_9_6_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_9_6">
+          <span class="md-nav__icon md-icon"></span>
+          Livox
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+        
+      
+      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9_6_1" >
+      
+      
+        
+          
+            
+          
+        
+      
+      
+        
+        
+        <div class="md-nav__link md-nav__link--index ">
+          <a href="../../../livox/autoware_livox_tag_filter/">Autoware livox tag filter</a>
+          
+        </div>
+      
+      <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_9_6_1_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_9_6_1">
+          <span class="md-nav__icon md-icon"></span>
+          Autoware livox tag filter
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
             
           
         </ul>
@@ -13337,40 +13282,6 @@
     Inner-workings / Algorithms
   </a>
   
-    <nav class="md-nav" aria-label="Inner-workings / Algorithms">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#approximate-downsample-filter" class="md-nav__link">
-    Approximate Downsample Filter
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#random-downsample-filter" class="md-nav__link">
-    Random Downsample Filter
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#voxel-grid-downsample-filter" class="md-nav__link">
-    Voxel Grid Downsample Filter
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#pickup-based-voxel-grid-downsample-filter" class="md-nav__link">
-    Pickup Based Voxel Grid Downsample Filter
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
 </li>
       
         <li class="md-nav__item">
@@ -13389,8 +13300,8 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#note-parameters" class="md-nav__link">
-    Note Parameters
+  <a href="#node-parameters" class="md-nav__link">
+    Node Parameters
   </a>
   
 </li>
@@ -13398,27 +13309,6 @@
           <li class="md-nav__item">
   <a href="#core-parameters" class="md-nav__link">
     Core Parameters
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#random-downsample-filter_1" class="md-nav__link">
-    Random Downsample Filter
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#voxel-grid-downsample-filter_1" class="md-nav__link">
-    Voxel Grid Downsample Filter
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#pickup-based-voxel-grid-downsample-filter_1" class="md-nav__link">
-    Pickup Based Voxel Grid Downsample Filter
   </a>
   
 </li>
@@ -13450,8 +13340,8 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#optional-referencesexternal-links" class="md-nav__link">
-    (Optional) References/External links
+  <a href="#referencesexternal-links" class="md-nav__link">
+    References/External links
   </a>
   
 </li>
@@ -13481,143 +13371,49 @@
   
 
 
-<div><h1 id="downsample_filter">downsample_filter<a class="headerlink" href="#downsample_filter" title="Permanent link">#</a></h1>
+<div><h1 id="radius_search_2d_outlier_filter">radius_search_2d_outlier_filter<a class="headerlink" href="#radius_search_2d_outlier_filter" title="Permanent link">#</a></h1>
 <h2 id="purpose">Purpose<a class="headerlink" href="#purpose" title="Permanent link">#</a></h2>
-<p>The <code>downsample_filter</code> is a node that reduces the number of points.</p>
+<p>The purpose is to remove point cloud noise such as insects and rain.</p>
 <h2 id="inner-workings-algorithms">Inner-workings / Algorithms<a class="headerlink" href="#inner-workings-algorithms" title="Permanent link">#</a></h2>
-<h3 id="approximate-downsample-filter">Approximate Downsample Filter<a class="headerlink" href="#approximate-downsample-filter" title="Permanent link">#</a></h3>
-<p><code>pcl::VoxelGridNearestCentroid</code> is used. The algorithm is described in <a href="../../../tier4_pcl_extensions/">tier4_pcl_extensions</a></p>
-<h3 id="random-downsample-filter">Random Downsample Filter<a class="headerlink" href="#random-downsample-filter" title="Permanent link">#</a></h3>
-<p><code>pcl::RandomSample</code> is used, which points are sampled with uniform probability.</p>
-<h3 id="voxel-grid-downsample-filter">Voxel Grid Downsample Filter<a class="headerlink" href="#voxel-grid-downsample-filter" title="Permanent link">#</a></h3>
-<p><code>pcl::VoxelGrid</code> is used, which points in each voxel are approximated with their centroid.</p>
-<h3 id="pickup-based-voxel-grid-downsample-filter">Pickup Based Voxel Grid Downsample Filter<a class="headerlink" href="#pickup-based-voxel-grid-downsample-filter" title="Permanent link">#</a></h3>
-<p>This algorithm samples a single actual point existing within the voxel, not the centroid. The computation cost is low compared to Centroid Based Voxel Grid Filter.</p>
+<blockquote>
+<p>RadiusOutlierRemoval filter which removes all indices in its input cloud that don’t have at least some number of neighbors within a certain range.</p>
+</blockquote>
+<p>The description above is quoted from [1]. <code>pcl::search::KdTree</code> [2] is used to implement this package.</p>
+<p><img alt="radius_search_2d_outlier_filter_picture" src="../image/outlier_filter-radius_search_2d.drawio.svg"></p>
 <h2 id="inputs-outputs">Inputs / Outputs<a class="headerlink" href="#inputs-outputs" title="Permanent link">#</a></h2>
-<p>These implementations inherit <code>pointcloud_preprocessor::Filter</code> class, please refer <a href="../../">README</a>.</p>
+<p>This implementation inherits <code>autoware::pointcloud_preprocessor::Filter</code> class, please refer <a href="../../">README</a>.</p>
 <h2 id="parameters">Parameters<a class="headerlink" href="#parameters" title="Permanent link">#</a></h2>
-<h3 id="note-parameters">Note Parameters<a class="headerlink" href="#note-parameters" title="Permanent link">#</a></h3>
-<p>These implementations inherit <code>pointcloud_preprocessor::Filter</code> class, please refer <a href="../../">README</a>.</p>
+<h3 id="node-parameters">Node Parameters<a class="headerlink" href="#node-parameters" title="Permanent link">#</a></h3>
+<p>This implementation inherits <code>autoware::pointcloud_preprocessor::Filter</code> class, please refer <a href="../../">README</a>.</p>
 <h3 id="core-parameters">Core Parameters<a class="headerlink" href="#core-parameters" title="Permanent link">#</a></h3>
-<h4 id="approximate-downsample-filter_1">Approximate Downsample Filter<a class="headerlink" href="#approximate-downsample-filter_1" title="Permanent link">#</a></h4>
 <table>
 <thead>
 <tr>
 <th>Name</th>
 <th>Type</th>
-<th>Default Value</th>
 <th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>voxel_size_x</code></td>
-<td>double</td>
-<td>0.3</td>
-<td>voxel size x [m]</td>
-</tr>
-<tr>
-<td><code>voxel_size_y</code></td>
-<td>double</td>
-<td>0.3</td>
-<td>voxel size y [m]</td>
-</tr>
-<tr>
-<td><code>voxel_size_z</code></td>
-<td>double</td>
-<td>0.1</td>
-<td>voxel size z [m]</td>
-</tr>
-</tbody>
-</table>
-<h3 id="random-downsample-filter_1">Random Downsample Filter<a class="headerlink" href="#random-downsample-filter_1" title="Permanent link">#</a></h3>
-<table>
-<thead>
-<tr>
-<th>Name</th>
-<th>Type</th>
-<th>Default Value</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>sample_num</code></td>
+<td><code>min_neighbors</code></td>
 <td>int</td>
-<td>1500</td>
-<td>number of indices to be sampled</td>
+<td>If points in the circle centered on reference point is less than <code>min_neighbors</code>, a reference point is judged as outlier</td>
 </tr>
-</tbody>
-</table>
-<h3 id="voxel-grid-downsample-filter_1">Voxel Grid Downsample Filter<a class="headerlink" href="#voxel-grid-downsample-filter_1" title="Permanent link">#</a></h3>
-<table>
-<thead>
 <tr>
-<th>Name</th>
-<th>Type</th>
-<th>Default Value</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>voxel_size_x</code></td>
+<td><code>search_radius</code></td>
 <td>double</td>
-<td>0.3</td>
-<td>voxel size x [m]</td>
-</tr>
-<tr>
-<td><code>voxel_size_y</code></td>
-<td>double</td>
-<td>0.3</td>
-<td>voxel size y [m]</td>
-</tr>
-<tr>
-<td><code>voxel_size_z</code></td>
-<td>double</td>
-<td>0.1</td>
-<td>voxel size z [m]</td>
-</tr>
-</tbody>
-</table>
-<h3 id="pickup-based-voxel-grid-downsample-filter_1">Pickup Based Voxel Grid Downsample Filter<a class="headerlink" href="#pickup-based-voxel-grid-downsample-filter_1" title="Permanent link">#</a></h3>
-<table>
-<thead>
-<tr>
-<th>Name</th>
-<th>Type</th>
-<th>Default Value</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>voxel_size_x</code></td>
-<td>double</td>
-<td>1.0</td>
-<td>voxel size x [m]</td>
-</tr>
-<tr>
-<td><code>voxel_size_y</code></td>
-<td>double</td>
-<td>1.0</td>
-<td>voxel size y [m]</td>
-</tr>
-<tr>
-<td><code>voxel_size_z</code></td>
-<td>double</td>
-<td>1.0</td>
-<td>voxel size z [m]</td>
+<td>Searching number of points included in <code>search_radius</code></td>
 </tr>
 </tbody>
 </table>
 <h2 id="assumptions-known-limits">Assumptions / Known limits<a class="headerlink" href="#assumptions-known-limits" title="Permanent link">#</a></h2>
-<!-- cspell: ignore martinus -->
-
-<p>This implementation uses the <code>robin_hood.h</code> hashing library by martinus, available under the MIT License at <a href="https://github.com/martinus/robin-hood-hashing">martinus/robin-hood-hashing</a> on GitHub. Special thanks to martinus for this contribution.</p>
+<p>Since the method is to count the number of points contained in the cylinder with the direction of gravity as the direction of the cylinder axis, it is a prerequisite that the ground has been removed.</p>
 <h2 id="optional-error-detection-and-handling">(Optional) Error detection and handling<a class="headerlink" href="#optional-error-detection-and-handling" title="Permanent link">#</a></h2>
 <h2 id="optional-performance-characterization">(Optional) Performance characterization<a class="headerlink" href="#optional-performance-characterization" title="Permanent link">#</a></h2>
-<h2 id="optional-referencesexternal-links">(Optional) References/External links<a class="headerlink" href="#optional-referencesexternal-links" title="Permanent link">#</a></h2>
+<h2 id="referencesexternal-links">References/External links<a class="headerlink" href="#referencesexternal-links" title="Permanent link">#</a></h2>
+<p>[1] <a href="https://pcl.readthedocs.io/projects/tutorials/en/latest/remove_outliers.html">https://pcl.readthedocs.io/projects/tutorials/en/latest/remove_outliers.html</a></p>
+<p>[2] <a href="https://pcl.readthedocs.io/projects/tutorials/en/latest/kdtree_search.html#kdtree-search">https://pcl.readthedocs.io/projects/tutorials/en/latest/kdtree_search.html#kdtree-search</a></p>
 <h2 id="optional-future-extensions-unimplemented-parts">(Optional) Future extensions / Unimplemented parts<a class="headerlink" href="#optional-future-extensions-unimplemented-parts" title="Permanent link">#</a></h2></div>
 
 
@@ -13645,7 +13441,7 @@
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../distortion-corrector/" class="md-footer__link md-footer__link--prev" aria-label="Previous: distortion_corrector" rel="prev">
+          <a href="../pointcloud-accumulator/" class="md-footer__link md-footer__link--prev" aria-label="Previous: pointcloud_accumulator" rel="prev">
             <div class="md-footer__button md-icon">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
             </div>
@@ -13654,20 +13450,20 @@
                 Previous
               </span>
               <div class="md-ellipsis">
-                distortion_corrector
+                pointcloud_accumulator
               </div>
             </div>
           </a>
         
         
           
-          <a href="../dual-return-outlier-filter/" class="md-footer__link md-footer__link--next" aria-label="Next: dual_return_outlier_filter" rel="next">
+          <a href="../ring-outlier-filter/" class="md-footer__link md-footer__link--next" aria-label="Next: ring_outlier_filter" rel="next">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                dual_return_outlier_filter
+                ring_outlier_filter
               </div>
             </div>
             <div class="md-footer__button md-icon">
