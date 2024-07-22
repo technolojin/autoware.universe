@@ -8,20 +8,20 @@
       
       
       
-        <link rel="canonical" href="https://autowarefoundation.github.io/autoware.universe/latest/sensing/pointcloud_preprocessor/docs/dual-return-outlier-filter/">
+        <link rel="canonical" href="https://autowarefoundation.github.io/autoware.universe/latest/sensing/autoware_pointcloud_preprocessor/docs/passthrough-filter/">
       
       
-        <link rel="prev" href="../downsample-filter/">
+        <link rel="prev" href="../outlier-filter/">
       
       
-        <link rel="next" href="../outlier-filter/">
+        <link rel="next" href="../pointcloud-accumulator/">
       
       <link rel="icon" href="../../../../docs/assets/images/autoware-foundation.png">
       <meta name="generator" content="mkdocs-1.4.3, mkdocs-material-9.1.20">
     
     
       
-        <title>dual_return_outlier_filter - Autoware Universe Documentation</title>
+        <title>passthrough_filter - Autoware Universe Documentation</title>
       
     
     
@@ -77,7 +77,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#dual_return_outlier_filter" class="md-skip">
+        <a href="#passthrough_filter" class="md-skip">
           Skip to content
         </a>
       
@@ -116,7 +116,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              dual_return_outlier_filter
+              passthrough_filter
             
           </span>
         </div>
@@ -391,7 +391,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../../../gnss_poser/" class="md-tabs__link md-tabs__link--active">
+      <a href="../../" class="md-tabs__link md-tabs__link--active">
         Sensing
       </a>
     </li>
@@ -9445,286 +9445,6 @@
               
   
   
-  
-    
-      
-    
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
-      
-      
-      
-      
-        
-      
-      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9_1" >
-      
-      
-        
-          
-            
-          
-        
-      
-      
-        
-        
-        <div class="md-nav__link md-nav__link--index ">
-          <a href="../../../gnss_poser/">Gnss poser</a>
-          
-        </div>
-      
-      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_9_1_label" aria-expanded="false">
-        <label class="md-nav__title" for="__nav_9_1">
-          <span class="md-nav__icon md-icon"></span>
-          Gnss poser
-        </label>
-        <ul class="md-nav__list" data-md-scrollfix>
-          
-            
-          
-        </ul>
-      </nav>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    
-      
-    
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
-      
-      
-      
-      
-        
-      
-      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9_2" >
-      
-      
-        
-          
-            
-          
-        
-      
-      
-        
-        
-        <div class="md-nav__link md-nav__link--index ">
-          <a href="../../../image_diagnostics/">Image diagnostics</a>
-          
-        </div>
-      
-      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_9_2_label" aria-expanded="false">
-        <label class="md-nav__title" for="__nav_9_2">
-          <span class="md-nav__icon md-icon"></span>
-          Image diagnostics
-        </label>
-        <ul class="md-nav__list" data-md-scrollfix>
-          
-            
-          
-        </ul>
-      </nav>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    
-      
-    
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
-      
-      
-      
-      
-        
-      
-      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9_3" >
-      
-      
-        
-          
-            
-          
-        
-      
-      
-        
-        
-        <div class="md-nav__link md-nav__link--index ">
-          <a href="../../../image_transport_decompressor/">Image transport decompressor</a>
-          
-        </div>
-      
-      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_9_3_label" aria-expanded="false">
-        <label class="md-nav__title" for="__nav_9_3">
-          <span class="md-nav__icon md-icon"></span>
-          Image transport decompressor
-        </label>
-        <ul class="md-nav__list" data-md-scrollfix>
-          
-            
-          
-        </ul>
-      </nav>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    
-      
-    
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
-      
-      
-      
-      
-        
-      
-      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9_4" >
-      
-      
-        
-          
-            
-          
-        
-      
-      
-        
-        
-        <div class="md-nav__link md-nav__link--index ">
-          <a href="../../../imu_corrector/">Imu corrector</a>
-          
-        </div>
-      
-      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_9_4_label" aria-expanded="false">
-        <label class="md-nav__title" for="__nav_9_4">
-          <span class="md-nav__icon md-icon"></span>
-          Imu corrector
-        </label>
-        <ul class="md-nav__list" data-md-scrollfix>
-          
-            
-          
-        </ul>
-      </nav>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    
-      
-    
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
-      
-      
-      
-      
-        
-      
-      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9_5" >
-      
-      
-        
-          
-        
-      
-      
-        <label class="md-nav__link" for="__nav_9_5" id="__nav_9_5_label" tabindex="0">
-          Livox
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_9_5_label" aria-expanded="false">
-        <label class="md-nav__title" for="__nav_9_5">
-          <span class="md-nav__icon md-icon"></span>
-          Livox
-        </label>
-        <ul class="md-nav__list" data-md-scrollfix>
-          
-            
-              
-  
-  
-  
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-      
-      
-      
-        
-      
-      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9_5_1" >
-      
-      
-        
-          
-            
-          
-        
-      
-      
-        
-        
-        <div class="md-nav__link md-nav__link--index ">
-          <a href="../../../livox/autoware_livox_tag_filter/">Autoware livox tag filter</a>
-          
-        </div>
-      
-      <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_9_5_1_label" aria-expanded="false">
-        <label class="md-nav__title" for="__nav_9_5_1">
-          <span class="md-nav__icon md-icon"></span>
-          Autoware livox tag filter
-        </label>
-        <ul class="md-nav__list" data-md-scrollfix>
-          
-            
-          
-        </ul>
-      </nav>
-    </li>
-  
-
-            
-          
-        </ul>
-      </nav>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
     
   
   
@@ -9736,7 +9456,7 @@
       
       
       
-      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9_6" checked>
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9_1" checked>
       
       
         
@@ -9751,18 +9471,18 @@
         
         
         <div class="md-nav__link md-nav__link--index ">
-          <a href="../../">Pointcloud preprocessor</a>
+          <a href="../../">Autoware pointcloud preprocessor</a>
           
-            <label for="__nav_9_6">
+            <label for="__nav_9_1">
               <span class="md-nav__icon md-icon"></span>
             </label>
           
         </div>
       
-      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_9_6_label" aria-expanded="true">
-        <label class="md-nav__title" for="__nav_9_6">
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_9_1_label" aria-expanded="true">
+        <label class="md-nav__title" for="__nav_9_1">
           <span class="md-nav__icon md-icon"></span>
-          Pointcloud preprocessor
+          Autoware pointcloud preprocessor
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -9781,7 +9501,7 @@
       
       
       
-      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9_6_2" checked>
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9_1_2" checked>
       
       
         
@@ -9815,13 +9535,13 @@
         
       
       
-        <label class="md-nav__link" for="__nav_9_6_2" id="__nav_9_6_2_label" tabindex="0">
+        <label class="md-nav__link" for="__nav_9_1_2" id="__nav_9_1_2_label" tabindex="0">
           Docs
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_9_6_2_label" aria-expanded="true">
-        <label class="md-nav__title" for="__nav_9_6_2">
+      <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_9_1_2_label" aria-expanded="true">
+        <label class="md-nav__title" for="__nav_9_1_2">
           <span class="md-nav__icon md-icon"></span>
           Docs
         </label>
@@ -9901,6 +9621,34 @@
               
   
   
+  
+    <li class="md-nav__item">
+      <a href="../dual-return-outlier-filter/" class="md-nav__link">
+        dual_return_outlier_filter
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../outlier-filter/" class="md-nav__link">
+        outlier_filter
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
     
   
   
@@ -9913,12 +9661,12 @@
       
       
         <label class="md-nav__link md-nav__link--active" for="__toc">
-          dual_return_outlier_filter
+          passthrough_filter
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <a href="./" class="md-nav__link md-nav__link--active">
-        dual_return_outlier_filter
+        passthrough_filter
       </a>
       
         
@@ -9959,6 +9707,13 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#input" class="md-nav__link">
+    Input
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#output" class="md-nav__link">
     Output
   </a>
@@ -9977,13 +9732,6 @@
   
     <nav class="md-nav" aria-label="Parameters">
       <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#node-parameters" class="md-nav__link">
-    Node Parameters
-  </a>
-  
-</li>
         
           <li class="md-nav__item">
   <a href="#core-parameters" class="md-nav__link">
@@ -10019,8 +9767,8 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#referencesexternal-links" class="md-nav__link">
-    References/External links
+  <a href="#optional-referencesexternal-links" class="md-nav__link">
+    (Optional) References/External links
   </a>
   
 </li>
@@ -10036,34 +9784,6 @@
   
 </nav>
       
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../outlier-filter/" class="md-nav__link">
-        outlier_filter
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../passthrough-filter/" class="md-nav__link">
-        passthrough_filter
-      </a>
     </li>
   
 
@@ -10151,6 +9871,286 @@
     </li>
   
 
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+      
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+      
+      
+      
+        
+      
+      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9_2" >
+      
+      
+        
+          
+            
+          
+        
+      
+      
+        
+        
+        <div class="md-nav__link md-nav__link--index ">
+          <a href="../../../gnss_poser/">Gnss poser</a>
+          
+        </div>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_9_2_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_9_2">
+          <span class="md-nav__icon md-icon"></span>
+          Gnss poser
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+      
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+      
+      
+      
+        
+      
+      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9_3" >
+      
+      
+        
+          
+            
+          
+        
+      
+      
+        
+        
+        <div class="md-nav__link md-nav__link--index ">
+          <a href="../../../image_diagnostics/">Image diagnostics</a>
+          
+        </div>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_9_3_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_9_3">
+          <span class="md-nav__icon md-icon"></span>
+          Image diagnostics
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+      
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+      
+      
+      
+        
+      
+      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9_4" >
+      
+      
+        
+          
+            
+          
+        
+      
+      
+        
+        
+        <div class="md-nav__link md-nav__link--index ">
+          <a href="../../../image_transport_decompressor/">Image transport decompressor</a>
+          
+        </div>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_9_4_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_9_4">
+          <span class="md-nav__icon md-icon"></span>
+          Image transport decompressor
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+      
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+      
+      
+      
+        
+      
+      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9_5" >
+      
+      
+        
+          
+            
+          
+        
+      
+      
+        
+        
+        <div class="md-nav__link md-nav__link--index ">
+          <a href="../../../imu_corrector/">Imu corrector</a>
+          
+        </div>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_9_5_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_9_5">
+          <span class="md-nav__icon md-icon"></span>
+          Imu corrector
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+      
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+      
+      
+      
+        
+      
+      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9_6" >
+      
+      
+        
+          
+        
+      
+      
+        <label class="md-nav__link" for="__nav_9_6" id="__nav_9_6_label" tabindex="0">
+          Livox
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_9_6_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_9_6">
+          <span class="md-nav__icon md-icon"></span>
+          Livox
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+        
+      
+      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9_6_1" >
+      
+      
+        
+          
+            
+          
+        
+      
+      
+        
+        
+        <div class="md-nav__link md-nav__link--index ">
+          <a href="../../../livox/autoware_livox_tag_filter/">Autoware livox tag filter</a>
+          
+        </div>
+      
+      <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_9_6_1_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_9_6_1">
+          <span class="md-nav__icon md-icon"></span>
+          Autoware livox tag filter
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
             
           
         </ul>
@@ -13306,6 +13306,13 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#input" class="md-nav__link">
+    Input
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#output" class="md-nav__link">
     Output
   </a>
@@ -13324,13 +13331,6 @@
   
     <nav class="md-nav" aria-label="Parameters">
       <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#node-parameters" class="md-nav__link">
-    Node Parameters
-  </a>
-  
-</li>
         
           <li class="md-nav__item">
   <a href="#core-parameters" class="md-nav__link">
@@ -13366,8 +13366,8 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#referencesexternal-links" class="md-nav__link">
-    References/External links
+  <a href="#optional-referencesexternal-links" class="md-nav__link">
+    (Optional) References/External links
   </a>
   
 </li>
@@ -13397,27 +13397,33 @@
   
 
 
-<div><h1 id="dual_return_outlier_filter">dual_return_outlier_filter<a class="headerlink" href="#dual_return_outlier_filter" title="Permanent link">#</a></h1>
+<div><h1 id="passthrough_filter">passthrough_filter<a class="headerlink" href="#passthrough_filter" title="Permanent link">#</a></h1>
 <h2 id="purpose">Purpose<a class="headerlink" href="#purpose" title="Permanent link">#</a></h2>
-<p>The purpose is to remove point cloud noise such as fog and rain and publish visibility as a diagnostic topic.</p>
+<p>The <code>passthrough_filter</code> is a node that removes points on the outside of a range in a given field (e.g. x, y, z, intensity, ring, etc).</p>
 <h2 id="inner-workings-algorithms">Inner-workings / Algorithms<a class="headerlink" href="#inner-workings-algorithms" title="Permanent link">#</a></h2>
-<p>This node can remove rain and fog by considering the light reflected from the object in two stages according to the attenuation factor. The <code>dual_return_outlier_filter</code> is named because it removes noise using data that contains two types of return values separated by attenuation factor, as shown in the figure below.</p>
-<p><img alt="outlier_filter-return_type" src="../image/outlier_filter-return_type.drawio.svg"></p>
-<p>Therefore, in order to use this node, the sensor driver must publish custom data including <code>return_type</code>. please refer to <a href="../../../common/autoware_point_types/include/autoware_point_types/types.hpp#L95-L116">PointXYZIRCAEDT</a> data structure.</p>
-<p>Another feature of this node is that it publishes visibility as a diagnostic topic. With this function, for example, in heavy rain, the sensing module can notify that the processing performance has reached its limit, which can lead to ensuring the safety of the vehicle.</p>
-<p>In some complicated road scenes where normal objects also reflect the light in two stages, for instance plants, leaves, some plastic net etc, the visibility faces some drop in fine weather condition. To deal with that, optional settings of a region of interest (ROI) are added.</p>
-<ol>
-<li><code>Fixed_xyz_ROI</code> mode: Visibility estimation based on the weak points in a fixed cuboid surrounding region of ego-vehicle, defined by x, y, z in base_link perspective.</li>
-<li><code>Fixed_azimuth_ROI</code> mode: Visibility estimation based on the weak points in a fixed surrounding region of ego-vehicle, defined by azimuth and distance of LiDAR perspective.</li>
-</ol>
-<p>When select 2 fixed ROI modes, due to the range of weak points is shrink, the sensitivity of visibility is decrease so that a trade of between <code>weak_first_local_noise_threshold</code> and <code>visibility_threshold</code> is needed.</p>
-<p><img alt="outlier_filter-dual_return_overall" src="../image/outlier_filter-dual_return_overall.drawio.svg"></p>
-<p>The figure below describe how the node works.
-<img alt="outlier_filter-dual_return_detail" src="../image/outlier_filter-dual_return_detail.drawio.svg"></p>
-<p>The below picture shows the ROI options.</p>
-<p><img alt="outlier_filter-dual_return_ROI_setting_options" src="../image/outlier_filter-dual_return_ROI_setting_options.png"></p>
 <h2 id="inputs-outputs">Inputs / Outputs<a class="headerlink" href="#inputs-outputs" title="Permanent link">#</a></h2>
-<p>This implementation inherits <code>pointcloud_preprocessor::Filter</code> class, please refer <a href="../../">README</a>.</p>
+<h3 id="input">Input<a class="headerlink" href="#input" title="Permanent link">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>~/input/points</code></td>
+<td><code>sensor_msgs::msg::PointCloud2</code></td>
+<td>reference points</td>
+</tr>
+<tr>
+<td><code>~/input/indices</code></td>
+<td><code>pcl_msgs::msg::Indices</code></td>
+<td>reference indices</td>
+</tr>
+</tbody>
+</table>
 <h3 id="output">Output<a class="headerlink" href="#output" title="Permanent link">#</a></h3>
 <table>
 <thead>
@@ -13429,128 +13435,60 @@
 </thead>
 <tbody>
 <tr>
-<td><code>/dual_return_outlier_filter/frequency_image</code></td>
-<td><code>sensor_msgs::msg::Image</code></td>
-<td>The histogram image that represent visibility</td>
-</tr>
-<tr>
-<td><code>/dual_return_outlier_filter/visibility</code></td>
-<td><code>tier4_debug_msgs::msg::Float32Stamped</code></td>
-<td>A representation of visibility with a value from 0 to 1</td>
-</tr>
-<tr>
-<td><code>/dual_return_outlier_filter/pointcloud_noise</code></td>
-<td><code>sensor_msgs::msg::Pointcloud2</code></td>
-<td>The pointcloud removed as noise</td>
+<td><code>~/output/points</code></td>
+<td><code>sensor_msgs::msg::PointCloud2</code></td>
+<td>filtered points</td>
 </tr>
 </tbody>
 </table>
 <h2 id="parameters">Parameters<a class="headerlink" href="#parameters" title="Permanent link">#</a></h2>
-<h3 id="node-parameters">Node Parameters<a class="headerlink" href="#node-parameters" title="Permanent link">#</a></h3>
-<p>This implementation inherits <code>pointcloud_preprocessor::Filter</code> class, please refer <a href="../../">README</a>.</p>
 <h3 id="core-parameters">Core Parameters<a class="headerlink" href="#core-parameters" title="Permanent link">#</a></h3>
 <table>
 <thead>
 <tr>
 <th>Name</th>
 <th>Type</th>
+<th>Default Value</th>
 <th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>vertical_bins</code></td>
+<td><code>filter_limit_min</code></td>
 <td>int</td>
-<td>The number of vertical bin for visibility histogram</td>
+<td>0</td>
+<td>minimum allowed field value</td>
 </tr>
 <tr>
-<td><code>max_azimuth_diff</code></td>
-<td>float</td>
-<td>Threshold for ring_outlier_filter</td>
-</tr>
-<tr>
-<td><code>weak_first_distance_ratio</code></td>
-<td>double</td>
-<td>Threshold for ring_outlier_filter</td>
-</tr>
-<tr>
-<td><code>general_distance_ratio</code></td>
-<td>double</td>
-<td>Threshold for ring_outlier_filter</td>
-</tr>
-<tr>
-<td><code>weak_first_local_noise_threshold</code></td>
+<td><code>filter_limit_max</code></td>
 <td>int</td>
-<td>The parameter for determining whether it is noise</td>
+<td>127</td>
+<td>maximum allowed field value</td>
 </tr>
 <tr>
-<td><code>visibility_error_threshold</code></td>
-<td>float</td>
-<td>When the percentage of white pixels in the binary histogram falls below this parameter the diagnostic status becomes ERR</td>
-</tr>
-<tr>
-<td><code>visibility_warn_threshold</code></td>
-<td>float</td>
-<td>When the percentage of white pixels in the binary histogram falls below this parameter the diagnostic status becomes WARN</td>
-</tr>
-<tr>
-<td><code>roi_mode</code></td>
+<td><code>filter_field_name</code></td>
 <td>string</td>
-<td>The name of ROI mode for switching</td>
+<td>"ring"</td>
+<td>filtering field name</td>
 </tr>
 <tr>
-<td><code>min_azimuth_deg</code></td>
-<td>float</td>
-<td>The left limit of azimuth for <code>Fixed_azimuth_ROI</code> mode</td>
+<td><code>keep_organized</code></td>
+<td>bool</td>
+<td>false</td>
+<td>flag to keep indices structure</td>
 </tr>
 <tr>
-<td><code>max_azimuth_deg</code></td>
-<td>float</td>
-<td>The right limit of azimuth for <code>Fixed_azimuth_ROI</code> mode</td>
-</tr>
-<tr>
-<td><code>max_distance</code></td>
-<td>float</td>
-<td>The limit distance for for <code>Fixed_azimuth_ROI</code> mode</td>
-</tr>
-<tr>
-<td><code>x_max</code></td>
-<td>float</td>
-<td>Maximum of x for <code>Fixed_xyz_ROI</code> mode</td>
-</tr>
-<tr>
-<td><code>x_min</code></td>
-<td>float</td>
-<td>Minimum of x for <code>Fixed_xyz_ROI</code> mode</td>
-</tr>
-<tr>
-<td><code>y_max</code></td>
-<td>float</td>
-<td>Maximum of y for <code>Fixed_xyz_ROI</code> mode</td>
-</tr>
-<tr>
-<td><code>y_min</code></td>
-<td>float</td>
-<td>Minimum of y for <code>Fixed_xyz_ROI</code> mode</td>
-</tr>
-<tr>
-<td><code>z_max</code></td>
-<td>float</td>
-<td>Maximum of z for <code>Fixed_xyz_ROI</code> mode</td>
-</tr>
-<tr>
-<td><code>z_min</code></td>
-<td>float</td>
-<td>Minimum of z for <code>Fixed_xyz_ROI</code> mode</td>
+<td><code>filter_limit_negative</code></td>
+<td>bool</td>
+<td>false</td>
+<td>flag to return whether the data is inside limit or not</td>
 </tr>
 </tbody>
 </table>
 <h2 id="assumptions-known-limits">Assumptions / Known limits<a class="headerlink" href="#assumptions-known-limits" title="Permanent link">#</a></h2>
-<p>Not recommended for use as it is under development.
-Input data must be <a href="../../../common/autoware_point_types/include/autoware_point_types/types.hpp#L95-L116">PointXYZIRCAEDT</a> type data including <code>return_type</code>.</p>
 <h2 id="optional-error-detection-and-handling">(Optional) Error detection and handling<a class="headerlink" href="#optional-error-detection-and-handling" title="Permanent link">#</a></h2>
 <h2 id="optional-performance-characterization">(Optional) Performance characterization<a class="headerlink" href="#optional-performance-characterization" title="Permanent link">#</a></h2>
-<h2 id="referencesexternal-links">References/External links<a class="headerlink" href="#referencesexternal-links" title="Permanent link">#</a></h2>
+<h2 id="optional-referencesexternal-links">(Optional) References/External links<a class="headerlink" href="#optional-referencesexternal-links" title="Permanent link">#</a></h2>
 <h2 id="optional-future-extensions-unimplemented-parts">(Optional) Future extensions / Unimplemented parts<a class="headerlink" href="#optional-future-extensions-unimplemented-parts" title="Permanent link">#</a></h2></div>
 
 
@@ -13578,7 +13516,7 @@ Input data must be <a href="../../../common/autoware_point_types/include/autowar
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../downsample-filter/" class="md-footer__link md-footer__link--prev" aria-label="Previous: downsample_filter" rel="prev">
+          <a href="../outlier-filter/" class="md-footer__link md-footer__link--prev" aria-label="Previous: outlier_filter" rel="prev">
             <div class="md-footer__button md-icon">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
             </div>
@@ -13587,20 +13525,20 @@ Input data must be <a href="../../../common/autoware_point_types/include/autowar
                 Previous
               </span>
               <div class="md-ellipsis">
-                downsample_filter
+                outlier_filter
               </div>
             </div>
           </a>
         
         
           
-          <a href="../outlier-filter/" class="md-footer__link md-footer__link--next" aria-label="Next: outlier_filter" rel="next">
+          <a href="../pointcloud-accumulator/" class="md-footer__link md-footer__link--next" aria-label="Next: pointcloud_accumulator" rel="next">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                outlier_filter
+                pointcloud_accumulator
               </div>
             </div>
             <div class="md-footer__button md-icon">

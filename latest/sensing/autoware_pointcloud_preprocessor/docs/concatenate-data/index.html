@@ -8,20 +8,20 @@
       
       
       
-        <link rel="canonical" href="https://autowarefoundation.github.io/autoware.universe/latest/sensing/pointcloud_preprocessor/docs/vector-map-inside-area-filter/">
+        <link rel="canonical" href="https://autowarefoundation.github.io/autoware.universe/latest/sensing/autoware_pointcloud_preprocessor/docs/concatenate-data/">
       
       
-        <link rel="prev" href="../vector-map-filter/">
+        <link rel="prev" href="../blockage_diag/">
       
       
-        <link rel="next" href="../voxel-grid-outlier-filter/">
+        <link rel="next" href="../crop-box-filter/">
       
       <link rel="icon" href="../../../../docs/assets/images/autoware-foundation.png">
       <meta name="generator" content="mkdocs-1.4.3, mkdocs-material-9.1.20">
     
     
       
-        <title>vector_map_inside_area_filter - Autoware Universe Documentation</title>
+        <title>concatenate_data - Autoware Universe Documentation</title>
       
     
     
@@ -77,7 +77,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#vector_map_inside_area_filter" class="md-skip">
+        <a href="#concatenate_data" class="md-skip">
           Skip to content
         </a>
       
@@ -116,7 +116,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              vector_map_inside_area_filter
+              concatenate_data
             
           </span>
         </div>
@@ -391,7 +391,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../../../gnss_poser/" class="md-tabs__link md-tabs__link--active">
+      <a href="../../" class="md-tabs__link md-tabs__link--active">
         Sensing
       </a>
     </li>
@@ -9445,286 +9445,6 @@
               
   
   
-  
-    
-      
-    
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
-      
-      
-      
-      
-        
-      
-      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9_1" >
-      
-      
-        
-          
-            
-          
-        
-      
-      
-        
-        
-        <div class="md-nav__link md-nav__link--index ">
-          <a href="../../../gnss_poser/">Gnss poser</a>
-          
-        </div>
-      
-      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_9_1_label" aria-expanded="false">
-        <label class="md-nav__title" for="__nav_9_1">
-          <span class="md-nav__icon md-icon"></span>
-          Gnss poser
-        </label>
-        <ul class="md-nav__list" data-md-scrollfix>
-          
-            
-          
-        </ul>
-      </nav>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    
-      
-    
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
-      
-      
-      
-      
-        
-      
-      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9_2" >
-      
-      
-        
-          
-            
-          
-        
-      
-      
-        
-        
-        <div class="md-nav__link md-nav__link--index ">
-          <a href="../../../image_diagnostics/">Image diagnostics</a>
-          
-        </div>
-      
-      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_9_2_label" aria-expanded="false">
-        <label class="md-nav__title" for="__nav_9_2">
-          <span class="md-nav__icon md-icon"></span>
-          Image diagnostics
-        </label>
-        <ul class="md-nav__list" data-md-scrollfix>
-          
-            
-          
-        </ul>
-      </nav>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    
-      
-    
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
-      
-      
-      
-      
-        
-      
-      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9_3" >
-      
-      
-        
-          
-            
-          
-        
-      
-      
-        
-        
-        <div class="md-nav__link md-nav__link--index ">
-          <a href="../../../image_transport_decompressor/">Image transport decompressor</a>
-          
-        </div>
-      
-      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_9_3_label" aria-expanded="false">
-        <label class="md-nav__title" for="__nav_9_3">
-          <span class="md-nav__icon md-icon"></span>
-          Image transport decompressor
-        </label>
-        <ul class="md-nav__list" data-md-scrollfix>
-          
-            
-          
-        </ul>
-      </nav>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    
-      
-    
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
-      
-      
-      
-      
-        
-      
-      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9_4" >
-      
-      
-        
-          
-            
-          
-        
-      
-      
-        
-        
-        <div class="md-nav__link md-nav__link--index ">
-          <a href="../../../imu_corrector/">Imu corrector</a>
-          
-        </div>
-      
-      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_9_4_label" aria-expanded="false">
-        <label class="md-nav__title" for="__nav_9_4">
-          <span class="md-nav__icon md-icon"></span>
-          Imu corrector
-        </label>
-        <ul class="md-nav__list" data-md-scrollfix>
-          
-            
-          
-        </ul>
-      </nav>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    
-      
-    
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
-      
-      
-      
-      
-        
-      
-      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9_5" >
-      
-      
-        
-          
-        
-      
-      
-        <label class="md-nav__link" for="__nav_9_5" id="__nav_9_5_label" tabindex="0">
-          Livox
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_9_5_label" aria-expanded="false">
-        <label class="md-nav__title" for="__nav_9_5">
-          <span class="md-nav__icon md-icon"></span>
-          Livox
-        </label>
-        <ul class="md-nav__list" data-md-scrollfix>
-          
-            
-              
-  
-  
-  
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-      
-      
-      
-        
-      
-      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9_5_1" >
-      
-      
-        
-          
-            
-          
-        
-      
-      
-        
-        
-        <div class="md-nav__link md-nav__link--index ">
-          <a href="../../../livox/autoware_livox_tag_filter/">Autoware livox tag filter</a>
-          
-        </div>
-      
-      <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_9_5_1_label" aria-expanded="false">
-        <label class="md-nav__title" for="__nav_9_5_1">
-          <span class="md-nav__icon md-icon"></span>
-          Autoware livox tag filter
-        </label>
-        <ul class="md-nav__list" data-md-scrollfix>
-          
-            
-          
-        </ul>
-      </nav>
-    </li>
-  
-
-            
-          
-        </ul>
-      </nav>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
     
   
   
@@ -9736,7 +9456,7 @@
       
       
       
-      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9_6" checked>
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9_1" checked>
       
       
         
@@ -9751,18 +9471,18 @@
         
         
         <div class="md-nav__link md-nav__link--index ">
-          <a href="../../">Pointcloud preprocessor</a>
+          <a href="../../">Autoware pointcloud preprocessor</a>
           
-            <label for="__nav_9_6">
+            <label for="__nav_9_1">
               <span class="md-nav__icon md-icon"></span>
             </label>
           
         </div>
       
-      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_9_6_label" aria-expanded="true">
-        <label class="md-nav__title" for="__nav_9_6">
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_9_1_label" aria-expanded="true">
+        <label class="md-nav__title" for="__nav_9_1">
           <span class="md-nav__icon md-icon"></span>
-          Pointcloud preprocessor
+          Autoware pointcloud preprocessor
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -9781,7 +9501,7 @@
       
       
       
-      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9_6_2" checked>
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9_1_2" checked>
       
       
         
@@ -9815,13 +9535,13 @@
         
       
       
-        <label class="md-nav__link" for="__nav_9_6_2" id="__nav_9_6_2_label" tabindex="0">
+        <label class="md-nav__link" for="__nav_9_1_2" id="__nav_9_1_2_label" tabindex="0">
           Docs
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_9_6_2_label" aria-expanded="true">
-        <label class="md-nav__title" for="__nav_9_6_2">
+      <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_9_1_2_label" aria-expanded="true">
+        <label class="md-nav__title" for="__nav_9_1_2">
           <span class="md-nav__icon md-icon"></span>
           Docs
         </label>
@@ -9845,11 +9565,140 @@
               
   
   
+    
   
-    <li class="md-nav__item">
-      <a href="../concatenate-data/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          concatenate_data
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         concatenate_data
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#purpose" class="md-nav__link">
+    Purpose
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#inner-workings-algorithms" class="md-nav__link">
+    Inner-workings / Algorithms
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#inputs-outputs" class="md-nav__link">
+    Inputs / Outputs
+  </a>
+  
+    <nav class="md-nav" aria-label="Inputs / Outputs">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#input" class="md-nav__link">
+    Input
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#output" class="md-nav__link">
+    Output
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#parameters" class="md-nav__link">
+    Parameters
+  </a>
+  
+    <nav class="md-nav" aria-label="Parameters">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#core-parameters" class="md-nav__link">
+    Core Parameters
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#actual-usage" class="md-nav__link">
+    Actual Usage
+  </a>
+  
+    <nav class="md-nav" aria-label="Actual Usage">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#how-to-tuning-timeout_sec-and-input_offset" class="md-nav__link">
+    How to tuning timeout_sec and input_offset
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#node-separation-options-for-future" class="md-nav__link">
+    Node separation options for future
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#assumptions-known-limits" class="md-nav__link">
+    Assumptions / Known limits
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -9999,100 +9848,11 @@
               
   
   
-    
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          vector_map_inside_area_filter
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../vector-map-inside-area-filter/" class="md-nav__link">
         vector_map_inside_area_filter
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#purpose" class="md-nav__link">
-    Purpose
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#inner-workings-algorithms" class="md-nav__link">
-    Inner-workings / Algorithms
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#inputs-outputs" class="md-nav__link">
-    Inputs / Outputs
-  </a>
-  
-    <nav class="md-nav" aria-label="Inputs / Outputs">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#input" class="md-nav__link">
-    Input
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#output" class="md-nav__link">
-    Output
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#core-parameters" class="md-nav__link">
-    Core Parameters
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#assumptions-known-limits" class="md-nav__link">
-    Assumptions / Known limits
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -10110,6 +9870,286 @@
     </li>
   
 
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+      
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+      
+      
+      
+        
+      
+      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9_2" >
+      
+      
+        
+          
+            
+          
+        
+      
+      
+        
+        
+        <div class="md-nav__link md-nav__link--index ">
+          <a href="../../../gnss_poser/">Gnss poser</a>
+          
+        </div>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_9_2_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_9_2">
+          <span class="md-nav__icon md-icon"></span>
+          Gnss poser
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+      
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+      
+      
+      
+        
+      
+      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9_3" >
+      
+      
+        
+          
+            
+          
+        
+      
+      
+        
+        
+        <div class="md-nav__link md-nav__link--index ">
+          <a href="../../../image_diagnostics/">Image diagnostics</a>
+          
+        </div>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_9_3_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_9_3">
+          <span class="md-nav__icon md-icon"></span>
+          Image diagnostics
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+      
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+      
+      
+      
+        
+      
+      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9_4" >
+      
+      
+        
+          
+            
+          
+        
+      
+      
+        
+        
+        <div class="md-nav__link md-nav__link--index ">
+          <a href="../../../image_transport_decompressor/">Image transport decompressor</a>
+          
+        </div>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_9_4_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_9_4">
+          <span class="md-nav__icon md-icon"></span>
+          Image transport decompressor
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+      
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+      
+      
+      
+        
+      
+      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9_5" >
+      
+      
+        
+          
+            
+          
+        
+      
+      
+        
+        
+        <div class="md-nav__link md-nav__link--index ">
+          <a href="../../../imu_corrector/">Imu corrector</a>
+          
+        </div>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_9_5_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_9_5">
+          <span class="md-nav__icon md-icon"></span>
+          Imu corrector
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+      
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+      
+      
+      
+        
+      
+      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9_6" >
+      
+      
+        
+          
+        
+      
+      
+        <label class="md-nav__link" for="__nav_9_6" id="__nav_9_6_label" tabindex="0">
+          Livox
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_9_6_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_9_6">
+          <span class="md-nav__icon md-icon"></span>
+          Livox
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+        
+      
+      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9_6_1" >
+      
+      
+        
+          
+            
+          
+        
+      
+      
+        
+        
+        <div class="md-nav__link md-nav__link--index ">
+          <a href="../../../livox/autoware_livox_tag_filter/">Autoware livox tag filter</a>
+          
+        </div>
+      
+      <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_9_6_1_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_9_6_1">
+          <span class="md-nav__icon md-icon"></span>
+          Autoware livox tag filter
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
             
           
         </ul>
@@ -13278,9 +13318,49 @@
   
 </li>
         
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#parameters" class="md-nav__link">
+    Parameters
+  </a>
+  
+    <nav class="md-nav" aria-label="Parameters">
+      <ul class="md-nav__list">
+        
           <li class="md-nav__item">
   <a href="#core-parameters" class="md-nav__link">
     Core Parameters
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#actual-usage" class="md-nav__link">
+    Actual Usage
+  </a>
+  
+    <nav class="md-nav" aria-label="Actual Usage">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#how-to-tuning-timeout_sec-and-input_offset" class="md-nav__link">
+    How to tuning timeout_sec and input_offset
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#node-separation-options-for-future" class="md-nav__link">
+    Node separation options for future
   </a>
   
 </li>
@@ -13315,20 +13395,14 @@
   
 
 
-<div><h1 id="vector_map_inside_area_filter">vector_map_inside_area_filter<a class="headerlink" href="#vector_map_inside_area_filter" title="Permanent link">#</a></h1>
+<div><h1 id="concatenate_data">concatenate_data<a class="headerlink" href="#concatenate_data" title="Permanent link">#</a></h1>
 <h2 id="purpose">Purpose<a class="headerlink" href="#purpose" title="Permanent link">#</a></h2>
-<p>The <code>vector_map_inside_area_filter</code> is a node that removes points inside the vector map area that has given type by parameter.</p>
+<p>Many self-driving cars combine multiple LiDARs to expand the sensing range. Therefore, a function to combine a plurality of point clouds is required.</p>
+<p>To combine multiple sensor data with a similar timestamp, the <a href="https://github.com/ros2/message_filters">message_filters</a> is often used in the ROS-based system, but this requires the assumption that all inputs can be received. Since safety must be strongly considered in autonomous driving, the point clouds concatenate node must be designed so that even if one sensor fails, the remaining sensor information can be output.</p>
 <h2 id="inner-workings-algorithms">Inner-workings / Algorithms<a class="headerlink" href="#inner-workings-algorithms" title="Permanent link">#</a></h2>
-<ul>
-<li>Get the vector map area that has given type by parameter of <code>polygon_type</code></li>
-<li>Extract the vector map area that intersects with the bounding box of input points to reduce the calculation cost</li>
-<li>Create the 2D polygon from the extracted vector map area</li>
-<li>Remove input points inside the polygon</li>
-<li>If the z value is used for filtering, remove points that are below the z threshold</li>
-</ul>
-<p><img alt="vector_map_inside_area_filter_figure" src="../image/vector_map_inside_area_filter_overview.svg"></p>
+<p>The figure below represents the reception time of each sensor data and how it is combined in the case.</p>
+<p><img alt="concatenate_data_timing_chart" src="../image/concatenate_data.drawio.svg"></p>
 <h2 id="inputs-outputs">Inputs / Outputs<a class="headerlink" href="#inputs-outputs" title="Permanent link">#</a></h2>
-<p>This implementation inherits <code>pointcloud_preprocessor::Filter</code> class, so please see also <a href="../../">README</a>.</p>
 <h3 id="input">Input<a class="headerlink" href="#input" title="Permanent link">#</a></h3>
 <table>
 <thead>
@@ -13340,14 +13414,9 @@
 </thead>
 <tbody>
 <tr>
-<td><code>~/input</code></td>
-<td><code>sensor_msgs::msg::PointCloud2</code></td>
-<td>input points</td>
-</tr>
-<tr>
-<td><code>~/input/vector_map</code></td>
-<td><code>autoware_map_msgs::msg::LaneletMapBin</code></td>
-<td>vector map used for filtering points</td>
+<td><code>~/input/twist</code></td>
+<td><code>geometry_msgs::msg::TwistWithCovarianceStamped</code></td>
+<td>The vehicle odometry is used to interpolate the timestamp of each sensor data</td>
 </tr>
 </tbody>
 </table>
@@ -13362,9 +13431,46 @@
 </thead>
 <tbody>
 <tr>
-<td><code>~/output</code></td>
-<td><code>sensor_msgs::msg::PointCloud2</code></td>
-<td>filtered points</td>
+<td><code>~/output/points</code></td>
+<td><code>sensor_msgs::msg::Pointcloud2</code></td>
+<td>concatenated point clouds</td>
+</tr>
+</tbody>
+</table>
+<h2 id="parameters">Parameters<a class="headerlink" href="#parameters" title="Permanent link">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Default Value</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>input/points</code></td>
+<td>vector of string</td>
+<td>[]</td>
+<td>input topic names that type must be <code>sensor_msgs::msg::Pointcloud2</code></td>
+</tr>
+<tr>
+<td><code>input_frame</code></td>
+<td>string</td>
+<td>""</td>
+<td>input frame id</td>
+</tr>
+<tr>
+<td><code>output_frame</code></td>
+<td>string</td>
+<td>""</td>
+<td>output frame id</td>
+</tr>
+<tr>
+<td><code>max_queue_size</code></td>
+<td>int</td>
+<td>5</td>
+<td>max queue size of input/output topics</td>
 </tr>
 </tbody>
 </table>
@@ -13374,28 +13480,76 @@
 <tr>
 <th>Name</th>
 <th>Type</th>
+<th>Default Value</th>
 <th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>polygon_type</code></td>
-<td>string</td>
-<td>polygon type to be filtered</td>
+<td><code>timeout_sec</code></td>
+<td>double</td>
+<td>0.1</td>
+<td>tolerance of time to publish next pointcloud [s]<br>When this time limit is exceeded, the filter concatenates and publishes pointcloud, even if not all the point clouds are subscribed.</td>
 </tr>
 <tr>
-<td><code>use_z</code></td>
+<td><code>input_offset</code></td>
+<td>vector of double</td>
+<td>[]</td>
+<td>This parameter can control waiting time for each input sensor pointcloud [s]. You must to set the same length of offsets with input pointclouds numbers. <br> For its tuning, please see <a href="#how-to-tuning-timeout_sec-and-input_offset">actual usage page</a>.</td>
+</tr>
+<tr>
+<td><code>publish_synchronized_pointcloud</code></td>
 <td>bool</td>
-<td>use z value for filtering</td>
+<td>false</td>
+<td>If true, publish the time synchronized pointclouds. All input pointclouds are transformed and then re-published as message named <code>&lt;original_msg_name&gt;_synchronized</code>.</td>
 </tr>
 <tr>
-<td><code>z_threshold</code></td>
-<td>float</td>
-<td>z threshold for filtering</td>
+<td><code>input_twist_topic_type</code></td>
+<td>std::string</td>
+<td>twist</td>
+<td>Topic type for twist. Currently support <code>twist</code> or <code>odom</code>.</td>
 </tr>
 </tbody>
 </table>
-<h2 id="assumptions-known-limits">Assumptions / Known limits<a class="headerlink" href="#assumptions-known-limits" title="Permanent link">#</a></h2></div>
+<h2 id="actual-usage">Actual Usage<a class="headerlink" href="#actual-usage" title="Permanent link">#</a></h2>
+<p>For the example of actual usage of this node, please refer to the <a href="../launch/preprocessor.launch.py">preprocessor.launch.py</a> file.</p>
+<h3 id="how-to-tuning-timeout_sec-and-input_offset">How to tuning timeout_sec and input_offset<a class="headerlink" href="#how-to-tuning-timeout_sec-and-input_offset" title="Permanent link">#</a></h3>
+<p>The values in <code>timeout_sec</code> and <code>input_offset</code> are used in the timer_callback to control concatenation timings.</p>
+<ul>
+<li>Assumptions<ul>
+<li>when the timer runs out, we concatenate the pointclouds in the buffer</li>
+<li>when the first pointcloud comes to buffer, we reset the timer to <code>timeout_sec</code></li>
+<li>when the second and later pointclouds comes to buffer, we reset the timer to <code>timeout_sec</code> - <code>input_offset</code></li>
+<li>we assume all lidar has same frequency</li>
+</ul>
+</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Description</th>
+<th>How to tune</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>timeout_sec</code></td>
+<td>timeout sec for default timer</td>
+<td>To avoid mis-concatenation, at least this value must be shorter than sampling time.</td>
+</tr>
+<tr>
+<td><code>input_offset</code></td>
+<td>timeout extension when a pointcloud comes to buffer.</td>
+<td>The amount of waiting time will be <code>timeout_sec</code> - <code>input_offset</code>. So, you will need to set larger value for the last-coming pointcloud and smaller for fore-coming.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="node-separation-options-for-future">Node separation options for future<a class="headerlink" href="#node-separation-options-for-future" title="Permanent link">#</a></h3>
+<p>Since the pointcloud concatenation has two process, "time synchronization" and "pointcloud concatenation", it is possible to separate these processes.</p>
+<p>In the future, Nodes will be completely separated in order to achieve node loosely coupled nature, but currently both nodes can be selected for backward compatibility (<a href="https://github.com/autowarefoundation/autoware.universe/pull/3312">See this PR</a>).</p>
+<h2 id="assumptions-known-limits">Assumptions / Known limits<a class="headerlink" href="#assumptions-known-limits" title="Permanent link">#</a></h2>
+<p>It is necessary to assume that the vehicle odometry value exists, the sensor data and odometry timestamp are correct, and the TF from <code>base_link</code> to <code>sensor_frame</code> is also correct.</p></div>
 
 
 
@@ -13422,7 +13576,7 @@
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../vector-map-filter/" class="md-footer__link md-footer__link--prev" aria-label="Previous: vector_map_filter" rel="prev">
+          <a href="../blockage_diag/" class="md-footer__link md-footer__link--prev" aria-label="Previous: blockage_diag" rel="prev">
             <div class="md-footer__button md-icon">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
             </div>
@@ -13431,20 +13585,20 @@
                 Previous
               </span>
               <div class="md-ellipsis">
-                vector_map_filter
+                blockage_diag
               </div>
             </div>
           </a>
         
         
           
-          <a href="../voxel-grid-outlier-filter/" class="md-footer__link md-footer__link--next" aria-label="Next: voxel_grid_outlier_filter" rel="next">
+          <a href="../crop-box-filter/" class="md-footer__link md-footer__link--next" aria-label="Next: crop_box_filter" rel="next">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                voxel_grid_outlier_filter
+                crop_box_filter
               </div>
             </div>
             <div class="md-footer__button md-icon">
