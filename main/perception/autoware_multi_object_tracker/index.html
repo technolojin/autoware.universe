@@ -414,7 +414,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../../simulator/dummy_perception_publisher/" class="md-tabs__link">
+      <a href="../../simulator/autoware_carla_interface/" class="md-tabs__link">
         Simulator
       </a>
     </li>
@@ -10360,6 +10360,8 @@
         
           
         
+          
+        
       
       
         <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
@@ -10402,14 +10404,14 @@
         
         
         <div class="md-nav__link md-nav__link--index ">
-          <a href="../../simulator/dummy_perception_publisher/">Dummy perception publisher</a>
+          <a href="../../simulator/autoware_carla_interface/">Autoware carla interface</a>
           
         </div>
       
       <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_10_1_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_10_1">
           <span class="md-nav__icon md-icon"></span>
-          Dummy perception publisher
+          Autoware carla interface
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -10450,14 +10452,14 @@
         
         
         <div class="md-nav__link md-nav__link--index ">
-          <a href="../../simulator/fault_injection/">Fault injection</a>
+          <a href="../../simulator/dummy_perception_publisher/">Dummy perception publisher</a>
           
         </div>
       
       <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_10_2_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_10_2">
           <span class="md-nav__icon md-icon"></span>
-          Fault injection
+          Dummy perception publisher
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -10498,14 +10500,14 @@
         
         
         <div class="md-nav__link md-nav__link--index ">
-          <a href="../../simulator/learning_based_vehicle_model/">Learning based vehicle model</a>
+          <a href="../../simulator/fault_injection/">Fault injection</a>
           
         </div>
       
       <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_10_3_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_10_3">
           <span class="md-nav__icon md-icon"></span>
-          Learning based vehicle model
+          Fault injection
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -10546,14 +10548,14 @@
         
         
         <div class="md-nav__link md-nav__link--index ">
-          <a href="../../simulator/simple_planning_simulator/">Simple planning simulator</a>
+          <a href="../../simulator/learning_based_vehicle_model/">Learning based vehicle model</a>
           
         </div>
       
       <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_10_4_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_10_4">
           <span class="md-nav__icon md-icon"></span>
-          Simple planning simulator
+          Learning based vehicle model
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -10594,12 +10596,60 @@
         
         
         <div class="md-nav__link md-nav__link--index ">
-          <a href="../../simulator/vehicle_door_simulator/">Vehicle door simulator</a>
+          <a href="../../simulator/simple_planning_simulator/">Simple planning simulator</a>
           
         </div>
       
       <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_10_5_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_10_5">
+          <span class="md-nav__icon md-icon"></span>
+          Simple planning simulator
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+      
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+      
+      
+      
+        
+      
+      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_10_6" >
+      
+      
+        
+          
+            
+          
+        
+      
+      
+        
+        
+        <div class="md-nav__link md-nav__link--index ">
+          <a href="../../simulator/vehicle_door_simulator/">Vehicle door simulator</a>
+          
+        </div>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_10_6_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_10_6">
           <span class="md-nav__icon md-icon"></span>
           Vehicle door simulator
         </label>
@@ -13115,7 +13165,7 @@
 
 <div><h1 id="macro-rendering-error"><em>Macro Rendering Error</em><a class="headerlink" href="#macro-rendering-error" title="Permanent link">#</a></h1>
 <p><em>File</em>: <code>perception/autoware_multi_object_tracker/README.md</code></p>
-<p><em>KeyError</em>: 'default'</p>
+<p><em>FileNotFoundError</em>: [Errno 2] No such file or directory: 'perception/multi_object_tracker/schema/input_channels.schema.json'</p>
 <div class="highlight"><pre><span></span><code>Traceback (most recent call last):
   File "/opt/hostedtoolcache/Python/3.8.18/x64/lib/python3.8/site-packages/mkdocs_macros/plugin.py", line 527, in render
     return md_template.render(**page_variables)
@@ -13124,13 +13174,9 @@
   File "/opt/hostedtoolcache/Python/3.8.18/x64/lib/python3.8/site-packages/jinja2/environment.py", line 939, in handle_exception
     raise rewrite_traceback_stack(source=source)
   File "&lt;template&gt;", line 68, in top-level template code
-  File "/home/runner/work/autoware.universe/autoware.universe/mkdocs_macros.py", line 72, in json_to_markdown
-    return format_json(data)
-  File "/home/runner/work/autoware.universe/autoware.universe/mkdocs_macros.py", line 63, in format_json
-    markdown_table = tabulate(extract_parameter_info(parameters), headers="keys", tablefmt="github")
-  File "/home/runner/work/autoware.universe/autoware.universe/mkdocs_macros.py", line 52, in extract_parameter_info
-    param["Default"] = v["default"]
-KeyError: 'default'
+  File "/home/runner/work/autoware.universe/autoware.universe/mkdocs_macros.py", line 70, in json_to_markdown
+    with open(json_schema_file_path) as f:
+FileNotFoundError: [Errno 2] No such file or directory: 'perception/multi_object_tracker/schema/input_channels.schema.json'
 </code></pre></div></div>
 
 
