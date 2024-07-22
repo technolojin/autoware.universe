@@ -414,7 +414,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../dummy_perception_publisher/" class="md-tabs__link md-tabs__link--active">
+      <a href="../autoware_carla_interface/" class="md-tabs__link md-tabs__link--active">
         Simulator
       </a>
     </li>
@@ -10360,6 +10360,8 @@
         
           
         
+          
+        
       
       
         <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
@@ -10402,14 +10404,14 @@
         
         
         <div class="md-nav__link md-nav__link--index ">
-          <a href="../dummy_perception_publisher/">Dummy perception publisher</a>
+          <a href="../autoware_carla_interface/">Autoware carla interface</a>
           
         </div>
       
       <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_10_1_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_10_1">
           <span class="md-nav__icon md-icon"></span>
-          Dummy perception publisher
+          Autoware carla interface
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -10450,14 +10452,14 @@
         
         
         <div class="md-nav__link md-nav__link--index ">
-          <a href="../fault_injection/">Fault injection</a>
+          <a href="../dummy_perception_publisher/">Dummy perception publisher</a>
           
         </div>
       
       <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_10_2_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_10_2">
           <span class="md-nav__icon md-icon"></span>
-          Fault injection
+          Dummy perception publisher
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -10498,12 +10500,60 @@
         
         
         <div class="md-nav__link md-nav__link--index ">
-          <a href="../learning_based_vehicle_model/">Learning based vehicle model</a>
+          <a href="../fault_injection/">Fault injection</a>
           
         </div>
       
       <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_10_3_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_10_3">
+          <span class="md-nav__icon md-icon"></span>
+          Fault injection
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+      
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+      
+      
+      
+        
+      
+      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_10_4" >
+      
+      
+        
+          
+            
+          
+        
+      
+      
+        
+        
+        <div class="md-nav__link md-nav__link--index ">
+          <a href="../learning_based_vehicle_model/">Learning based vehicle model</a>
+          
+        </div>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_10_4_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_10_4">
           <span class="md-nav__icon md-icon"></span>
           Learning based vehicle model
         </label>
@@ -10533,7 +10583,7 @@
       
       
       
-      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10_4" checked>
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10_5" checked>
       
       
         
@@ -10550,8 +10600,8 @@
           
         </div>
       
-      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_10_4_label" aria-expanded="true">
-        <label class="md-nav__title" for="__nav_10_4">
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_10_5_label" aria-expanded="true">
+        <label class="md-nav__title" for="__nav_10_5">
           <span class="md-nav__icon md-icon"></span>
           Simple planning simulator
         </label>
@@ -10581,7 +10631,7 @@
       
         
       
-      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_10_5" >
+      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_10_6" >
       
       
         
@@ -10598,8 +10648,8 @@
           
         </div>
       
-      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_10_5_label" aria-expanded="false">
-        <label class="md-nav__title" for="__nav_10_5">
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_10_6_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_10_6">
           <span class="md-nav__icon md-icon"></span>
           Vehicle door simulator
         </label>
@@ -13357,6 +13407,7 @@
 <li><code>DELAY_STEER_ACC_GEARED_WO_FALL_GUARD</code></li>
 <li><code>DELAY_STEER_MAP_ACC_GEARED</code>: applies 1D dynamics and time delay to the steering and acceleration commands. The simulated acceleration is determined by a value converted through the provided acceleration map. This model is valuable for an accurate simulation with acceleration deviations in a real vehicle.</li>
 <li><code>LEARNED_STEER_VEL</code>: launches learned python models. More about this <a href="../learning_based_vehicle_model">here</a>.</li>
+<li><code>ACTUATION_CMD</code>: A simulator model that receives <code>ACTUATION_CMD</code>. In this case, the <code>raw_vehicle_cmd_converter</code> is also launched.</li>
 </ul>
 <p>The <code>IDEAL</code> model moves ideally as commanded, while the <code>DELAY</code> model moves based on a 1st-order with time delay model. The <code>STEER</code> means the model receives the steer command. The <code>VEL</code> means the model receives the target velocity command, while the <code>ACC</code> model receives the target acceleration command. The <code>GEARED</code> suffix means that the motion will consider the gear command: the vehicle moves only one direction following the gear.</p>
 <p>The table below shows which models correspond to what parameters. The model names are written in abbreviated form (e.g. IDEAL_STEER_VEL = I_ST_V).</p>
@@ -13695,6 +13746,63 @@
  2.0,     1.80,  1.80,  1.64,  1.43,  1.25,  1.11,  0.96,  0.81,  0.70,  0.59,  0.51,  0.42,  0.42
 </code></pre></div>
 <p><img alt="acceleration_map" src="media/acceleration_map.svg"></p>
+<h5 id="actuation_cmd-model">ACTUATION_CMD model<a class="headerlink" href="#actuation_cmd-model" title="Permanent link">#</a></h5>
+<p>The simple_planning_simulator usually operates by receiving Control commands, but when the <code>ACTUATION_CMD</code> model is selected, it receives Actuation commands instead of Control commands. This model can simulate the motion using the vehicle command that is actually sent to the real vehicle. Therefore, when this model is selected, the <code>raw_vehicle_cmd_converter</code> is also launched.</p>
+<p>The parameters used in the ACTUATION_CMD are as follows.</p>
+<table>
+<thead>
+<tr>
+<th align="left">Name</th>
+<th align="left">Type</th>
+<th align="left">Description</th>
+<th align="left">unit</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left">accel_time_delay</td>
+<td align="left">double</td>
+<td align="left">dead time for the acceleration input</td>
+<td align="left">[s]</td>
+</tr>
+<tr>
+<td align="left">accel_time_constant</td>
+<td align="left">double</td>
+<td align="left">time constant of the 1st-order acceleration dynamics</td>
+<td align="left">[s]</td>
+</tr>
+<tr>
+<td align="left">brake_time_delay</td>
+<td align="left">double</td>
+<td align="left">dead time for the brake input</td>
+<td align="left">[s]</td>
+</tr>
+<tr>
+<td align="left">brake_time_constant</td>
+<td align="left">double</td>
+<td align="left">time constant of the 1st-order brake dynamics</td>
+<td align="left">[s]</td>
+</tr>
+<tr>
+<td align="left">convert_accel_cmd</td>
+<td align="left">bool</td>
+<td align="left">If true, it is assumed that the command is received converted to an accel actuation value, and it is converted back to acceleration value inside the simulator.</td>
+<td align="left">[-]</td>
+</tr>
+<tr>
+<td align="left">convert_brake_cmd</td>
+<td align="left">bool</td>
+<td align="left">If true, it is assumed that the command is received converted to a brake actuation value, and it is converted back to acceleration value inside the simulator.</td>
+<td align="left">[-]</td>
+</tr>
+<tr>
+<td align="left">convert_steer_cmd</td>
+<td align="left">bool</td>
+<td align="left">If true, it is assumed that the command is received converted to a steer actuation value, and it is converted back to steer rate value inside the simulator.</td>
+<td align="left">[-]</td>
+</tr>
+</tbody>
+</table>
 <!-- deadzone_delta_steer | double | dead zone for the steering dynamics                  | x      | x      | x        | o      | o      | 0.0      | [rad]         |         | -->
 
 <p><em>Note</em>: The steering/velocity/acceleration dynamics is modeled by a first order system with a deadtime in a <em>delay</em> model. The definition of the <em>time constant</em> is the time it takes for the step response to rise up to 63% of its final value. The <em>deadtime</em> is a delay in the response to a control input.</p>
