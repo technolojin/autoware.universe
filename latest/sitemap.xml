@@ -596,6 +596,11 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
+         <loc>https://autowarefoundation.github.io/autoware.universe/latest/perception/autoware_euclidean_cluster/</loc>
+         <lastmod>2024-07-22</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
          <loc>https://autowarefoundation.github.io/autoware.universe/latest/perception/autoware_map_based_prediction/</loc>
          <lastmod>2024-07-22</lastmod>
          <changefreq>daily</changefreq>
@@ -661,6 +666,11 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
+         <loc>https://autowarefoundation.github.io/autoware.universe/latest/perception/autoware_tensorrt_classifier/</loc>
+         <lastmod>2024-07-22</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
          <loc>https://autowarefoundation.github.io/autoware.universe/latest/perception/autoware_tracking_object_merger/</loc>
          <lastmod>2024-07-22</lastmod>
          <changefreq>daily</changefreq>
@@ -707,11 +717,6 @@
     </url>
     <url>
          <loc>https://autowarefoundation.github.io/autoware.universe/latest/perception/elevation_map_loader/</loc>
-         <lastmod>2024-07-22</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://autowarefoundation.github.io/autoware.universe/latest/perception/euclidean_cluster/</loc>
          <lastmod>2024-07-22</lastmod>
          <changefreq>daily</changefreq>
     </url>
@@ -827,11 +832,6 @@
     </url>
     <url>
          <loc>https://autowarefoundation.github.io/autoware.universe/latest/perception/simple_object_merger/</loc>
-         <lastmod>2024-07-22</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://autowarefoundation.github.io/autoware.universe/latest/perception/tensorrt_classifier/</loc>
          <lastmod>2024-07-22</lastmod>
          <changefreq>daily</changefreq>
     </url>
