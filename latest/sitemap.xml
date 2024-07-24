@@ -686,6 +686,11 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
+         <loc>https://autowarefoundation.github.io/autoware.universe/latest/perception/autoware_lidar_apollo_instance_segmentation/</loc>
+         <lastmod>2024-07-24</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
          <loc>https://autowarefoundation.github.io/autoware.universe/latest/perception/autoware_lidar_centerpoint/</loc>
          <lastmod>2024-07-24</lastmod>
          <changefreq>daily</changefreq>
@@ -782,21 +787,6 @@
     </url>
     <url>
          <loc>https://autowarefoundation.github.io/autoware.universe/latest/perception/elevation_map_loader/</loc>
-         <lastmod>2024-07-24</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://autowarefoundation.github.io/autoware.universe/latest/perception/lidar_apollo_instance_segmentation/</loc>
-         <lastmod>2024-07-24</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://autowarefoundation.github.io/autoware.universe/latest/perception/lidar_apollo_segmentation_tvm/</loc>
-         <lastmod>2024-07-24</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://autowarefoundation.github.io/autoware.universe/latest/perception/lidar_apollo_segmentation_tvm_nodes/</loc>
          <lastmod>2024-07-24</lastmod>
          <changefreq>daily</changefreq>
     </url>
