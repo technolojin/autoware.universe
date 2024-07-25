@@ -791,6 +791,11 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
+         <loc>https://autowarefoundation.github.io/autoware.universe/latest/perception/autoware_tensorrt_yolox/</loc>
+         <lastmod>2024-07-25</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
          <loc>https://autowarefoundation.github.io/autoware.universe/latest/perception/autoware_tracking_object_merger/</loc>
          <lastmod>2024-07-25</lastmod>
          <changefreq>daily</changefreq>
@@ -852,11 +857,6 @@
     </url>
     <url>
          <loc>https://autowarefoundation.github.io/autoware.universe/latest/perception/probabilistic_occupancy_grid_map/synchronized_grid_map_fusion/</loc>
-         <lastmod>2024-07-25</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://autowarefoundation.github.io/autoware.universe/latest/perception/tensorrt_yolox/</loc>
          <lastmod>2024-07-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
