@@ -8,20 +8,20 @@
       
       
       
-        <link rel="canonical" href="https://autowarefoundation.github.io/autoware.universe/latest/perception/probabilistic_occupancy_grid_map/synchronized_grid_map_fusion/">
+        <link rel="canonical" href="https://autowarefoundation.github.io/autoware.universe/latest/perception/autoware_probabilistic_occupancy_grid_map/pointcloud-based-occupancy-grid-map/">
       
       
-        <link rel="prev" href="../pointcloud-based-occupancy-grid-map/">
+        <link rel="prev" href="../laserscan-based-occupancy-grid-map/">
       
       
-        <link rel="next" href="../../traffic_light_arbiter/">
+        <link rel="next" href="../synchronized_grid_map_fusion/">
       
       <link rel="icon" href="../../../docs/assets/images/autoware-foundation.png">
       <meta name="generator" content="mkdocs-1.4.3, mkdocs-material-9.1.20">
     
     
       
-        <title>synchronized OGM fusion - Autoware Universe Documentation</title>
+        <title>pointcloud based occupancy grid map - Autoware Universe Documentation</title>
       
     
     
@@ -77,7 +77,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#synchronized-ogm-fusion" class="md-skip">
+        <a href="#pointcloud-based-occupancy-grid-map" class="md-skip">
           Skip to content
         </a>
       
@@ -116,7 +116,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              synchronized OGM fusion
+              pointcloud based occupancy grid map
             
           </span>
         </div>
@@ -6323,12 +6323,324 @@
         
         
         <div class="md-nav__link md-nav__link--index ">
-          <a href="../../autoware_radar_crossing_objects_noise_filter/">Autoware radar crossing objects noise filter</a>
+          <a href="../../autoware_occupancy_grid_map_outlier_filter/">Autoware occupancy grid map outlier filter</a>
           
         </div>
       
       <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_7_20_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_7_20">
+          <span class="md-nav__icon md-icon"></span>
+          Autoware occupancy grid map outlier filter
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+    
+  
+  
+    
+      
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7_21" checked>
+      
+      
+        
+          
+            
+          
+        
+          
+        
+          
+        
+          
+        
+      
+      
+        
+        
+        <div class="md-nav__link md-nav__link--index ">
+          <a href="../">Autoware probabilistic occupancy grid map</a>
+          
+            <label for="__nav_7_21">
+              <span class="md-nav__icon md-icon"></span>
+            </label>
+          
+        </div>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_7_21_label" aria-expanded="true">
+        <label class="md-nav__title" for="__nav_7_21">
+          <span class="md-nav__icon md-icon"></span>
+          Autoware probabilistic occupancy grid map
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../laserscan-based-occupancy-grid-map/" class="md-nav__link">
+        laserscan based occupancy grid map
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          pointcloud based occupancy grid map
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        pointcloud based occupancy grid map
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#inner-workings-algorithms" class="md-nav__link">
+    Inner-workings / Algorithms
+  </a>
+  
+    <nav class="md-nav" aria-label="Inner-workings / Algorithms">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1st-step" class="md-nav__link">
+    1st step
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2nd-step" class="md-nav__link">
+    2nd step
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3rd-step" class="md-nav__link">
+    3rd step
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#inputs-outputs" class="md-nav__link">
+    Inputs / Outputs
+  </a>
+  
+    <nav class="md-nav" aria-label="Inputs / Outputs">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#input" class="md-nav__link">
+    Input
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#output" class="md-nav__link">
+    Output
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#related-topics" class="md-nav__link">
+    Related topics
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#parameters" class="md-nav__link">
+    Parameters
+  </a>
+  
+    <nav class="md-nav" aria-label="Parameters">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#node-parameters" class="md-nav__link">
+    Node Parameters
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#assumptions-known-limits" class="md-nav__link">
+    Assumptions / Known limits
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#optional-error-detection-and-handling" class="md-nav__link">
+    (Optional) Error detection and handling
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#optional-performance-characterization" class="md-nav__link">
+    (Optional) Performance characterization
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#optional-referencesexternal-links" class="md-nav__link">
+    (Optional) References/External links
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#optional-future-extensions-unimplemented-parts" class="md-nav__link">
+    (Optional) Future extensions / Unimplemented parts
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-to-debug" class="md-nav__link">
+    How to debug
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../synchronized_grid_map_fusion/" class="md-nav__link">
+        synchronized OGM fusion
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+      
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+      
+      
+      
+        
+      
+      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7_22" >
+      
+      
+        
+          
+            
+          
+        
+      
+      
+        
+        
+        <div class="md-nav__link md-nav__link--index ">
+          <a href="../../autoware_radar_crossing_objects_noise_filter/">Autoware radar crossing objects noise filter</a>
+          
+        </div>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_7_22_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_7_22">
           <span class="md-nav__icon md-icon"></span>
           Autoware radar crossing objects noise filter
         </label>
@@ -6358,7 +6670,7 @@
       
         
       
-      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7_21" >
+      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7_23" >
       
       
         
@@ -6375,14 +6687,14 @@
         <div class="md-nav__link md-nav__link--index ">
           <a href="../../autoware_radar_fusion_to_detected_object/">Autoware radar fusion to detected object</a>
           
-            <label for="__nav_7_21">
+            <label for="__nav_7_23">
               <span class="md-nav__icon md-icon"></span>
             </label>
           
         </div>
       
-      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_7_21_label" aria-expanded="false">
-        <label class="md-nav__title" for="__nav_7_21">
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_7_23_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_7_23">
           <span class="md-nav__icon md-icon"></span>
           Autoware radar fusion to detected object
         </label>
@@ -6403,7 +6715,7 @@
       
         
       
-      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7_21_2" >
+      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7_23_2" >
       
       
         
@@ -6411,13 +6723,13 @@
         
       
       
-        <label class="md-nav__link" for="__nav_7_21_2" id="__nav_7_21_2_label" tabindex="0">
+        <label class="md-nav__link" for="__nav_7_23_2" id="__nav_7_23_2_label" tabindex="0">
           Docs
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_7_21_2_label" aria-expanded="false">
-        <label class="md-nav__title" for="__nav_7_21_2">
+      <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_7_23_2_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_7_23_2">
           <span class="md-nav__icon md-icon"></span>
           Docs
         </label>
@@ -6466,7 +6778,7 @@
       
         
       
-      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7_22" >
+      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7_24" >
       
       
         
@@ -6483,8 +6795,8 @@
           
         </div>
       
-      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_7_22_label" aria-expanded="false">
-        <label class="md-nav__title" for="__nav_7_22">
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_7_24_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_7_24">
           <span class="md-nav__icon md-icon"></span>
           Autoware radar object clustering
         </label>
@@ -6514,7 +6826,7 @@
       
         
       
-      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7_23" >
+      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7_25" >
       
       
         
@@ -6531,14 +6843,14 @@
         <div class="md-nav__link md-nav__link--index ">
           <a href="../../autoware_radar_object_tracker/">Autoware radar object tracker</a>
           
-            <label for="__nav_7_23">
+            <label for="__nav_7_25">
               <span class="md-nav__icon md-icon"></span>
             </label>
           
         </div>
       
-      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_7_23_label" aria-expanded="false">
-        <label class="md-nav__title" for="__nav_7_23">
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_7_25_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_7_25">
           <span class="md-nav__icon md-icon"></span>
           Autoware radar object tracker
         </label>
@@ -6582,7 +6894,7 @@
       
         
       
-      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7_24" >
+      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7_26" >
       
       
         
@@ -6599,8 +6911,8 @@
           
         </div>
       
-      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_7_24_label" aria-expanded="false">
-        <label class="md-nav__title" for="__nav_7_24">
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_7_26_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_7_26">
           <span class="md-nav__icon md-icon"></span>
           Autoware radar tracks msgs converter
         </label>
@@ -6630,7 +6942,7 @@
       
         
       
-      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7_25" >
+      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7_27" >
       
       
         
@@ -6638,13 +6950,13 @@
         
       
       
-        <label class="md-nav__link" for="__nav_7_25" id="__nav_7_25_label" tabindex="0">
+        <label class="md-nav__link" for="__nav_7_27" id="__nav_7_27_label" tabindex="0">
           Autoware raindrop cluster filter
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_7_25_label" aria-expanded="false">
-        <label class="md-nav__title" for="__nav_7_25">
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_7_27_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_7_27">
           <span class="md-nav__icon md-icon"></span>
           Autoware raindrop cluster filter
         </label>
@@ -6686,7 +6998,7 @@
       
         
       
-      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7_26" >
+      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7_28" >
       
       
         
@@ -6703,106 +7015,10 @@
           
         </div>
       
-      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_7_26_label" aria-expanded="false">
-        <label class="md-nav__title" for="__nav_7_26">
-          <span class="md-nav__icon md-icon"></span>
-          Autoware shape estimation
-        </label>
-        <ul class="md-nav__list" data-md-scrollfix>
-          
-            
-          
-        </ul>
-      </nav>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    
-      
-    
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
-      
-      
-      
-      
-        
-      
-      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7_27" >
-      
-      
-        
-          
-            
-          
-        
-      
-      
-        
-        
-        <div class="md-nav__link md-nav__link--index ">
-          <a href="../../autoware_simple_object_merger/">Autoware simple object merger</a>
-          
-        </div>
-      
-      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_7_27_label" aria-expanded="false">
-        <label class="md-nav__title" for="__nav_7_27">
-          <span class="md-nav__icon md-icon"></span>
-          Autoware simple object merger
-        </label>
-        <ul class="md-nav__list" data-md-scrollfix>
-          
-            
-          
-        </ul>
-      </nav>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    
-      
-    
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
-      
-      
-      
-      
-        
-      
-      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7_28" >
-      
-      
-        
-          
-            
-          
-        
-      
-      
-        
-        
-        <div class="md-nav__link md-nav__link--index ">
-          <a href="../../autoware_tensorrt_classifier/">Autoware tensorrt classifier</a>
-          
-        </div>
-      
       <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_7_28_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_7_28">
           <span class="md-nav__icon md-icon"></span>
-          Autoware tensorrt classifier
+          Autoware shape estimation
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -6843,14 +7059,14 @@
         
         
         <div class="md-nav__link md-nav__link--index ">
-          <a href="../../autoware_tensorrt_yolox/">Autoware tensorrt yolox</a>
+          <a href="../../autoware_simple_object_merger/">Autoware simple object merger</a>
           
         </div>
       
       <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_7_29_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_7_29">
           <span class="md-nav__icon md-icon"></span>
-          Autoware tensorrt yolox
+          Autoware simple object merger
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -6891,14 +7107,14 @@
         
         
         <div class="md-nav__link md-nav__link--index ">
-          <a href="../../autoware_tracking_object_merger/">Autoware tracking object merger</a>
+          <a href="../../autoware_tensorrt_classifier/">Autoware tensorrt classifier</a>
           
         </div>
       
       <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_7_30_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_7_30">
           <span class="md-nav__icon md-icon"></span>
-          Autoware tracking object merger
+          Autoware tensorrt classifier
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -6939,14 +7155,14 @@
         
         
         <div class="md-nav__link md-nav__link--index ">
-          <a href="../../autoware_traffic_light_classifier/">Autoware traffic light classifier</a>
+          <a href="../../autoware_tensorrt_yolox/">Autoware tensorrt yolox</a>
           
         </div>
       
       <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_7_31_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_7_31">
           <span class="md-nav__icon md-icon"></span>
-          Autoware traffic light classifier
+          Autoware tensorrt yolox
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -6987,14 +7203,14 @@
         
         
         <div class="md-nav__link md-nav__link--index ">
-          <a href="../../autoware_traffic_light_fine_detector/">Autoware traffic light fine detector</a>
+          <a href="../../autoware_tracking_object_merger/">Autoware tracking object merger</a>
           
         </div>
       
       <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_7_32_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_7_32">
           <span class="md-nav__icon md-icon"></span>
-          Autoware traffic light fine detector
+          Autoware tracking object merger
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -7035,14 +7251,14 @@
         
         
         <div class="md-nav__link md-nav__link--index ">
-          <a href="../../autoware_traffic_light_map_based_detector/">Autoware traffic light map based detector</a>
+          <a href="../../autoware_traffic_light_classifier/">Autoware traffic light classifier</a>
           
         </div>
       
       <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_7_33_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_7_33">
           <span class="md-nav__icon md-icon"></span>
-          Autoware traffic light map based detector
+          Autoware traffic light classifier
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -7083,14 +7299,14 @@
         
         
         <div class="md-nav__link md-nav__link--index ">
-          <a href="../../autoware_traffic_light_multi_camera_fusion/">Autoware traffic light multi camera fusion</a>
+          <a href="../../autoware_traffic_light_fine_detector/">Autoware traffic light fine detector</a>
           
         </div>
       
       <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_7_34_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_7_34">
           <span class="md-nav__icon md-icon"></span>
-          Autoware traffic light multi camera fusion
+          Autoware traffic light fine detector
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -7131,14 +7347,14 @@
         
         
         <div class="md-nav__link md-nav__link--index ">
-          <a href="../../autoware_traffic_light_occlusion_predictor/">Autoware traffic light occlusion predictor</a>
+          <a href="../../autoware_traffic_light_map_based_detector/">Autoware traffic light map based detector</a>
           
         </div>
       
       <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_7_35_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_7_35">
           <span class="md-nav__icon md-icon"></span>
-          Autoware traffic light occlusion predictor
+          Autoware traffic light map based detector
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -7179,14 +7395,14 @@
         
         
         <div class="md-nav__link md-nav__link--index ">
-          <a href="../../autoware_traffic_light_visualization/">Autoware traffic light visualization</a>
+          <a href="../../autoware_traffic_light_multi_camera_fusion/">Autoware traffic light multi camera fusion</a>
           
         </div>
       
       <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_7_36_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_7_36">
           <span class="md-nav__icon md-icon"></span>
-          Autoware traffic light visualization
+          Autoware traffic light multi camera fusion
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -7227,14 +7443,14 @@
         
         
         <div class="md-nav__link md-nav__link--index ">
-          <a href="../../occupancy_grid_map_outlier_filter/">Occupancy grid map outlier filter</a>
+          <a href="../../autoware_traffic_light_occlusion_predictor/">Autoware traffic light occlusion predictor</a>
           
         </div>
       
       <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_7_37_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_7_37">
           <span class="md-nav__icon md-icon"></span>
-          Occupancy grid map outlier filter
+          Autoware traffic light occlusion predictor
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -7251,29 +7467,23 @@
               
   
   
-    
-  
   
     
       
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
       
       
       
-      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7_38" checked>
+        
+      
+      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7_38" >
       
       
         
           
             
-          
-        
-          
-        
-          
-        
           
         
       
@@ -7281,166 +7491,17 @@
         
         
         <div class="md-nav__link md-nav__link--index ">
-          <a href="../">Probabilistic occupancy grid map</a>
-          
-            <label for="__nav_7_38">
-              <span class="md-nav__icon md-icon"></span>
-            </label>
+          <a href="../../autoware_traffic_light_visualization/">Autoware traffic light visualization</a>
           
         </div>
       
-      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_7_38_label" aria-expanded="true">
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_7_38_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_7_38">
           <span class="md-nav__icon md-icon"></span>
-          Probabilistic occupancy grid map
+          Autoware traffic light visualization
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../laserscan-based-occupancy-grid-map/" class="md-nav__link">
-        laserscan based occupancy grid map
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../pointcloud-based-occupancy-grid-map/" class="md-nav__link">
-        pointcloud based occupancy grid map
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-    
-  
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          synchronized OGM fusion
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
-        synchronized OGM fusion
-      </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#processing-flow" class="md-nav__link">
-    Processing flow
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#io" class="md-nav__link">
-    I/O
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#parameters" class="md-nav__link">
-    Parameters
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#fusion-methods" class="md-nav__link">
-    Fusion methods
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#how-to-use" class="md-nav__link">
-    How to use
-  </a>
-  
-    <nav class="md-nav" aria-label="How to use">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#launch-fusion-node" class="md-nav__link">
-    launch fusion node
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#optional-generate-ogms-in-each-sensor-frame" class="md-nav__link">
-    (Optional) Generate OGMs in each sensor frame
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#run-both-ogm-generation-node-and-fusion-node" class="md-nav__link">
-    Run both OGM generation node and fusion node
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#references" class="md-nav__link">
-    References
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
-    </li>
-  
-
             
           
         </ul>
@@ -13157,58 +13218,30 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#processing-flow" class="md-nav__link">
-    Processing flow
+  <a href="#inner-workings-algorithms" class="md-nav__link">
+    Inner-workings / Algorithms
   </a>
   
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#io" class="md-nav__link">
-    I/O
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#parameters" class="md-nav__link">
-    Parameters
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#fusion-methods" class="md-nav__link">
-    Fusion methods
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#how-to-use" class="md-nav__link">
-    How to use
-  </a>
-  
-    <nav class="md-nav" aria-label="How to use">
+    <nav class="md-nav" aria-label="Inner-workings / Algorithms">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#launch-fusion-node" class="md-nav__link">
-    launch fusion node
+  <a href="#1st-step" class="md-nav__link">
+    1st step
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#optional-generate-ogms-in-each-sensor-frame" class="md-nav__link">
-    (Optional) Generate OGMs in each sensor frame
+  <a href="#2nd-step" class="md-nav__link">
+    2nd step
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#run-both-ogm-generation-node-and-fusion-node" class="md-nav__link">
-    Run both OGM generation node and fusion node
+  <a href="#3rd-step" class="md-nav__link">
+    3rd step
   </a>
   
 </li>
@@ -13219,8 +13252,97 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#references" class="md-nav__link">
-    References
+  <a href="#inputs-outputs" class="md-nav__link">
+    Inputs / Outputs
+  </a>
+  
+    <nav class="md-nav" aria-label="Inputs / Outputs">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#input" class="md-nav__link">
+    Input
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#output" class="md-nav__link">
+    Output
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#related-topics" class="md-nav__link">
+    Related topics
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#parameters" class="md-nav__link">
+    Parameters
+  </a>
+  
+    <nav class="md-nav" aria-label="Parameters">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#node-parameters" class="md-nav__link">
+    Node Parameters
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#assumptions-known-limits" class="md-nav__link">
+    Assumptions / Known limits
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#optional-error-detection-and-handling" class="md-nav__link">
+    (Optional) Error detection and handling
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#optional-performance-characterization" class="md-nav__link">
+    (Optional) Performance characterization
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#optional-referencesexternal-links" class="md-nav__link">
+    (Optional) References/External links
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#optional-future-extensions-unimplemented-parts" class="md-nav__link">
+    (Optional) Future extensions / Unimplemented parts
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-to-debug" class="md-nav__link">
+    How to debug
   </a>
   
 </li>
@@ -13243,63 +13365,86 @@
   
 
 
-<div><h1 id="synchronized-ogm-fusion">synchronized OGM fusion<a class="headerlink" href="#synchronized-ogm-fusion" title="Permanent link">#</a></h1>
-<blockquote>
-<p>For simplicity, we use OGM as the meaning of the occupancy grid map.</p>
-</blockquote>
-<p>This package is used to fuse the OGMs from synchronized sensors. Especially for the lidar.</p>
-<p>Here shows the example OGM for the this synchronized OGM fusion.</p>
-<table>
-<thead>
-<tr>
-<th>left lidar OGM</th>
-<th>right lidar OGM</th>
-<th>top lidar OGM</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><img alt="left" src="image/left_lidar_ogm.png"></td>
-<td><img alt="right" src="image/right_lidar_ogm.png"></td>
-<td><img alt="top" src="image/top_lidar_ogm.png"></td>
-</tr>
-</tbody>
-</table>
-<p>OGM fusion with asynchronous sensor outputs is not suitable for this package. Asynchronous OGM fusion is under construction.</p>
-<h2 id="processing-flow">Processing flow<a class="headerlink" href="#processing-flow" title="Permanent link">#</a></h2>
-<p>The processing flow of this package is shown in the following figure.</p>
-<p><img alt="data_flow" src="../image/synchronized_grid_map_fusion.drawio.svg"></p>
+<div><h1 id="pointcloud-based-occupancy-grid-map">pointcloud based occupancy grid map<a class="headerlink" href="#pointcloud-based-occupancy-grid-map" title="Permanent link">#</a></h1>
+<p><img alt="pointcloud_based_occupancy_grid_map_sample_image" src="../image/pointcloud_based_occupancy_grid_map_sample_image.gif"></p>
+<h2 id="inner-workings-algorithms">Inner-workings / Algorithms<a class="headerlink" href="#inner-workings-algorithms" title="Permanent link">#</a></h2>
+<h3 id="1st-step">1st step<a class="headerlink" href="#1st-step" title="Permanent link">#</a></h3>
+<p>First of all, input obstacle/raw pointcloud are transformed into the polar coordinate centered around <code>scan_origin</code> and divided int circular bins per angle_increment respectively.
+At this time, each point belonging to each bin is stored as range data. In addition, the x,y information in the map coordinate is also stored for ray-tracing on the map coordinate.
+The bin contains the following information for each point</p>
 <ul>
-<li>Single Frame Fusion<ul>
-<li>Single frame fusion means that the OGMs from synchronized sensors are fused in a certain time frame <span class="arithmatex">\(t=t_n\)</span>.</li>
+<li>range data from origin of raytrace</li>
+<li>x on map coordinate</li>
+<li>y on map coordinate</li>
 </ul>
+<p><img alt="pointcloud_based_occupancy_grid_map_bev" src="../image/pointcloud_based_occupancy_grid_map_bev.svg"></p>
+<p>The following figure shows each of the bins from side view.
+<img alt="pointcloud_based_occupancy_grid_map_side_view" src="../image/pointcloud_based_occupancy_grid_map_side_view.svg"></p>
+<h3 id="2nd-step">2nd step<a class="headerlink" href="#2nd-step" title="Permanent link">#</a></h3>
+<p>The ray trace is performed in three steps for each cell.
+The ray trace is done by Bresenham's line algorithm.
+<img alt="Bresenham's line algorithm" src="../image/bresenham.svg"></p>
+<ol>
+<li>
+<p>Initialize freespace to the farthest point of each bin.</p>
+<p><img alt="pointcloud_based_occupancy_grid_map_side_view_1st" src="../image/pointcloud_based_occupancy_grid_map_side_view_1st.svg"></p>
 </li>
-<li>Multi Frame Fusion<ul>
-<li>In the multi frame fusion process, current fused single frame OGM in <span class="arithmatex">\(t_n\)</span> is fused with the previous fused single frame OGM in <span class="arithmatex">\(t_{n-1}\)</span>.</li>
+<li>
+<p>Fill in the unknown cells.
+   Based on the assumption that <code>UNKNOWN</code> is behind the obstacle, the cells that are more than a distance margin from each obstacle point are filled with <code>UNKNOWN</code></p>
+<p><img alt="pointcloud_based_occupancy_grid_map_side_view_2nd" src="../image/pointcloud_based_occupancy_grid_map_side_view_2nd.svg"></p>
+<p>There are three reasons for setting a distance margin.</p>
+<ul>
+<li>It is unlikely that a point on the ground will be immediately behind an obstacle.</li>
+<li>The obstacle point cloud is processed and may not match the raw pointcloud.</li>
+<li>The input may be inaccurate and obstacle points may not be determined as obstacles.</li>
 </ul>
+<p>When the parameter <code>grid_map_type</code> is "OccupancyGridMapProjectiveBlindSpot" and the <code>scan_origin</code> is a sensor frame like <code>velodyne_top</code> for instance, for each obstacle pointcloud, if there are no <em>visible</em> raw pointclouds that are located above the projected ray from the <code>scan_origin</code> to that obstacle pointcloud, the cells between the obstacle pointcloud and the <code>projected point</code> are filled with <code>UNKNOWN</code>. Note that the <code>scan_origin</code> should not be <code>base_link</code> if this flag is true because otherwise all the cells behind the obstacle point clouds would be filled with <code>UNKNOWN</code>.</p>
+<p><img alt="pointcloud_based_occupancy_grid_map_side_view_2nd_projection" src="../image/pointcloud_based_occupancy_grid_map_side_view_2nd_projection.drawio.svg"></p>
 </li>
-</ul>
-<h2 id="io">I/O<a class="headerlink" href="#io" title="Permanent link">#</a></h2>
+<li>
+<p>Fill in the occupied cells.
+   Fill in the point where the obstacle point is located with occupied.
+   In addition, If the distance between obstacle points is less than or equal to the distance margin, that interval is filled with <code>OCCUPIED</code> because the input may be inaccurate and obstacle points may not be determined as obstacles.</p>
+<p><img alt="pointcloud_based_occupancy_grid_map_side_view_3rd" src="../image/pointcloud_based_occupancy_grid_map_side_view_3rd.svg"></p>
+</li>
+</ol>
+<h3 id="3rd-step">3rd step<a class="headerlink" href="#3rd-step" title="Permanent link">#</a></h3>
+<p>Using the previous occupancy grid map, update the existence probability using a binary Bayesian filter (1). Also, the unobserved cells are time-decayed like the system noise of the Kalman filter (2).</p>
+<div class="arithmatex">\[
+\hat{P_{o}} = \frac{(P_{o} *P_{z})}{(P_{o}* P_{z} + (1 - P_{o}) * \bar{P_{z}})} \tag{1}
+\]</div>
+<div class="arithmatex">\[
+\hat{P_{o}} = \frac{(P_{o} + 0.5 * \frac{1}{ratio})}{(\frac{1}{ratio} + 1)} \tag{2}
+\]</div>
+<h2 id="inputs-outputs">Inputs / Outputs<a class="headerlink" href="#inputs-outputs" title="Permanent link">#</a></h2>
+<h3 id="input">Input<a class="headerlink" href="#input" title="Permanent link">#</a></h3>
 <table>
 <thead>
 <tr>
-<th>Input topic name</th>
+<th>Name</th>
 <th>Type</th>
 <th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>input_ogm_topics</code></td>
-<td>list of nav_msgs::msg::OccupancyGrid</td>
-<td>List of input topics for Occupancy Grid Maps. This parameter is given in list, so</td>
+<td><code>~/input/obstacle_pointcloud</code></td>
+<td><code>sensor_msgs::PointCloud2</code></td>
+<td>obstacle pointcloud</td>
+</tr>
+<tr>
+<td><code>~/input/raw_pointcloud</code></td>
+<td><code>sensor_msgs::PointCloud2</code></td>
+<td>The overall point cloud used to input the obstacle point cloud</td>
 </tr>
 </tbody>
 </table>
+<h3 id="output">Output<a class="headerlink" href="#output" title="Permanent link">#</a></h3>
 <table>
 <thead>
 <tr>
-<th>Output topic name</th>
+<th>Name</th>
 <th>Type</th>
 <th>Description</th>
 </tr>
@@ -13307,214 +13452,107 @@
 <tbody>
 <tr>
 <td><code>~/output/occupancy_grid_map</code></td>
-<td>nav_msgs::msg::OccupancyGrid</td>
-<td>Output topic name of the fused Occupancy Grid Map.</td>
-</tr>
-<tr>
-<td><code>~/debug/single_frame_map</code></td>
-<td>nav_msgs::msg::OccupancyGrid</td>
-<td>(debug topic) Output topic name of the single frame fused Occupancy Grid Map.</td>
+<td><code>nav_msgs::OccupancyGrid</code></td>
+<td>occupancy grid map</td>
 </tr>
 </tbody>
 </table>
-<h2 id="parameters">Parameters<a class="headerlink" href="#parameters" title="Permanent link">#</a></h2>
-<p>Synchronized OGM fusion node parameters are shown in the following table. Main parameters to be considered in the fusion node is shown as bold.</p>
-<table>
-<thead>
-<tr>
-<th>Ros param name</th>
-<th>Sample value</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong>input_ogm_topics</strong></td>
-<td>["topic1", "topic2"]</td>
-<td>List of input topics for Occupancy Grid Maps</td>
-</tr>
-<tr>
-<td><strong>input_ogm_reliabilities</strong></td>
-<td>[0.8, 0.2]</td>
-<td>Weights for the reliability of each input topic</td>
-</tr>
-<tr>
-<td><strong>fusion_method</strong></td>
-<td>"overwrite"</td>
-<td>Method of fusion ("overwrite", "log-odds", "dempster-shafer")</td>
-</tr>
-<tr>
-<td>match_threshold_sec</td>
-<td>0.01</td>
-<td>Matching threshold in milliseconds</td>
-</tr>
-<tr>
-<td>timeout_sec</td>
-<td>0.1</td>
-<td>Timeout duration in seconds</td>
-</tr>
-<tr>
-<td>input_offset_sec</td>
-<td>[0.0, 0.0]</td>
-<td>Offset time in seconds for each input topic</td>
-</tr>
-<tr>
-<td>map<em>frame</em></td>
-<td>"map"</td>
-<td>Frame name for the fused map</td>
-</tr>
-<tr>
-<td>base<em>link_frame</em></td>
-<td>"base_link"</td>
-<td>Frame name for the base link</td>
-</tr>
-<tr>
-<td>grid<em>map_origin_frame</em></td>
-<td>"base_link"</td>
-<td>Frame name for the origin of the grid map</td>
-</tr>
-<tr>
-<td>fusion_map_length_x</td>
-<td>100.0</td>
-<td>Length of the fused map along the X-axis</td>
-</tr>
-<tr>
-<td>fusion_map_length_y</td>
-<td>100.0</td>
-<td>Length of the fused map along the Y-axis</td>
-</tr>
-<tr>
-<td>fusion_map_resolution</td>
-<td>0.5</td>
-<td>Resolution of the fused map</td>
-</tr>
-</tbody>
-</table>
-<p>Since this node assumes that the OGMs from synchronized sensors are generated in the same time, we need to tune the <code>match_threshold_sec</code>, <code>timeout_sec</code> and <code>input_offset_sec</code> parameters to successfully fuse the OGMs.</p>
-<h2 id="fusion-methods">Fusion methods<a class="headerlink" href="#fusion-methods" title="Permanent link">#</a></h2>
-<p>For the single frame fusion, the following fusion methods are supported.</p>
-<table>
-<thead>
-<tr>
-<th>Fusion Method in parameter</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>overwrite</code></td>
-<td>The value of the cell in the fused OGM is overwritten by the value of the cell in the OGM with the highest priority. <br> We set priority as <code>Occupied</code> &gt; <code>Free</code> &gt; <code>Unknown</code>.</td>
-</tr>
-<tr>
-<td><code>log-odds</code></td>
-<td>The value of the cell in the fused OGM is calculated by the log-odds ratio method, which is known as a Bayesian fusion method. <br> The log-odds of a probability <span class="arithmatex">\(p\)</span> can be written as <span class="arithmatex">\(l_p = \log(\frac{p}{1-p})\)</span>. <br> And the fused log-odds is calculated by the sum of log-odds. <span class="arithmatex">\(l_f = \Sigma l_p\)</span></td>
-</tr>
-<tr>
-<td><code>dempster-shafer</code></td>
-<td>The value of the cell in the fused OGM is calculated by the Dempster-Shafer theory[1]. This is also popular method to handle multiple evidences. This package applied conflict escape logic in [2] for the performance. See references for the algorithm details.</td>
-</tr>
-</tbody>
-</table>
-<p>For the multi frame fusion, currently only supporting <code>log-odds</code> fusion method.</p>
-<h2 id="how-to-use">How to use<a class="headerlink" href="#how-to-use" title="Permanent link">#</a></h2>
-<h3 id="launch-fusion-node">launch fusion node<a class="headerlink" href="#launch-fusion-node" title="Permanent link">#</a></h3>
-<p>The minimum node launch will be like the following.</p>
-<div class="highlight"><pre><span></span><code><span class="cp">&lt;?xml version="1.0"?&gt;</span>
-<span class="nt">&lt;launch&gt;</span>
-<span class="nt">&lt;arg</span><span class="w"> </span><span class="na">name=</span><span class="s">"output_topic"</span><span class="w"> </span><span class="na">default=</span><span class="s">"~/output/occupancy_grid_map"</span><span class="nt">/&gt;</span>
-<span class="nt">&lt;arg</span><span class="w"> </span><span class="na">name=</span><span class="s">"fusion_node_param_path"</span><span class="w"> </span><span class="na">default=</span><span class="s">"$(find-pkg-share probabilistic_occupancy_grid_map)/config/synchronized_grid_map_fusion_node.param.yaml"</span><span class="nt">/&gt;</span>
-
-<span class="nt">&lt;node</span><span class="w"> </span><span class="na">name=</span><span class="s">"synchronized_grid_map_fusion_node"</span><span class="w"> </span><span class="na">exec=</span><span class="s">"synchronized_grid_map_fusion_node"</span><span class="w"> </span><span class="na">pkg=</span><span class="s">"probabilistic_occupancy_grid_map"</span><span class="w"> </span><span class="na">output=</span><span class="s">"screen"</span><span class="nt">&gt;</span>
-<span class="w">  </span><span class="nt">&lt;remap</span><span class="w"> </span><span class="na">from=</span><span class="s">"~/output/occupancy_grid_map"</span><span class="w"> </span><span class="na">to=</span><span class="s">"$(var output_topic)"</span><span class="nt">/&gt;</span>
-<span class="w">  </span><span class="nt">&lt;param</span><span class="w"> </span><span class="na">from=</span><span class="s">"$(var fusion_node_param_path)"</span><span class="nt">/&gt;</span>
-<span class="nt">&lt;/node&gt;</span>
-<span class="nt">&lt;/launch&gt;</span>
-</code></pre></div>
-<h3 id="optional-generate-ogms-in-each-sensor-frame">(Optional) Generate OGMs in each sensor frame<a class="headerlink" href="#optional-generate-ogms-in-each-sensor-frame" title="Permanent link">#</a></h3>
-<p>You need to generate OGMs in each sensor frame before achieving grid map fusion.</p>
-<p><code>probabilistic_occupancy_grid_map</code> package supports to generate OGMs for the each from the point cloud data.</p>
-<details>
-<summary> Example launch.xml (click to expand) </summary>
-
-<div class="highlight"><pre><span></span><code><span class="nt">&lt;include</span><span class="w"> </span><span class="na">file=</span><span class="s">"$(find-pkg-share tier4_perception_launch)/launch/occupancy_grid_map/probabilistic_occupancy_grid_map.launch.xml"</span><span class="nt">&gt;</span>
-<span class="w">    </span><span class="nt">&lt;arg</span><span class="w"> </span><span class="na">name=</span><span class="s">"input/obstacle_pointcloud"</span><span class="w"> </span><span class="na">value=</span><span class="s">"/perception/obstacle_segmentation/single_frame/pointcloud"</span><span class="nt">/&gt;</span>
-<span class="w">    </span><span class="nt">&lt;arg</span><span class="w"> </span><span class="na">name=</span><span class="s">"input/raw_pointcloud"</span><span class="w"> </span><span class="na">value=</span><span class="s">"/sensing/lidar/right/outlier_filtered/pointcloud_synchronized"</span><span class="nt">/&gt;</span>
-<span class="w">    </span><span class="nt">&lt;arg</span><span class="w"> </span><span class="na">name=</span><span class="s">"output"</span><span class="w"> </span><span class="na">value=</span><span class="s">"/perception/occupancy_grid_map/right_lidar/map"</span><span class="nt">/&gt;</span>
-<span class="w">    </span><span class="nt">&lt;arg</span><span class="w"> </span><span class="na">name=</span><span class="s">"map_frame"</span><span class="w"> </span><span class="na">value=</span><span class="s">"base_link"</span><span class="nt">/&gt;</span>
-<span class="w">    </span><span class="nt">&lt;arg</span><span class="w"> </span><span class="na">name=</span><span class="s">"scan_origin"</span><span class="w"> </span><span class="na">value=</span><span class="s">"velodyne_right"</span><span class="nt">/&gt;</span>
-<span class="w">    </span><span class="nt">&lt;arg</span><span class="w"> </span><span class="na">name=</span><span class="s">"use_intra_process"</span><span class="w"> </span><span class="na">value=</span><span class="s">"true"</span><span class="nt">/&gt;</span>
-<span class="w">    </span><span class="nt">&lt;arg</span><span class="w"> </span><span class="na">name=</span><span class="s">"use_multithread"</span><span class="w"> </span><span class="na">value=</span><span class="s">"true"</span><span class="nt">/&gt;</span>
-<span class="w">    </span><span class="nt">&lt;arg</span><span class="w"> </span><span class="na">name=</span><span class="s">"use_pointcloud_container"</span><span class="w"> </span><span class="na">value=</span><span class="s">"$(var use_pointcloud_container)"</span><span class="nt">/&gt;</span>
-<span class="w">    </span><span class="nt">&lt;arg</span><span class="w"> </span><span class="na">name=</span><span class="s">"pointcloud_container_name"</span><span class="w"> </span><span class="na">value=</span><span class="s">"$(var pointcloud_container_name)"</span><span class="nt">/&gt;</span>
-<span class="w">    </span><span class="nt">&lt;arg</span><span class="w"> </span><span class="na">name=</span><span class="s">"method"</span><span class="w"> </span><span class="na">value=</span><span class="s">"pointcloud_based_occupancy_grid_map"</span><span class="nt">/&gt;</span>
-<span class="w">    </span><span class="nt">&lt;arg</span><span class="w"> </span><span class="na">name=</span><span class="s">"param_file"</span><span class="w"> </span><span class="na">value=</span><span class="s">"$(find-pkg-share probabilistic_occupancy_grid_map)/config/pointcloud_based_occupancy_grid_map_fusion.param.yaml"</span><span class="nt">/&gt;</span>
-<span class="nt">&lt;/include&gt;</span>
-
-
-The<span class="w"> </span>minimum<span class="w"> </span>parameter<span class="w"> </span>for<span class="w"> </span>the<span class="w"> </span>OGM<span class="w"> </span>generation<span class="w"> </span>in<span class="w"> </span>each<span class="w"> </span>frame<span class="w"> </span>is<span class="w"> </span>shown<span class="w"> </span>in<span class="w"> </span>the<span class="w"> </span>following<span class="w"> </span>table.
-
-|Parameter|Description|
-|--|--|
-|`input/obstacle_pointcloud`|<span class="w"> </span>The<span class="w"> </span>input<span class="w"> </span>point<span class="w"> </span>cloud<span class="w"> </span>data<span class="w"> </span>for<span class="w"> </span>the<span class="w"> </span>OGM<span class="w"> </span>generation.<span class="w"> </span>This<span class="w"> </span>point<span class="w"> </span>cloud<span class="w"> </span>data<span class="w"> </span>should<span class="w"> </span>be<span class="w"> </span>the<span class="w"> </span>point<span class="w"> </span>cloud<span class="w"> </span>data<span class="w"> </span>which<span class="w"> </span>is<span class="w"> </span>segmented<span class="w"> </span>as<span class="w"> </span>the<span class="w"> </span>obstacle.|
-|`input/raw_pointcloud`|<span class="w"> </span>The<span class="w"> </span>input<span class="w"> </span>point<span class="w"> </span>cloud<span class="w"> </span>data<span class="w"> </span>for<span class="w"> </span>the<span class="w"> </span>OGM<span class="w"> </span>generation.<span class="w"> </span>This<span class="w"> </span>point<span class="w"> </span>cloud<span class="w"> </span>data<span class="w"> </span>should<span class="w"> </span>be<span class="w"> </span>the<span class="w"> </span>point<span class="w"> </span>cloud<span class="w"> </span>data<span class="w"> </span>which<span class="w"> </span>is<span class="w"> </span>not<span class="w"> </span>segmented<span class="w"> </span>as<span class="w"> </span>the<span class="w"> </span>obstacle.<span class="w"> </span>|
-|`output`|<span class="w"> </span>The<span class="w"> </span>output<span class="w"> </span>topic<span class="w"> </span>of<span class="w"> </span>the<span class="w"> </span>OGM.<span class="w"> </span>|
-|`map_frame`|<span class="w"> </span>The<span class="w"> </span>tf<span class="w"> </span>frame<span class="w"> </span>for<span class="w"> </span>the<span class="w"> </span>OGM<span class="w"> </span>center<span class="w"> </span>origin.<span class="w"> </span>|
-|`scan_origin`|<span class="w"> </span>The<span class="w"> </span>tf<span class="w"> </span>frame<span class="w"> </span>for<span class="w"> </span>the<span class="w"> </span>sensor<span class="w"> </span>origin.<span class="w"> </span>|
-|`method`|<span class="w"> </span>The<span class="w"> </span>method<span class="w"> </span>for<span class="w"> </span>the<span class="w"> </span>OGM<span class="w"> </span>generation.<span class="w"> </span>Currently<span class="w"> </span>we<span class="w"> </span>support<span class="w"> </span>`pointcloud_based_occupancy_grid_map`<span class="w"> </span>and<span class="w"> </span>`laser_scan_based_occupancy_grid_map`.<span class="w"> </span>The<span class="w"> </span>pointcloud<span class="w"> </span>based<span class="w"> </span>method<span class="w"> </span>is<span class="w"> </span>recommended.<span class="w"> </span>|
-|`param_file`|<span class="w"> </span>The<span class="w"> </span>parameter<span class="w"> </span>file<span class="w"> </span>for<span class="w"> </span>the<span class="w"> </span>OGM<span class="w"> </span>generation.<span class="w"> </span>See<span class="w"> </span>[example<span class="w"> </span>parameter<span class="w"> </span>file](config/pointcloud_based_occupancy_grid_map_for_fusion.param.yaml)<span class="w"> </span>|
-</code></pre></div>
-
-</details>
-
-<p><br></p>
-<p>We recommend to use same <code>map_frame</code>, size and resolutions for the OGMs from synchronized sensors.<br>
-Also, remember to set <code>enable_single_frame_mode</code> and <code>filter_obstacle_pointcloud_by_raw_pointcloud</code> to <code>true</code> in the <code>probabilistic_occupancy_grid_map</code> package (you do not need to set these parameters if you use the above example config file).</p>
-<p><br></p>
-<h3 id="run-both-ogm-generation-node-and-fusion-node">Run both OGM generation node and fusion node<a class="headerlink" href="#run-both-ogm-generation-node-and-fusion-node" title="Permanent link">#</a></h3>
-<p>We prepared the launch file to run both OGM generation node and fusion node in <a href="launch/grid_map_fusion_with_synchronized_pointclouds.launch.py"><code>grid_map_fusion_with_synchronized_pointclouds.launch.py</code></a></p>
-<p>You can include this launch file like the following.</p>
-<div class="highlight"><pre><span></span><code><span class="nt">&lt;include</span><span class="w"> </span><span class="na">file=</span><span class="s">"$(find-pkg-share probabilistic_occupancy_grid_map)/launch/grid_map_fusion_with_synchronized_pointclouds.launch.py"</span><span class="nt">&gt;</span>
-<span class="w">  </span><span class="nt">&lt;arg</span><span class="w"> </span><span class="na">name=</span><span class="s">"output"</span><span class="w"> </span><span class="na">value=</span><span class="s">"/perception/occupancy_grid_map/fusion/map"</span><span class="nt">/&gt;</span>
-<span class="w">  </span><span class="nt">&lt;arg</span><span class="w"> </span><span class="na">name=</span><span class="s">"use_intra_process"</span><span class="w"> </span><span class="na">value=</span><span class="s">"true"</span><span class="nt">/&gt;</span>
-<span class="w">  </span><span class="nt">&lt;arg</span><span class="w"> </span><span class="na">name=</span><span class="s">"use_multithread"</span><span class="w"> </span><span class="na">value=</span><span class="s">"true"</span><span class="nt">/&gt;</span>
-<span class="w">  </span><span class="nt">&lt;arg</span><span class="w"> </span><span class="na">name=</span><span class="s">"use_pointcloud_container"</span><span class="w"> </span><span class="na">value=</span><span class="s">"$(var use_pointcloud_container)"</span><span class="nt">/&gt;</span>
-<span class="w">  </span><span class="nt">&lt;arg</span><span class="w"> </span><span class="na">name=</span><span class="s">"pointcloud_container_name"</span><span class="w"> </span><span class="na">value=</span><span class="s">"$(var pointcloud_container_name)"</span><span class="nt">/&gt;</span>
-<span class="w">  </span><span class="nt">&lt;arg</span><span class="w"> </span><span class="na">name=</span><span class="s">"method"</span><span class="w"> </span><span class="na">value=</span><span class="s">"pointcloud_based_occupancy_grid_map"</span><span class="nt">/&gt;</span>
-<span class="w">  </span><span class="nt">&lt;arg</span><span class="w"> </span><span class="na">name=</span><span class="s">"fusion_config_file"</span><span class="w"> </span><span class="na">value=</span><span class="s">"$(var fusion_config_file)"</span><span class="nt">/&gt;</span>
-<span class="w">  </span><span class="nt">&lt;arg</span><span class="w"> </span><span class="na">name=</span><span class="s">"ogm_config_file"</span><span class="w"> </span><span class="na">value=</span><span class="s">"$(var ogm_config_file)"</span><span class="nt">/&gt;</span>
-<span class="nt">&lt;/include&gt;</span>
-</code></pre></div>
-<p>The minimum parameter for the launch file is shown in the following table.</p>
-<table>
-<thead>
-<tr>
-<th>Parameter</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>output</code></td>
-<td>The output topic of the finally fused OGM.</td>
-</tr>
-<tr>
-<td><code>method</code></td>
-<td>The method for the OGM generation. Currently we support <code>pointcloud_based_occupancy_grid_map</code> and <code>laser_scan_based_occupancy_grid_map</code>. The pointcloud based method is recommended.</td>
-</tr>
-<tr>
-<td><code>fusion_config_file</code></td>
-<td>The parameter file for the grid map fusion. See <a href="config/grid_map_fusion.param.yaml">example parameter file</a></td>
-</tr>
-<tr>
-<td><code>ogm_config_file</code></td>
-<td>The parameter file for the OGM generation. See <a href="config/pointcloud_based_occupancy_grid_map_for_fusion.param.yaml">example parameter file</a></td>
-</tr>
-</tbody>
-</table>
-<h2 id="references">References<a class="headerlink" href="#references" title="Permanent link">#</a></h2>
+<h3 id="related-topics">Related topics<a class="headerlink" href="#related-topics" title="Permanent link">#</a></h3>
+<p>If you set <code>downsample_input_pointcloud</code> to <code>true</code>, the input pointcloud will be downsampled and following topics are also used.</p>
 <ul>
-<li>[1] Dempster, A. P., Laird, N. M., &amp; Rubin, D. B. (1977). Maximum likelihood from incomplete data via the EM algorithm. Journal of the Royal Statistical Society. Series B (Methodological), 39(1), 1-38.</li>
-<li>[2] <a href="https://www.diva-portal.org/smash/get/diva2:852457/FULLTEXT01.pdf">https://www.diva-portal.org/smash/get/diva2:852457/FULLTEXT01.pdf</a></li>
+<li>pointcloud_based_occupancy_grid_map method</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="c1"># downsampled raw and obstacle pointcloud</span>
+<span class="l l-Scalar l-Scalar-Plain">/perception/occupancy_grid_map/obstacle/downsample/pointcloud</span>
+<span class="l l-Scalar l-Scalar-Plain">/perception/occupancy_grid_map/raw/downsample/pointcloud</span>
+</code></pre></div>
+<h2 id="parameters">Parameters<a class="headerlink" href="#parameters" title="Permanent link">#</a></h2>
+<h3 id="node-parameters">Node Parameters<a class="headerlink" href="#node-parameters" title="Permanent link">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>map_frame</code></td>
+<td>string</td>
+<td>map frame</td>
+</tr>
+<tr>
+<td><code>base_link_frame</code></td>
+<td>string</td>
+<td>base_link frame</td>
+</tr>
+<tr>
+<td><code>use_height_filter</code></td>
+<td>bool</td>
+<td>whether to height filter for <code>~/input/obstacle_pointcloud</code> and <code>~/input/raw_pointcloud</code>? By default, the height is set to -1~2m.</td>
+</tr>
+<tr>
+<td><code>map_length</code></td>
+<td>double</td>
+<td>The length of the map. -100 if it is 50~50[m]</td>
+</tr>
+<tr>
+<td><code>map_resolution</code></td>
+<td>double</td>
+<td>The map cell resolution [m]</td>
+</tr>
+<tr>
+<td><code>grid_map_type</code></td>
+<td>string</td>
+<td>The type of grid map for estimating <code>UNKNOWN</code> region behind obstacle point clouds</td>
+</tr>
+<tr>
+<td><code>scan_origin</code></td>
+<td>string</td>
+<td>The origin of the scan. It should be a sensor frame.</td>
+</tr>
+<tr>
+<td><code>pub_debug_grid</code></td>
+<td>bool</td>
+<td>Whether to publish debug grid maps</td>
+</tr>
+<tr>
+<td><code>downsample_input_pointcloud</code></td>
+<td>bool</td>
+<td>Whether to downsample the input pointclouds. The downsampled pointclouds are used for the ray tracing.</td>
+</tr>
+<tr>
+<td><code>downsample_voxel_size</code></td>
+<td>double</td>
+<td>The voxel size for the downsampled pointclouds.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="assumptions-known-limits">Assumptions / Known limits<a class="headerlink" href="#assumptions-known-limits" title="Permanent link">#</a></h2>
+<p>In several places we have modified the external code written in BSD3 license.</p>
+<ul>
+<li>occupancy_grid_map.hpp</li>
+<li>cost_value.hpp</li>
+<li>occupancy_grid_map.cpp</li>
+</ul>
+<h2 id="optional-error-detection-and-handling">(Optional) Error detection and handling<a class="headerlink" href="#optional-error-detection-and-handling" title="Permanent link">#</a></h2>
+<h2 id="optional-performance-characterization">(Optional) Performance characterization<a class="headerlink" href="#optional-performance-characterization" title="Permanent link">#</a></h2>
+<h2 id="optional-referencesexternal-links">(Optional) References/External links<a class="headerlink" href="#optional-referencesexternal-links" title="Permanent link">#</a></h2>
+<h2 id="optional-future-extensions-unimplemented-parts">(Optional) Future extensions / Unimplemented parts<a class="headerlink" href="#optional-future-extensions-unimplemented-parts" title="Permanent link">#</a></h2>
+<ul>
+<li>The update probability of the binary Bayesian filter is currently hard-coded and requires a code change to be modified.</li>
+<li>Since there is no special support for moving objects, the probability of existence is not increased for fast objects.</li>
+</ul>
+<h2 id="how-to-debug">How to debug<a class="headerlink" href="#how-to-debug" title="Permanent link">#</a></h2>
+<p>If <code>grid_map_type</code> is "OccupancyGridMapProjectiveBlindSpot" and <code>pub_debug_grid</code> is <code>true</code>, it is possible to check the each process of grid map generation by running</p>
+<div class="highlight"><pre><span></span><code>ros2<span class="w"> </span>launch<span class="w"> </span>autoware_probabilistic_occupancy_grid_map<span class="w"> </span>debug.launch.xml
+</code></pre></div>
+<p>and visualizing the following occupancy grid map topics (which are listed in config/grid_map_param.yaml):</p>
+<ul>
+<li><code>/perception/occupancy_grid_map/grid_1st_step</code>: <code>FREE</code> cells are filled</li>
+<li><code>/perception/occupancy_grid_map/grid_2nd_step</code>: <code>UNKNOWN</code> cells are filled</li>
+<li><code>/perception/occupancy_grid_map/grid_3rd_step</code>: <code>OCCUPIED</code> cells are filled</li>
 </ul></div>
 
 
@@ -13542,7 +13580,7 @@ Also, remember to set <code>enable_single_frame_mode</code> and <code>filter_obs
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../pointcloud-based-occupancy-grid-map/" class="md-footer__link md-footer__link--prev" aria-label="Previous: pointcloud based occupancy grid map" rel="prev">
+          <a href="../laserscan-based-occupancy-grid-map/" class="md-footer__link md-footer__link--prev" aria-label="Previous: laserscan based occupancy grid map" rel="prev">
             <div class="md-footer__button md-icon">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
             </div>
@@ -13551,20 +13589,20 @@ Also, remember to set <code>enable_single_frame_mode</code> and <code>filter_obs
                 Previous
               </span>
               <div class="md-ellipsis">
-                pointcloud based occupancy grid map
+                laserscan based occupancy grid map
               </div>
             </div>
           </a>
         
         
           
-          <a href="../../traffic_light_arbiter/" class="md-footer__link md-footer__link--next" aria-label="Next: traffic_light_arbiter" rel="next">
+          <a href="../synchronized_grid_map_fusion/" class="md-footer__link md-footer__link--next" aria-label="Next: synchronized OGM fusion" rel="next">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                traffic_light_arbiter
+                synchronized OGM fusion
               </div>
             </div>
             <div class="md-footer__button md-icon">
