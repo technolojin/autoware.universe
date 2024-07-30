@@ -147,9 +147,14 @@ private:
   autoware::universe_utils::InterProcessPollingSubscriber<TrafficLightGroupArray>
     sub_traffic_signals_{this, "/traffic_signals"};
 
+  rclcpp::TimerBase::SharedPtr process_cycle_timer_;
+
   // debug publisher
   std::unique_ptr<autoware::universe_utils::StopWatch<std::chrono::milliseconds>> stop_watch_ptr_;
   std::unique_ptr<autoware::universe_utils::DebugPublisher> processing_time_publisher_;
+
+  // Object Data
+  TrackedObjects::ConstSharedPtr latest_objects_;
 
   // Object History
   std::unordered_map<std::string, std::deque<ObjectData>> road_users_history;
@@ -231,6 +236,7 @@ private:
   void mapCallback(const LaneletMapBin::ConstSharedPtr msg);
   void trafficSignalsCallback(const TrafficLightGroupArray::ConstSharedPtr msg);
   void objectsCallback(const TrackedObjects::ConstSharedPtr in_objects);
+  void onCycleCallback();
 
   bool doesPathCrossAnyFence(const PredictedPath & predicted_path);
   bool doesPathCrossFence(

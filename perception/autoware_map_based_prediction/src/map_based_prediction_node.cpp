@@ -871,6 +871,11 @@ MapBasedPredictionNode::MapBasedPredictionNode(const rclcpp::NodeOptions & node_
   set_param_res_ = this->add_on_set_parameters_callback(
     std::bind(&MapBasedPredictionNode::onParam, this, std::placeholders::_1));
 
+  const double process_rate = 10.0;  // [Hz]
+  const auto timer_period = rclcpp::Rate(process_rate).period();
+  process_cycle_timer_ = rclcpp::create_timer(
+    this, get_clock(), timer_period, std::bind(&MapBasedPredictionNode::onCycleCallback, this));
+
   stop_watch_ptr_ =
     std::make_unique<autoware::universe_utils::StopWatch<std::chrono::milliseconds>>();
   stop_watch_ptr_->tic("cyclic_time");
@@ -956,8 +961,18 @@ void MapBasedPredictionNode::trafficSignalsCallback(
 void MapBasedPredictionNode::objectsCallback(const TrackedObjects::ConstSharedPtr in_objects)
 {
   autoware::universe_utils::ScopedTimeTrack st(__func__, time_keeper_);
+  latest_objects_ = in_objects;
+}
 
+void MapBasedPredictionNode::onCycleCallback()
+{
+  autoware::universe_utils::ScopedTimeTrack st(__func__, time_keeper_);
   stop_watch_ptr_->toc("processing_time", true);
+
+  const TrackedObjects::ConstSharedPtr & in_objects = latest_objects_;
+  if (!in_objects) {
+    return;
+  }
 
   // take traffic_signal
   {
