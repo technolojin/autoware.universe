@@ -13280,14 +13280,14 @@ In other words, the output trajectory doesn't include both forward and backward 
 <td>time limit of planning</td>
 </tr>
 <tr>
-<td><code>minimum_turning_radius</code></td>
+<td><code>maximum_turning_ratio</code></td>
 <td>double</td>
-<td>minimum turning radius of robot</td>
+<td>max ratio of actual turning range to use</td>
 </tr>
 <tr>
-<td><code>maximum_turning_radius</code></td>
+<td><code>turning_steps</code></td>
 <td>double</td>
-<td>maximum turning radius of robot</td>
+<td>number of turning steps within turning range</td>
 </tr>
 <tr>
 <td><code>theta_size</code></td>
@@ -13320,6 +13320,11 @@ In other words, the output trajectory doesn't include both forward and backward 
 <td>additional cost factor for reverse actions</td>
 </tr>
 <tr>
+<td><code>direction_change_weight</code></td>
+<td>double</td>
+<td>additional cost factor for switching direction</td>
+</tr>
+<tr>
 <td><code>obstacle_threshold</code></td>
 <td>double</td>
 <td>threshold for regarding a certain grid as obstacle</td>
@@ -13347,9 +13352,19 @@ In other words, the output trajectory doesn't include both forward and backward 
 <td>whether using backward trajectory</td>
 </tr>
 <tr>
+<td><code>expansion_distance</code></td>
+<td>double</td>
+<td>length of expansion for node transitions</td>
+</tr>
+<tr>
 <td><code>distance_heuristic_weight</code></td>
 <td>double</td>
 <td>heuristic weight for estimating node's cost</td>
+</tr>
+<tr>
+<td><code>smoothness_weight</code></td>
+<td>double</td>
+<td>cost factor for change in curvature</td>
 </tr>
 </tbody>
 </table>
