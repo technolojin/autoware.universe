@@ -185,6 +185,7 @@ private:
 
   // Parameters
   bool enable_delay_compensation_;
+  double process_rate_;
   PredictionTimeHorizon prediction_time_horizon_;
   double lateral_control_time_horizon_;
   double prediction_time_horizon_rate_for_validate_lane_length_;
@@ -236,7 +237,7 @@ private:
   void mapCallback(const LaneletMapBin::ConstSharedPtr msg);
   void trafficSignalsCallback(const TrafficLightGroupArray::ConstSharedPtr msg);
   void objectsCallback(const TrackedObjects::ConstSharedPtr in_objects);
-  void onCycleCallback();
+  void cycleCallback();
 
   bool doesPathCrossAnyFence(const PredictedPath & predicted_path);
   bool doesPathCrossFence(

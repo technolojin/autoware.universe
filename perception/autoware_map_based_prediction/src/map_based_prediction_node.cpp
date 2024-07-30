@@ -766,6 +766,7 @@ MapBasedPredictionNode::MapBasedPredictionNode(const rclcpp::NodeOptions & node_
     google::InstallFailureSignalHandler();
   }
   enable_delay_compensation_ = declare_parameter<bool>("enable_delay_compensation");
+  process_rate_ = declare_parameter<double>("process_rate");
   prediction_time_horizon_.vehicle = declare_parameter<double>("prediction_time_horizon.vehicle");
   prediction_time_horizon_.pedestrian =
     declare_parameter<double>("prediction_time_horizon.pedestrian");
@@ -871,10 +872,10 @@ MapBasedPredictionNode::MapBasedPredictionNode(const rclcpp::NodeOptions & node_
   set_param_res_ = this->add_on_set_parameters_callback(
     std::bind(&MapBasedPredictionNode::onParam, this, std::placeholders::_1));
 
-  const double process_rate = 10.0;  // [Hz]
-  const auto timer_period = rclcpp::Rate(process_rate).period();
+  // Timer for cyclic processing
+  const auto timer_period = rclcpp::Rate(process_rate_).period();
   process_cycle_timer_ = rclcpp::create_timer(
-    this, get_clock(), timer_period, std::bind(&MapBasedPredictionNode::onCycleCallback, this));
+    this, get_clock(), timer_period, std::bind(&MapBasedPredictionNode::cycleCallback, this));
 
   stop_watch_ptr_ =
     std::make_unique<autoware::universe_utils::StopWatch<std::chrono::milliseconds>>();
@@ -964,7 +965,7 @@ void MapBasedPredictionNode::objectsCallback(const TrackedObjects::ConstSharedPt
   latest_objects_ = in_objects;
 }
 
-void MapBasedPredictionNode::onCycleCallback()
+void MapBasedPredictionNode::cycleCallback()
 {
   autoware::universe_utils::ScopedTimeTrack st(__func__, time_keeper_);
   stop_watch_ptr_->toc("processing_time", true);
