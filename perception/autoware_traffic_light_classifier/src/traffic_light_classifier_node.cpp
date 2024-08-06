@@ -85,8 +85,6 @@ void TrafficLightClassifierNodelet::imageRoiCallback(
     return;
   }
   if (input_rois_msg->rois.size() == 0) {
-    // debug message
-    RCLCPP_WARN(this->get_logger(), "no rois detected, abort callback");
     return;
   }
   cv_bridge::CvImagePtr cv_ptr;
@@ -106,23 +104,21 @@ void TrafficLightClassifierNodelet::imageRoiCallback(
   std::vector<size_t> backlight_indices;
   for (size_t i = 0; i < input_rois_msg->rois.size(); i++) {
     const auto & input_roi = input_rois_msg->rois.at(i);
-    // skip if the roi is not detected
-    if (input_roi.roi.height == 0 || input_roi.roi.width == 0) {
-      // debug message
-      RCLCPP_INFO(
-        this->get_logger(), "ignore roi %ld, type %d, size %d x %d", input_roi.traffic_light_id,
-        input_roi.traffic_light_type, input_roi.roi.width, input_roi.roi.height);
-      // break; // why break?
-      continue;
-    }
     if (input_roi.traffic_light_type != classify_traffic_light_type_) {
       // ignore if the roi is not the type to be classified
       continue;
     }
+
+    if (input_roi.roi.height == 0 || input_roi.roi.width == 0) {
+      // skip if size of the roi is 0
+      continue;
+    }
+
+    // set traffic light id and type
     output_msg.signals[images.size()].traffic_light_id = input_roi.traffic_light_id;
     output_msg.signals[images.size()].traffic_light_type = input_roi.traffic_light_type;
-    const sensor_msgs::msg::RegionOfInterest & roi = input_roi.roi;
 
+    const sensor_msgs::msg::RegionOfInterest & roi = input_roi.roi;
     auto roi_img = cv_ptr->image(cv::Rect(roi.x_offset, roi.y_offset, roi.width, roi.height));
     if (is_harsh_backlight(roi_img)) {
       backlight_indices.emplace_back(i);
@@ -130,10 +126,13 @@ void TrafficLightClassifierNodelet::imageRoiCallback(
     images.emplace_back(roi_img);
   }
 
+  // classify the images
   output_msg.signals.resize(images.size());
-  if (!classifier_ptr_->getTrafficSignals(images, output_msg)) {
-    RCLCPP_ERROR(this->get_logger(), "failed classify image, abort callback");
-    return;
+  if (!images.empty()) {
+    if (!classifier_ptr_->getTrafficSignals(images, output_msg)) {
+      RCLCPP_ERROR(this->get_logger(), "failed classify image, abort callback");
+      return;
+    }
   }
 
   // append the undetected rois as unknown
@@ -141,6 +140,8 @@ void TrafficLightClassifierNodelet::imageRoiCallback(
     if (
       (input_roi.roi.height == 0 || input_roi.roi.width == 0) &&
       input_roi.traffic_light_type == classify_traffic_light_type_) {
+      // the type is the target type and the roi is not detected
+
       tier4_perception_msgs::msg::TrafficLight tlr_sig;
       tlr_sig.traffic_light_id = input_roi.traffic_light_id;
       tlr_sig.traffic_light_type = input_roi.traffic_light_type;
