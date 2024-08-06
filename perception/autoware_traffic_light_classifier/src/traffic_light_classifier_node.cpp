@@ -97,20 +97,19 @@ void TrafficLightClassifierNodelet::imageRoiCallback(
   }
 
   tier4_perception_msgs::msg::TrafficLightArray output_msg;
-
   output_msg.signals.resize(input_rois_msg->rois.size());
 
   std::vector<cv::Mat> images;
   std::vector<size_t> backlight_indices;
   for (size_t i = 0; i < input_rois_msg->rois.size(); i++) {
     const auto & input_roi = input_rois_msg->rois.at(i);
+
+    // ignore if the roi is not the type to be classified
     if (input_roi.traffic_light_type != classify_traffic_light_type_) {
-      // ignore if the roi is not the type to be classified
       continue;
     }
-
+    // skip if the roi size is zero
     if (input_roi.roi.height == 0 || input_roi.roi.width == 0) {
-      // skip if size of the roi is 0
       continue;
     }
 
