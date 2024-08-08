@@ -412,8 +412,10 @@ bool withinRoadLanelet(
 boost::optional<CrosswalkEdgePoints> isReachableCrosswalkEdgePoints(
   const TrackedObject & object, const lanelet::ConstLanelets & surrounding_lanelets,
   const lanelet::ConstLanelets & external_surrounding_crosswalks,
-  const CrosswalkEdgePoints & edge_points, const double time_horizon, const double min_object_vel)
+  const CrosswalkEdgePoints & edge_points, const double time_horizon, const double min_object_vel, autoware::universe_utils::TimeKeeper & time_keeper)
 {
+  autoware::universe_utils::ScopedTimeTrack st(__func__, time_keeper);
+
   using Point = boost::geometry::model::d2::point_xy<double>;
 
   const auto & obj_pos = object.kinematics.pose_with_covariance.pose.position;
@@ -516,8 +518,11 @@ bool hasPotentialToReach(
   const TrackedObject & object, const Eigen::Vector2d & center_point,
   const Eigen::Vector2d & right_point, const Eigen::Vector2d & left_point,
   const double time_horizon, const double min_object_vel,
-  const double max_crosswalk_user_delta_yaw_threshold_for_lanelet)
+  const double max_crosswalk_user_delta_yaw_threshold_for_lanelet, 
+  autoware::universe_utils::TimeKeeper & time_keeper)
 {
+  autoware::universe_utils::ScopedTimeTrack st(__func__, time_keeper);
+
   const auto & obj_pos = object.kinematics.pose_with_covariance.pose.position;
   const auto & obj_vel = object.kinematics.twist_with_covariance.twist.linear;
   const auto yaw = autoware::universe_utils::getRPY(object.kinematics.pose_with_covariance.pose).z;
@@ -579,8 +584,11 @@ bool hasPotentialToReach(
 template <typename T>
 std::unordered_set<std::string> removeOldObjectsHistory(
   const double current_time, const double buffer_time,
-  std::unordered_map<std::string, std::deque<T>> & target_objects)
+  std::unordered_map<std::string, std::deque<T>> & target_objects,
+  autoware::universe_utils::TimeKeeper & time_keeper)
 {
+  autoware::universe_utils::ScopedTimeTrack st(__func__, time_keeper);
+
   std::unordered_set<std::string> invalid_object_id;
   for (auto iter = target_objects.begin(); iter != target_objects.end(); ++iter) {
     const std::string object_id = iter->first;
@@ -684,8 +692,10 @@ ObjectClassification::_label_type changeLabelForPrediction(
 // NOTE: These two functions are copied from the route_handler package.
 lanelet::Lanelets getRightOppositeLanelets(
   const std::shared_ptr<lanelet::LaneletMap> & lanelet_map_ptr,
-  const lanelet::ConstLanelet & lanelet)
+  const lanelet::ConstLanelet & lanelet,
+  autoware::universe_utils::TimeKeeper & time_keeper)
 {
+  autoware::universe_utils::ScopedTimeTrack st(__func__, time_keeper);
   const auto opposite_candidate_lanelets =
     lanelet_map_ptr->laneletLayer.findUsages(lanelet.rightBound().invert());
 
@@ -703,8 +713,10 @@ lanelet::Lanelets getRightOppositeLanelets(
 
 lanelet::Lanelets getLeftOppositeLanelets(
   const std::shared_ptr<lanelet::LaneletMap> & lanelet_map_ptr,
-  const lanelet::ConstLanelet & lanelet)
+  const lanelet::ConstLanelet & lanelet,
+  autoware::universe_utils::TimeKeeper & time_keeper)
 {
+  autoware::universe_utils::ScopedTimeTrack st(__func__, time_keeper);
   const auto opposite_candidate_lanelets =
     lanelet_map_ptr->laneletLayer.findUsages(lanelet.leftBound().invert());
 
@@ -721,8 +733,9 @@ lanelet::Lanelets getLeftOppositeLanelets(
 }
 
 void replaceObjectYawWithLaneletsYaw(
-  const LaneletsData & current_lanelets, TrackedObject & transformed_object)
+  const LaneletsData & current_lanelets, TrackedObject & transformed_object, autoware::universe_utils::TimeKeeper & time_keeper)
 {
+  autoware::universe_utils::ScopedTimeTrack st(__func__, time_keeper);
   // return if no lanelet is found
   if (current_lanelets.empty()) return;
   auto & pose_with_cov = transformed_object.kinematics.pose_with_covariance;
@@ -831,10 +844,6 @@ MapBasedPredictionNode::MapBasedPredictionNode(const rclcpp::NodeOptions & node_
   timeout_set_for_no_intention_to_walk_ = declare_parameter<std::vector<double>>(
     "crosswalk_with_signal.timeout_set_for_no_intention_to_walk");
 
-  path_generator_ = std::make_shared<PathGenerator>(
-    prediction_sampling_time_interval_, min_crosswalk_user_velocity_);
-  path_generator_->setUseVehicleAcceleration(use_vehicle_acceleration_);
-  path_generator_->setAccelerationHalfLife(acceleration_exponential_half_life_);
 
   sub_objects_ = this->create_subscription<TrackedObjects>(
     "~/input/objects", 1,
@@ -856,7 +865,13 @@ MapBasedPredictionNode::MapBasedPredictionNode(const rclcpp::NodeOptions & node_
       "~/debug/processing_time_detail_ms", 1);
   time_keeper_ = autoware::universe_utils::TimeKeeper(detailed_processing_time_publisher_);
 
-  path_generator_->setTimeKeeper(time_keeper_);
+
+  path_generator_ = std::make_shared<PathGenerator>(
+    prediction_sampling_time_interval_, min_crosswalk_user_velocity_, time_keeper_);
+  path_generator_->setUseVehicleAcceleration(use_vehicle_acceleration_);
+  path_generator_->setAccelerationHalfLife(acceleration_exponential_half_life_);
+
+  // path_generator_->setTimeKeeper(time_keeper_);
 
   set_param_res_ = this->add_on_set_parameters_callback(
     std::bind(&MapBasedPredictionNode::onParam, this, std::placeholders::_1));
@@ -995,11 +1010,11 @@ void MapBasedPredictionNode::objectsCallback(const TrackedObjects::ConstSharedPt
 
   // Remove old objects information in object history
   const double objects_detected_time = rclcpp::Time(in_objects->header.stamp).seconds();
-  removeOldObjectsHistory(objects_detected_time, object_buffer_time_length_, road_users_history);
+  removeOldObjectsHistory(objects_detected_time, object_buffer_time_length_, road_users_history, time_keeper_);
   removeStaleTrafficLightInfo(in_objects);
 
   auto invalidated_crosswalk_users = removeOldObjectsHistory(
-    objects_detected_time, object_buffer_time_length_, crosswalk_users_history_);
+    objects_detected_time, object_buffer_time_length_, crosswalk_users_history_, time_keeper_);
   // delete matches that point to invalid object
   for (auto it = known_matches_.begin(); it != known_matches_.end();) {
     if (invalidated_crosswalk_users.count(it->second)) {
@@ -1139,7 +1154,7 @@ void MapBasedPredictionNode::objectsCallback(const TrackedObjects::ConstSharedPt
         if (
           transformed_object.kinematics.orientation_availability ==
           autoware_perception_msgs::msg::TrackedObjectKinematics::UNAVAILABLE) {
-          replaceObjectYawWithLaneletsYaw(current_lanelets, yaw_fixed_transformed_object);
+          replaceObjectYawWithLaneletsYaw(current_lanelets, yaw_fixed_transformed_object, time_keeper_);
         }
         // Generate Predicted Path
         std::vector<PredictedPath> predicted_paths;
@@ -1431,7 +1446,7 @@ PredictedObject MapBasedPredictionNode::getPredictedObjectAsCrosswalkUser(
     if (hasPotentialToReach(
           object, edge_points.front_center_point, edge_points.front_right_point,
           edge_points.front_left_point, std::numeric_limits<double>::max(),
-          min_crosswalk_user_velocity_, max_crosswalk_user_delta_yaw_threshold_for_lanelet_)) {
+          min_crosswalk_user_velocity_, max_crosswalk_user_delta_yaw_threshold_for_lanelet_, time_keeper_)) {
       PredictedPath predicted_path =
         path_generator_->generatePathToTargetPoint(object, edge_points.front_center_point);
       predicted_path.confidence = 1.0;
@@ -1441,7 +1456,7 @@ PredictedObject MapBasedPredictionNode::getPredictedObjectAsCrosswalkUser(
     if (hasPotentialToReach(
           object, edge_points.back_center_point, edge_points.back_right_point,
           edge_points.back_left_point, std::numeric_limits<double>::max(),
-          min_crosswalk_user_velocity_, max_crosswalk_user_delta_yaw_threshold_for_lanelet_)) {
+          min_crosswalk_user_velocity_, max_crosswalk_user_delta_yaw_threshold_for_lanelet_, time_keeper_)) {
       PredictedPath predicted_path =
         path_generator_->generatePathToTargetPoint(object, edge_points.back_center_point);
       predicted_path.confidence = 1.0;
@@ -1462,7 +1477,7 @@ PredictedObject MapBasedPredictionNode::getPredictedObjectAsCrosswalkUser(
       if (hasPotentialToReach(
             object, edge_points.front_center_point, edge_points.front_right_point,
             edge_points.front_left_point, prediction_time_horizon_.pedestrian * 2.0,
-            min_crosswalk_user_velocity_, max_crosswalk_user_delta_yaw_threshold_for_lanelet_)) {
+            min_crosswalk_user_velocity_, max_crosswalk_user_delta_yaw_threshold_for_lanelet_, time_keeper_)) {
         PredictedPath predicted_path =
           path_generator_->generatePathToTargetPoint(object, edge_points.front_center_point);
         predicted_path.confidence = 1.0;
@@ -1472,7 +1487,7 @@ PredictedObject MapBasedPredictionNode::getPredictedObjectAsCrosswalkUser(
       if (hasPotentialToReach(
             object, edge_points.back_center_point, edge_points.back_right_point,
             edge_points.back_left_point, prediction_time_horizon_.pedestrian * 2.0,
-            min_crosswalk_user_velocity_, max_crosswalk_user_delta_yaw_threshold_for_lanelet_)) {
+            min_crosswalk_user_velocity_, max_crosswalk_user_delta_yaw_threshold_for_lanelet_, time_keeper_)) {
         PredictedPath predicted_path =
           path_generator_->generatePathToTargetPoint(object, edge_points.back_center_point);
         predicted_path.confidence = 1.0;
@@ -1497,11 +1512,11 @@ PredictedObject MapBasedPredictionNode::getPredictedObjectAsCrosswalkUser(
     const auto reachable_first = hasPotentialToReach(
       object, edge_points.front_center_point, edge_points.front_right_point,
       edge_points.front_left_point, prediction_time_horizon_.pedestrian,
-      min_crosswalk_user_velocity_, max_crosswalk_user_delta_yaw_threshold_for_lanelet_);
+      min_crosswalk_user_velocity_, max_crosswalk_user_delta_yaw_threshold_for_lanelet_, time_keeper_);
     const auto reachable_second = hasPotentialToReach(
       object, edge_points.back_center_point, edge_points.back_right_point,
       edge_points.back_left_point, prediction_time_horizon_.pedestrian,
-      min_crosswalk_user_velocity_, max_crosswalk_user_delta_yaw_threshold_for_lanelet_);
+      min_crosswalk_user_velocity_, max_crosswalk_user_delta_yaw_threshold_for_lanelet_, time_keeper_);
 
     if (!reachable_first && !reachable_second) {
       continue;
@@ -1509,7 +1524,7 @@ PredictedObject MapBasedPredictionNode::getPredictedObjectAsCrosswalkUser(
 
     const auto reachable_crosswalk = isReachableCrosswalkEdgePoints(
       object, surrounding_lanelets, external_surrounding_crosswalks, edge_points,
-      prediction_time_horizon_.pedestrian, min_crosswalk_user_velocity_);
+      prediction_time_horizon_.pedestrian, min_crosswalk_user_velocity_, time_keeper_);
 
     if (!reachable_crosswalk) {
       continue;
@@ -1665,12 +1680,12 @@ LaneletsData MapBasedPredictionNode::getCurrentLanelets(const TrackedObject & ob
     std::vector<std::pair<double, lanelet::Lanelet>> surrounding_opposite_lanelets;
     for (const auto & surrounding_lanelet : surrounding_lanelets) {
       for (const auto & left_opposite_lanelet :
-           getLeftOppositeLanelets(lanelet_map_ptr_, surrounding_lanelet.second)) {
+           getLeftOppositeLanelets(lanelet_map_ptr_, surrounding_lanelet.second, time_keeper_)) {
         const double distance = lanelet::geometry::distance2d(left_opposite_lanelet, search_point);
         surrounding_opposite_lanelets.push_back(std::make_pair(distance, left_opposite_lanelet));
       }
       for (const auto & right_opposite_lanelet :
-           getRightOppositeLanelets(lanelet_map_ptr_, surrounding_lanelet.second)) {
+           getRightOppositeLanelets(lanelet_map_ptr_, surrounding_lanelet.second, time_keeper_)) {
         const double distance = lanelet::geometry::distance2d(right_opposite_lanelet, search_point);
         surrounding_opposite_lanelets.push_back(std::make_pair(distance, right_opposite_lanelet));
       }

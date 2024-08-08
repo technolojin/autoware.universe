@@ -81,7 +81,7 @@ using PosePath = std::vector<geometry_msgs::msg::Pose>;
 class PathGenerator
 {
 public:
-  PathGenerator(const double sampling_time_interval, const double min_crosswalk_user_velocity);
+  PathGenerator(const double sampling_time_interval, const double min_crosswalk_user_velocity, autoware::universe_utils::TimeKeeper & time_keeper);
 
   void setTimeKeeper(autoware::universe_utils::TimeKeeper & time_keeper);
 
@@ -148,7 +148,8 @@ private:
     const TrackedObject & object, const PosePath & ref_path, const double duration,
     const double speed_limit = 0.0) const;
 
-  std::shared_ptr<autoware::universe_utils::TimeKeeper> time_keeper_;
+  autoware::universe_utils::TimeKeeper & time_keeper_;
+  bool is_time_keeper_set_ = false;
 };
 }  // namespace autoware::map_based_prediction
 

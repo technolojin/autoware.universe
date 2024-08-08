@@ -17,6 +17,8 @@
 #include <glog/logging.h>
 #include <gtest/gtest.h>
 
+#include <iostream>
+
 using autoware_perception_msgs::msg::ObjectClassification;
 using autoware_perception_msgs::msg::PredictedObject;
 using autoware_perception_msgs::msg::PredictedObjectKinematics;
@@ -54,9 +56,13 @@ TEST(PathGenerator, test_generatePathForNonVehicleObject)
   const double prediction_time_horizon = 10.0;
   const double prediction_sampling_time_interval = 0.5;
   const double min_crosswalk_user_velocity = 0.1;
+
+  // Output stream
+  // std::ostream* out = &std::cout;
+
   const autoware::map_based_prediction::PathGenerator path_generator =
     autoware::map_based_prediction::PathGenerator(
-      prediction_sampling_time_interval, min_crosswalk_user_velocity);
+      prediction_sampling_time_interval, min_crosswalk_user_velocity, autoware::universe_utils::TimeKeeper(&std::cerr));
 
   // Generate pedestrian object
   TrackedObject tracked_object = generate_static_object(ObjectClassification::PEDESTRIAN);
@@ -104,7 +110,7 @@ TEST(PathGenerator, test_generatePathForOffLaneVehicle)
   const double min_crosswalk_user_velocity = 0.1;
   const autoware::map_based_prediction::PathGenerator path_generator =
     autoware::map_based_prediction::PathGenerator(
-      prediction_sampling_time_interval, min_crosswalk_user_velocity);
+      prediction_sampling_time_interval, min_crosswalk_user_velocity, );
 
   // Generate dummy object
   TrackedObject tracked_object = generate_static_object(ObjectClassification::CAR);
