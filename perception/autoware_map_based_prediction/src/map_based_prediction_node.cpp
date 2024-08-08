@@ -833,7 +833,6 @@ MapBasedPredictionNode::MapBasedPredictionNode(const rclcpp::NodeOptions & node_
 
   path_generator_ = std::make_shared<PathGenerator>(
     prediction_sampling_time_interval_, min_crosswalk_user_velocity_);
-
   path_generator_->setUseVehicleAcceleration(use_vehicle_acceleration_);
   path_generator_->setAccelerationHalfLife(acceleration_exponential_half_life_);
 
@@ -856,6 +855,8 @@ MapBasedPredictionNode::MapBasedPredictionNode(const rclcpp::NodeOptions & node_
     this->create_publisher<autoware::universe_utils::ProcessingTimeDetail>(
       "~/debug/processing_time_detail_ms", 1);
   time_keeper_ = autoware::universe_utils::TimeKeeper(detailed_processing_time_publisher_);
+
+  path_generator_->setTimeKeeper(time_keeper_);
 
   set_param_res_ = this->add_on_set_parameters_callback(
     std::bind(&MapBasedPredictionNode::onParam, this, std::placeholders::_1));

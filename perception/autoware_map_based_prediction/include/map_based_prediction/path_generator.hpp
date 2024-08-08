@@ -18,6 +18,7 @@
 #include <Eigen/Eigen>
 #include <rclcpp/rclcpp.hpp>
 
+#include <autoware/universe_utils/system/time_keeper.hpp>
 #include <autoware_perception_msgs/msg/predicted_objects.hpp>
 #include <autoware_perception_msgs/msg/tracked_objects.hpp>
 #include <geometry_msgs/msg/pose.hpp>
@@ -82,6 +83,8 @@ class PathGenerator
 public:
   PathGenerator(const double sampling_time_interval, const double min_crosswalk_user_velocity);
 
+  void setTimeKeeper(autoware::universe_utils::TimeKeeper & time_keeper);
+
   PredictedPath generatePathForNonVehicleObject(
     const TrackedObject & object, const double duration) const;
 
@@ -144,6 +147,8 @@ private:
   FrenetPoint getFrenetPoint(
     const TrackedObject & object, const PosePath & ref_path, const double duration,
     const double speed_limit = 0.0) const;
+
+  std::shared_ptr<autoware::universe_utils::TimeKeeper> time_keeper_;
 };
 }  // namespace autoware::map_based_prediction
 
