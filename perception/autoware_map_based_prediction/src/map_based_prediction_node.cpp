@@ -893,6 +893,8 @@ rcl_interfaces::msg::SetParametersResult MapBasedPredictionNode::onParam(
 PredictedObjectKinematics MapBasedPredictionNode::convertToPredictedKinematics(
   const TrackedObjectKinematics & tracked_object)
 {
+  autoware::universe_utils::ScopedTimeTrack st(__func__, time_keeper_);
+
   PredictedObjectKinematics output;
   output.initial_pose_with_covariance = tracked_object.pose_with_covariance;
   output.initial_twist_with_covariance = tracked_object.twist_with_covariance;
@@ -903,6 +905,8 @@ PredictedObjectKinematics MapBasedPredictionNode::convertToPredictedKinematics(
 PredictedObject MapBasedPredictionNode::convertToPredictedObject(
   const TrackedObject & tracked_object)
 {
+  autoware::universe_utils::ScopedTimeTrack st(__func__, time_keeper_);
+
   PredictedObject predicted_object;
   predicted_object.kinematics = convertToPredictedKinematics(tracked_object.kinematics);
   predicted_object.classification = tracked_object.classification;
@@ -1233,9 +1237,8 @@ void MapBasedPredictionNode::objectsCallback(const TrackedObjects::ConstSharedPt
   }
 
   // Publish Results
-  pub_objects_->publish(output);
-  published_time_publisher_->publish_if_subscribed(pub_objects_, output.header.stamp);
-  pub_debug_markers_->publish(debug_markers);
+  publish(output, debug_markers);
+
   const auto processing_time_ms = stop_watch_ptr_->toc("processing_time", true);
   const auto cyclic_time_ms = stop_watch_ptr_->toc("cyclic_time", true);
   processing_time_publisher_->publish<tier4_debug_msgs::msg::Float64Stamped>(
@@ -1243,6 +1246,16 @@ void MapBasedPredictionNode::objectsCallback(const TrackedObjects::ConstSharedPt
   processing_time_publisher_->publish<tier4_debug_msgs::msg::Float64Stamped>(
     "debug/processing_time_ms", processing_time_ms);
 }
+
+void MapBasedPredictionNode::publish(const PredictedObjects & output, const visualization_msgs::msg::MarkerArray & debug_markers) const
+{
+  autoware::universe_utils::ScopedTimeTrack st(__func__, time_keeper_);
+
+  pub_objects_->publish(output);
+  published_time_publisher_->publish_if_subscribed(pub_objects_, output.header.stamp);
+  pub_debug_markers_->publish(debug_markers);
+}
+
 
 void MapBasedPredictionNode::updateCrosswalkUserHistory(
   const std_msgs::msg::Header & header, const TrackedObject & object, const std::string & object_id)
@@ -1360,6 +1373,8 @@ bool MapBasedPredictionNode::isIntersecting(
   const geometry_msgs::msg::Point & point1, const geometry_msgs::msg::Point & point2,
   const lanelet::ConstPoint3d & point3, const lanelet::ConstPoint3d & point4)
 {
+  autoware::universe_utils::ScopedTimeTrack st(__func__, time_keeper_);
+
   const auto p1 = autoware::universe_utils::createPoint(point1.x, point1.y, 0.0);
   const auto p2 = autoware::universe_utils::createPoint(point2.x, point2.y, 0.0);
   const auto p3 = autoware::universe_utils::createPoint(point3.x(), point3.y(), 0.0);
@@ -2214,6 +2229,8 @@ geometry_msgs::msg::Pose MapBasedPredictionNode::compensateTimeDelay(
   const geometry_msgs::msg::Pose & delayed_pose, const geometry_msgs::msg::Twist & twist,
   const double dt) const
 {
+  autoware::universe_utils::ScopedTimeTrack st(__func__, time_keeper_);
+
   if (!enable_delay_compensation_) {
     return delayed_pose;
   }
@@ -2264,6 +2281,8 @@ double MapBasedPredictionNode::calcRightLateralOffset(
 double MapBasedPredictionNode::calcLeftLateralOffset(
   const lanelet::ConstLineString2d & boundary_line, const geometry_msgs::msg::Pose & search_pose)
 {
+  autoware::universe_utils::ScopedTimeTrack st(__func__, time_keeper_);
+
   return -calcRightLateralOffset(boundary_line, search_pose);
 }
 

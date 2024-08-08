@@ -235,6 +235,7 @@ private:
   void mapCallback(const LaneletMapBin::ConstSharedPtr msg);
   void trafficSignalsCallback(const TrafficLightGroupArray::ConstSharedPtr msg);
   void objectsCallback(const TrackedObjects::ConstSharedPtr in_objects);
+  void publish(const PredictedObjects & output, const visualization_msgs::msg::MarkerArray & debug_markers) const;
 
   bool doesPathCrossAnyFence(const PredictedPath & predicted_path);
   bool doesPathCrossFence(
