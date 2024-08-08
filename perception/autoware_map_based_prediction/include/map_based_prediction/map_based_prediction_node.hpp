@@ -320,112 +320,13 @@ private:
 
   // NOTE: This function is copied from the motion_velocity_smoother package.
   // TODO(someone): Consolidate functions and move them to a common
-  inline std::vector<double> calcTrajectoryCurvatureFrom3Points(
-    const TrajectoryPoints & trajectory, size_t idx_dist)
-  {
-    using autoware::universe_utils::calcCurvature;
-    using autoware::universe_utils::getPoint;
+  std::vector<double> calcTrajectoryCurvatureFrom3Points(
+    const TrajectoryPoints & trajectory, size_t idx_dist);
 
-    if (trajectory.size() < 3) {
-      const std::vector<double> k_arr(trajectory.size(), 0.0);
-      return k_arr;
-    }
+  TrajectoryPoints toTrajectoryPoints(const PredictedPath & path, const double velocity);
 
-    // if the idx size is not enough, change the idx_dist
-    const auto max_idx_dist = static_cast<size_t>(std::floor((trajectory.size() - 1) / 2.0));
-    idx_dist = std::max(1ul, std::min(idx_dist, max_idx_dist));
-
-    if (idx_dist < 1) {
-      throw std::logic_error("idx_dist less than 1 is not expected");
-    }
-
-    // calculate curvature by circle fitting from three points
-    std::vector<double> k_arr(trajectory.size(), 0.0);
-
-    for (size_t i = 1; i + 1 < trajectory.size(); i++) {
-      double curvature = 0.0;
-      const auto p0 = getPoint(trajectory.at(i - std::min(idx_dist, i)));
-      const auto p1 = getPoint(trajectory.at(i));
-      const auto p2 = getPoint(trajectory.at(i + std::min(idx_dist, trajectory.size() - 1 - i)));
-      try {
-        curvature = calcCurvature(p0, p1, p2);
-      } catch (std::exception const & e) {
-        // ...code that handles the error...
-        RCLCPP_WARN(rclcpp::get_logger("map_based_prediction"), "%s", e.what());
-        if (i > 1) {
-          curvature = k_arr.at(i - 1);  // previous curvature
-        } else {
-          curvature = 0.0;
-        }
-      }
-      k_arr.at(i) = curvature;
-    }
-    // copy curvatures for the last and first points;
-    k_arr.at(0) = k_arr.at(1);
-    k_arr.back() = k_arr.at((trajectory.size() - 2));
-
-    return k_arr;
-  }
-
-  inline TrajectoryPoints toTrajectoryPoints(const PredictedPath & path, const double velocity)
-  {
-    TrajectoryPoints out_trajectory;
-    std::for_each(
-      path.path.begin(), path.path.end(), [&out_trajectory, velocity](const auto & pose) {
-        TrajectoryPoint p;
-        p.pose = pose;
-        p.longitudinal_velocity_mps = velocity;
-        out_trajectory.push_back(p);
-      });
-    return out_trajectory;
-  };
-
-  inline bool isLateralAccelerationConstraintSatisfied(
-    const TrajectoryPoints & trajectory, const double delta_time)
-  {
-    constexpr double epsilon = 1E-6;
-    if (delta_time < epsilon) throw std::invalid_argument("delta_time must be a positive value");
-
-    if (trajectory.size() < 3) return true;
-    const double max_lateral_accel_abs = std::fabs(max_lateral_accel_);
-
-    double arc_length = 0.0;
-    for (size_t i = 1; i < trajectory.size(); ++i) {
-      const auto current_pose = trajectory.at(i).pose;
-      const auto next_pose = trajectory.at(i - 1).pose;
-      // Compute distance between poses
-      const double delta_s = std::hypot(
-        next_pose.position.x - current_pose.position.x,
-        next_pose.position.y - current_pose.position.y);
-      arc_length += delta_s;
-
-      // Compute change in heading
-      tf2::Quaternion q_current, q_next;
-      tf2::convert(current_pose.orientation, q_current);
-      tf2::convert(next_pose.orientation, q_next);
-      double delta_theta = q_current.angleShortestPath(q_next);
-      // Handle wrap-around
-      if (delta_theta > M_PI) {
-        delta_theta -= 2.0 * M_PI;
-      } else if (delta_theta < -M_PI) {
-        delta_theta += 2.0 * M_PI;
-      }
-
-      const double yaw_rate = std::max(std::abs(delta_theta / delta_time), 1.0E-5);
-
-      const double current_speed = std::abs(trajectory.at(i).longitudinal_velocity_mps);
-      // Compute lateral acceleration
-      const double lateral_acceleration = std::abs(current_speed * yaw_rate);
-      if (lateral_acceleration < max_lateral_accel_abs) continue;
-      const double v_curvature_max = std::sqrt(max_lateral_accel_abs / yaw_rate);
-      const double t =
-        (v_curvature_max - current_speed) / min_acceleration_before_curve_;  // acc is negative
-      const double distance_to_slow_down =
-        current_speed * t + 0.5 * min_acceleration_before_curve_ * std::pow(t, 2);
-      if (distance_to_slow_down > arc_length) return false;
-    }
-    return true;
-  };
+  bool isLateralAccelerationConstraintSatisfied(
+    const TrajectoryPoints & trajectory, const double delta_time);
 };
 }  // namespace autoware::map_based_prediction
 
