@@ -319,6 +319,8 @@ bool PedestrianTracker::getTrackedObject(
     RCLCPP_WARN(logger_, "PedestrianTracker::getTrackedObject: Failed to get predicted state.");
     return false;
   }
+  object.kinematics.orientation_availability =
+    autoware_perception_msgs::msg::TrackedObjectKinematics::AVAILABLE;
 
   // position
   pose_with_cov.pose.position.z = z_;
