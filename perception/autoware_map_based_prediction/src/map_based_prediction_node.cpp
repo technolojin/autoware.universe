@@ -1632,15 +1632,24 @@ LaneletsData MapBasedPredictionNode::getCurrentLanelets(const TrackedObject & ob
     object.kinematics.pose_with_covariance.pose.position.x,
     object.kinematics.pose_with_covariance.pose.position.y);
 
-  // nearest lanelet
-  std::vector<std::pair<double, lanelet::Lanelet>> surrounding_lanelets =
-    lanelet::geometry::findNearest(lanelet_map_ptr_->laneletLayer, search_point, 10);
+  std::vector<std::pair<double, lanelet::Lanelet>> surrounding_lanelets;
 
-  {  // Step 1. Search same directional lanelets
+  {  // Step 0. Get Closest Lanelets
+    std::unique_ptr<ScopedTimeTrack> st_ptr;
+    if (time_keeper_) st_ptr = std::make_unique<ScopedTimeTrack>("getCurrentLanelets_findNearest", *time_keeper_);
+
+    surrounding_lanelets =
+      lanelet::geometry::findNearest(lanelet_map_ptr_->laneletLayer, search_point, 10);
+
     // No Closest Lanelets
     if (surrounding_lanelets.empty()) {
       return {};
     }
+  }
+
+  {  // Step 1. Search same directional lanelets
+    std::unique_ptr<ScopedTimeTrack> st_ptr;
+    if (time_keeper_) st_ptr = std::make_unique<ScopedTimeTrack>("getCurrentLanelets_step1", *time_keeper_);
 
     LaneletsData object_lanelets;
     std::optional<std::pair<double, lanelet::Lanelet>> closest_lanelet{std::nullopt};
@@ -1677,6 +1686,9 @@ LaneletsData MapBasedPredictionNode::getCurrentLanelets(const TrackedObject & ob
 
   {  // Step 2. Search opposite directional lanelets
     // Get opposite lanelets and calculate distance to search point.
+    std::unique_ptr<ScopedTimeTrack> st_ptr;
+    if (time_keeper_) st_ptr = std::make_unique<ScopedTimeTrack>("getCurrentLanelets_step2", *time_keeper_);
+
     std::vector<std::pair<double, lanelet::Lanelet>> surrounding_opposite_lanelets;
     for (const auto & surrounding_lanelet : surrounding_lanelets) {
       for (const auto & left_opposite_lanelet :
