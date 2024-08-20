@@ -84,6 +84,7 @@ struct MotionProcessLimit
   double acc_long_max{0.0};  // [m/s^2]
   double acc_lat_max{0.0};   // [m/s^2]
   double vel_long_max{0.0};  // [m/s]
+  double vel_long_reverse{0.0};  // [m/s]
   double vel_lat_max{0.0};   // [m/s]
   double yaw_rate_max{0.0};  // [rad/s]
 };
@@ -143,6 +144,7 @@ public:
         process_limit.acc_long_max = const_g;
         process_limit.acc_lat_max = const_g;
         process_limit.vel_long_max = kmph2mps(140.0);
+        process_limit.vel_long_reverse = kmph2mps(-5.0);
 
         // initial covariance
         initial_covariance.pos_x = sq(1.0);
@@ -187,6 +189,7 @@ public:
         process_limit.acc_long_max = const_g;
         process_limit.acc_lat_max = const_g;
         process_limit.vel_long_max = kmph2mps(140.0);
+        process_limit.vel_long_reverse = kmph2mps(-5.0);
 
         // initial covariance
         initial_covariance.pos_x = sq(1.5);
@@ -231,6 +234,7 @@ public:
         process_limit.acc_long_max = const_g;
         process_limit.acc_lat_max = const_g;
         process_limit.vel_long_max = kmph2mps(120.0);
+        process_limit.vel_long_reverse = kmph2mps(-5.0);
 
         // initial covariance
         initial_covariance.pos_x = sq(0.8);
