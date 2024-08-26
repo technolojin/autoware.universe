@@ -13267,9 +13267,6 @@
 <h3 id="assumptions">Assumptions<a class="headerlink" href="#assumptions" title="Permanent link">#</a></h3>
 <p>This module has following assumptions.</p>
 <ul>
-<li>It is used when driving at low speeds (about 15 km/h).</li>
-</ul>
-<ul>
 <li>The predicted path of the ego vehicle can be made from either the path created from sensors or the path created from a control module, or both.</li>
 </ul>
 <ul>
@@ -13284,7 +13281,7 @@
 <p>IMU angular velocity:</p>
 <ul>
 <li>(+) Usually, it has high accuracy</li>
-<li>(-)Vehicle vibration might introduce noise.</li>
+<li>(-) Vehicle vibration might introduce noise.</li>
 </ul>
 <p>Steering angle:</p>
 <ul>
@@ -13393,7 +13390,7 @@ d = v_{ego}*t_{response} + v_{ego}^2/(2*a_{min}) -(sign(v_{obj})) * v_{obj}^2/(2
 <p><img alt="backward driving" src="image/backward-driving.drawio.svg"></p>
 <h3 id="preventing-collisions-in-case-of-wrong-odometry-imu-path-only">Preventing collisions in case of wrong Odometry (IMU path only)<a class="headerlink" href="#preventing-collisions-in-case-of-wrong-odometry-imu-path-only" title="Permanent link">#</a></h3>
 <p>When vehicle odometry information is faulty, it is possible that the MPC fails to predict a correct path for the ego vehicle. If the MPC predicted path is wrong, collision avoidance will not work as intended on the planning modules. However, the AEB’s IMU path does not depend on the MPC and could be able to predict a collision when the other modules cannot. As an example you can see a figure of a hypothetical case in which the MPC path is wrong and only the AEB’s IMU path detects a collision.</p>
-<p><img alt="backward driving" src="image/wrong-mpc.drawio.svg"></p>
+<p><img alt="wrong mpc" src="image/wrong-mpc.drawio.svg"></p>
 <h2 id="parameters">Parameters<a class="headerlink" href="#parameters" title="Permanent link">#</a></h2>
 <table>
 <thead>
@@ -13563,6 +13560,9 @@ d = v_{ego}*t_{response} + v_{ego}^2/(2*a_{min}) -(sign(v_{obj})) * v_{obj}^2/(2
 </tbody>
 </table>
 <h2 id="limitations">Limitations<a class="headerlink" href="#limitations" title="Permanent link">#</a></h2>
+<ul>
+<li>The distance required to stop after collision detection depends on the ego vehicle's speed and deceleration performance. To avoid collisions, it's necessary to increase the detection distance and set a higher deceleration rate. However, this creates a trade-off as it may also increase the number of unnecessary activations. Therefore, it's essential to consider what role this module should play and adjust the parameters accordingly.</li>
+</ul>
 <ul>
 <li>AEB might not be able to react with obstacles that are close to the ground. It depends on the performance of the pre-processing methods applied to the point cloud.</li>
 </ul>
