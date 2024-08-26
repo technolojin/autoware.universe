@@ -13291,27 +13291,6 @@ it is skipped.</p>
 <table>
 <thead>
 <tr>
-<th>Parameter /intervals</th>
-<th>Type</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>ego_time_buffer</code></td>
-<td>double</td>
-<td>[s] extend the ego time interval by this buffer</td>
-</tr>
-<tr>
-<td><code>objects_time_buffer</code></td>
-<td>double</td>
-<td>[s] extend the time intervals of objects by this buffer</td>
-</tr>
-</tbody>
-</table>
-<table>
-<thead>
-<tr>
 <th>Parameter /ttc</th>
 <th>Type</th>
 <th>Description</th>
@@ -13344,11 +13323,6 @@ it is skipped.</p>
 <td>double</td>
 <td>[-] minimum confidence required for a predicted path to be considered</td>
 </tr>
-<tr>
-<td><code>use_predicted_paths</code></td>
-<td>bool</td>
-<td>[-] if true, use the predicted paths to estimate future positions; if false, assume the object moves at constant velocity along <em>all</em> lanelets it currently is located in</td>
-</tr>
 </tbody>
 </table>
 <table>
@@ -13365,11 +13339,6 @@ it is skipped.</p>
 <td>double</td>
 <td>[m] minimum distance inside a lanelet for an overlap to be considered</td>
 </tr>
-<tr>
-<td><code>extra_length</code></td>
-<td>double</td>
-<td>[m] extra arc length to add to the front and back of an overlap (used to calculate enter/exit times)</td>
-</tr>
 </tbody>
 </table>
 <table>
@@ -13381,16 +13350,6 @@ it is skipped.</p>
 </tr>
 </thead>
 <tbody>
-<tr>
-<td><code>skip_if_over_max_decel</code></td>
-<td>bool</td>
-<td>[-] if true, do not take an action that would cause more deceleration than the maximum allowed</td>
-</tr>
-<tr>
-<td><code>distance_buffer</code></td>
-<td>double</td>
-<td>[m] buffer distance to try to keep between the ego footprint and lane</td>
-</tr>
 <tr>
 <td><code>slowdown.distance_threshold</code></td>
 <td>double</td>
