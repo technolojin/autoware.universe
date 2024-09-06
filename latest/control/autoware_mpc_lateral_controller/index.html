@@ -13424,6 +13424,12 @@ AutonomouStuff Lexus RX 450h for under 40 km/h driving.</p>
 <td align="left">stop vehicle when following yaw angle error is larger than this value [rad]</td>
 <td align="left">1.57</td>
 </tr>
+<tr>
+<td align="left">use_delayed_initial_state</td>
+<td align="left">boolean</td>
+<td align="left">flag to use x0_delayed as initial state for predicted trajectory</td>
+<td align="left">true</td>
+</tr>
 </tbody>
 </table>
 <h4 id="path-smoothing">Path Smoothing<a class="headerlink" href="#path-smoothing" title="Permanent link">#</a></h4>
@@ -13901,6 +13907,25 @@ AutonomouStuff Lexus RX 450h for under 40 km/h driving.</p>
 <td align="left">double</td>
 <td align="left">rear cornering power [N/rad]</td>
 <td align="left">155494.663</td>
+</tr>
+</tbody>
+</table>
+<h4 id="debug">Debug<a class="headerlink" href="#debug" title="Permanent link">#</a></h4>
+<table>
+<thead>
+<tr>
+<th align="left">Name</th>
+<th align="left">Type</th>
+<th align="left">Description</th>
+<th align="left">Default value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left">publish_debug_trajectories</td>
+<td align="left">boolean</td>
+<td align="left">publish predicted trajectory and resampled reference trajectory for debug purpose</td>
+<td align="left">true</td>
 </tr>
 </tbody>
 </table>
