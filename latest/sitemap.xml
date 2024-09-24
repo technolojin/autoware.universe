@@ -1571,11 +1571,6 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://autowarefoundation.github.io/autoware.universe/latest/system/system_error_monitor/</loc>
-         <lastmod>2024-09-24</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
          <loc>https://autowarefoundation.github.io/autoware.universe/latest/system/system_monitor/</loc>
          <lastmod>2024-09-24</lastmod>
          <changefreq>daily</changefreq>
