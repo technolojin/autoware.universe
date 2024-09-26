@@ -13415,6 +13415,12 @@ y_{k+1} = y_k + v sin(\theta_k) dt \\
 <p>Once all target obstacles have been identified, the AEB module chooses the point that is closest to the ego vehicle as the candidate for collision checking. Only the closest point is considered because RSS distance is used to judge if a collision will happen or not, and if the closest vertex to the ego is deemed to be safe from collision, the rest of the target obstacles will also be safe.</p>
 <p><img alt="closest_object" src="image/closest-point.drawio.svg"></p>
 <h3 id="4-obstacle-velocity-estimation">4. Obstacle velocity estimation<a class="headerlink" href="#4-obstacle-velocity-estimation" title="Permanent link">#</a></h3>
+<p>To begin calculating the target point's velocity, the point must enter the speed calculation area,
+which is defined by the <code>speed_calculation_expansion_margin</code> parameter.
+Depending on the operational environment,
+this margin can reduce unnecessary autonomous emergency braking
+caused by velocity miscalculations during the initial calculation steps.</p>
+<p><img alt="speed_calculation_expansion" src="image/speed_calculation_expansion.drawio.svg"></p>
 <p>Once the position of the closest obstacle/point is determined, the AEB modules uses the history of previously detected objects to estimate the closest object relative speed using the following equations:</p>
 <div class="arithmatex">\[
 d_{t} = t_{1} - t_{0}
@@ -13650,6 +13656,13 @@ d = v_{ego}*t_{response} + v_{ego}^2/(2*a_{min}) -(sign(v_{obj})) * v_{obj}^2/(2
 <td align="left">double</td>
 <td align="left">frequency at which AEB operates per second</td>
 <td align="left">10</td>
+</tr>
+<tr>
+<td align="left">speed_calculation_expansion_margin</td>
+<td align="left">[m]</td>
+<td align="left">double</td>
+<td align="left">expansion width of the ego vehicle for the beginning speed calculation</td>
+<td align="left">0.1</td>
 </tr>
 </tbody>
 </table>
