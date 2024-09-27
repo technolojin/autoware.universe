@@ -13351,6 +13351,20 @@ This node depends on the map height fitter library.
 <td>≥0.0</td>
 </tr>
 <tr>
+<td>pose_error_check_enabled</td>
+<td>boolean</td>
+<td>If true, check error between initial pose result and GNSS pose.</td>
+<td>false</td>
+<td>N/A</td>
+</tr>
+<tr>
+<td>pose_error_threshold</td>
+<td>float</td>
+<td>The error threshold between GNSS and initial pose</td>
+<td>5.0</td>
+<td>≥0.0</td>
+</tr>
+<tr>
 <td>stop_check_enabled</td>
 <td>string</td>
 <td>If true, initialization is accepted only when the vehicle is stopped.</td>
@@ -13483,6 +13497,11 @@ This node depends on the map height fitter library.
 <td><code>/initialpose3d</code></td>
 <td>geometry_msgs::msg::PoseWithCovarianceStamped</td>
 <td>calculated initial ego pose</td>
+</tr>
+<tr>
+<td><code>/diagnostics</code></td>
+<td>diagnostic_msgs::msg::DiagnosticArray</td>
+<td>diagnostics</td>
 </tr>
 </tbody>
 </table>
