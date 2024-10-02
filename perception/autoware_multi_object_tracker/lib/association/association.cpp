@@ -206,7 +206,7 @@ Eigen::MatrixXd DataAssociation::calcScoreMatrix(
             getXYCovariance(measurement_object.kinematics.pose_with_covariance));
           // constexpr double gaussian_interval = 3.035;  // 2d gaussian interval of 99.0% 
           // constexpr double gaussian_interval = 3.815;  // 2d gaussian interval of 99.5%
-          // constexpr double gaussian_interval = 4.605;  // 2d gaussian interval of 99.9%
+          constexpr double gaussian_interval = 4.605;  // 2d gaussian interval of 99.9%
           if (gaussian_interval  <= mahalanobis_dist) {
             passed_gate = true;
           }
