@@ -77,7 +77,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#macro-rendering-error" class="md-skip">
+        <a href="#bluetooth_monitor" class="md-skip">
           Skip to content
         </a>
       
@@ -13161,6 +13161,69 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#description" class="md-nav__link">
+    Description
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#block-diagram" class="md-nav__link">
+    Block diagram
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#output" class="md-nav__link">
+    Output
+  </a>
+  
+    <nav class="md-nav" aria-label="Output">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#bluetooth_monitor-bluetooth_connection" class="md-nav__link">
+    bluetooth_monitor: bluetooth_connection
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#parameters" class="md-nav__link">
+    Parameters
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#instructions-before-starting" class="md-nav__link">
+    Instructions before starting
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#known-limitations-and-issues" class="md-nav__link">
+    Known limitations and issues
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -13177,21 +13240,172 @@
   
 
 
-<div><h1 id="macro-rendering-error"><em>Macro Rendering Error</em><a class="headerlink" href="#macro-rendering-error" title="Permanent link">#</a></h1>
-<p><em>File</em>: <code>system/bluetooth_monitor/README.md</code></p>
-<p><em>FileNotFoundError</em>: [Errno 2] No such file or directory: 'system/bluetooth_monitor/schema/bluetooth_monitor.schema.json'</p>
-<div class="highlight"><pre><span></span><code>Traceback (most recent call last):
-  File "/opt/hostedtoolcache/Python/3.8.18/x64/lib/python3.8/site-packages/mkdocs_macros/plugin.py", line 644, in render
-    return md_template.render(**page_variables)
-  File "/opt/hostedtoolcache/Python/3.8.18/x64/lib/python3.8/site-packages/jinja2/environment.py", line 1304, in render
-    self.environment.handle_exception()
-  File "/opt/hostedtoolcache/Python/3.8.18/x64/lib/python3.8/site-packages/jinja2/environment.py", line 939, in handle_exception
-    raise rewrite_traceback_stack(source=source)
-  File "&lt;template&gt;", line 49, in top-level template code
-  File "/home/runner/work/autoware.universe/autoware.universe/mkdocs_macros.py", line 70, in json_to_markdown
-    with open(json_schema_file_path) as f:
-FileNotFoundError: [Errno 2] No such file or directory: 'system/bluetooth_monitor/schema/bluetooth_monitor.schema.json'
-</code></pre></div></div>
+<div><h1 id="bluetooth_monitor">bluetooth_monitor<a class="headerlink" href="#bluetooth_monitor" title="Permanent link">#</a></h1>
+<h2 id="description">Description<a class="headerlink" href="#description" title="Permanent link">#</a></h2>
+<p>This node monitors a Bluetooth connection to a wireless device by using L2ping.<br>
+L2ping generates PING echo command on Bluetooth L2CAP layer, and it is able to receive and check echo response from a wireless device.</p>
+<h2 id="block-diagram">Block diagram<a class="headerlink" href="#block-diagram" title="Permanent link">#</a></h2>
+<p>L2ping is only allowed for root by default, so this package provides the following approach to minimize security risks as much as possible:</p>
+<ul>
+<li>Provide a small program named <code>l2ping_service</code> which performs L2ping and provides wireless device information to <code>bluetooth_monitor</code> by using socket programming.</li>
+<li><code>bluetooth_monitor</code> is able to know wireless device information and L2ping status as an unprivileged user since those information are sent by socket communication.</li>
+</ul>
+<p><img alt="block_diagram" src="docs/block_diagram.drawio.svg"></p>
+<h2 id="output">Output<a class="headerlink" href="#output" title="Permanent link">#</a></h2>
+<h3 id="bluetooth_monitor-bluetooth_connection"><u>bluetooth_monitor: bluetooth_connection</u><a class="headerlink" href="#bluetooth_monitor-bluetooth_connection" title="Permanent link">#</a></h3>
+<p><b>[summary]</b></p>
+<table>
+<thead>
+<tr>
+<th>level</th>
+<th>message</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>OK</td>
+<td>OK</td>
+</tr>
+<tr>
+<td>WARN</td>
+<td>RTT warning</td>
+</tr>
+<tr>
+<td>ERROR</td>
+<td>Lost</td>
+</tr>
+<tr>
+<td></td>
+<td>Function error</td>
+</tr>
+</tbody>
+</table>
+<p><b>[values]</b></p>
+<table>
+<thead>
+<tr>
+<th>key</th>
+<th>value (example)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Device [0-9]: Status</td>
+<td>OK / RTT warning / Verify error / Lost / Ping rejected / Function error</td>
+</tr>
+<tr>
+<td>Device [0-9]: Name</td>
+<td>Wireless Controller</td>
+</tr>
+<tr>
+<td>Device [0-9]: Manufacturer</td>
+<td>MediaTek, Inc.</td>
+</tr>
+<tr>
+<td>Device [0-9]: Address</td>
+<td>AA:BB:CC:DD:EE:FF</td>
+</tr>
+<tr>
+<td>Device [0-9]: RTT</td>
+<td>0.00ms</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>The following key will be added when <code>bluetooth_monitor</code> reports <code>Function error</code>.<br>
+  ex.) The <code>connect</code> system call failed.</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>key (example)</th>
+<th>value (example)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Device [0-9]: connect</td>
+<td>No such file or directory</td>
+</tr>
+</tbody>
+</table>
+<h2 id="parameters">Parameters<a class="headerlink" href="#parameters" title="Permanent link">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+<th>Range</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>addresses</td>
+<td>array</td>
+<td>Bluetooth addresses of the device to monitor</td>
+<td>['4C:B9:9B:6E:7F:9A']</td>
+<td>N/A</td>
+</tr>
+<tr>
+<td>port</td>
+<td>integer</td>
+<td>Port number to connect to L2ping service on the host</td>
+<td>7640</td>
+<td>N/A</td>
+</tr>
+<tr>
+<td>timeout</td>
+<td>integer</td>
+<td>Time in seconds to wait for a response from the device</td>
+<td>5</td>
+<td>N/A</td>
+</tr>
+<tr>
+<td>rtt_warn</td>
+<td>float</td>
+<td>Time in seconds to warn if the round trip time is greater than this value</td>
+<td>0.1</td>
+<td>N/A</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>
+<p><code>rtt_warn</code></p>
+<ul>
+<li><strong>0.00(zero)</strong>: Disable checking RTT</li>
+<li><strong>otherwise</strong>: Check RTT with specified seconds</li>
+</ul>
+</li>
+</ul>
+<ul>
+<li><code>addresses</code><ul>
+<li><strong>*</strong>: All connected devices</li>
+<li><strong>AA:BB:CC:DD:EE:FF</strong>: You can specify a device to monitor by setting a Bluetooth address</li>
+</ul>
+</li>
+</ul>
+<h2 id="instructions-before-starting">Instructions before starting<a class="headerlink" href="#instructions-before-starting" title="Permanent link">#</a></h2>
+<ul>
+<li>You can skip this instructions if you run <code>l2ping_service</code> as root user.</li>
+</ul>
+<ol>
+<li>
+<p>Assign capability to <code>l2ping_service</code> since L2ping requires <code>cap_net_raw+eip</code> capability.</p>
+<div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>setcap<span class="w"> </span><span class="s1">'cap_net_raw+eip'</span><span class="w"> </span>./build/bluetooth_monitor/l2ping_service
+</code></pre></div>
+</li>
+<li>
+<p>Run <code>l2ping_service</code> and <code>bluetooth_monitor</code>.</p>
+<div class="highlight"><pre><span></span><code>./build/bluetooth_monitor/l2ping_service
+ros2<span class="w"> </span>launch<span class="w"> </span>bluetooth_monitor<span class="w"> </span>bluetooth_monitor.launch.xml
+</code></pre></div>
+</li>
+</ol>
+<h2 id="known-limitations-and-issues">Known limitations and issues<a class="headerlink" href="#known-limitations-and-issues" title="Permanent link">#</a></h2>
+<p>None.</p></div>
 
 
 
