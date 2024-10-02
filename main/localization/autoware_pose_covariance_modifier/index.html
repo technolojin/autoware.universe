@@ -13391,16 +13391,13 @@ class ekf_localizer cl_node;</code></pre>
 system.</p>
 <p>Here is a flowchart depicting the process and the predefined thresholds:</p>
 <pre class="mermaid"><code>graph TD
-    gnss_poser["gnss_poser"] --&gt; |"/sensing/gnss/\npose_with_covariance"| pose_covariance_modifier_node
-    ndt_scan_matcher["ndt_scan_matcher"] --&gt; |"/localization/pose_estimator/ndt_scan_matcher/\npose_with_covariance"| pose_covariance_modifier_node
+    gnss_poser["gnss_poser"] --&gt; |"/sensing/gnss/&lt;br/&gt;pose_with_covariance"| pose_covariance_modifier_node
+    ndt_scan_matcher["ndt_scan_matcher"] --&gt; |"/localization/pose_estimator/ndt_scan_matcher/&lt;br/&gt;pose_with_covariance"| pose_covariance_modifier_node
 
     subgraph pose_covariance_modifier_node ["Pose Covariance Modifier Node"]
-        pc1gnss_pose_yaw
-stddev
-        pc1 --&gt;|"&lt;= 0.3 rad"| pc2gnss_pose_z
-stddev
-        pc2 --&gt;|"&lt;= 0.1 m"| pc3gnss_pose_xy
-stddev
+        pc1gnss_pose_yaw&lt;br/&gt;stddev
+        pc1 --&gt;|"&lt;= 0.3 rad"| pc2gnss_pose_z&lt;br/&gt;stddev
+        pc2 --&gt;|"&lt;= 0.1 m"| pc3gnss_pose_xy&lt;br/&gt;stddev
         pc2 --&gt;|"&gt; 0.1 m"| ndt_pose("NDT Pose")
         pc3 --&gt;|"&lt;= 0.1 m"| gnss_pose("GNSS Pose")
         pc3 --&gt;|"0.1 m &lt; x &lt;= 0.2 m"| gnss_ndt_pose("`Both GNSS and NDT Pose
@@ -13435,8 +13432,8 @@ class gnss_ndt_pose cl_output;</code></pre>
 the <a href="../../launch/tier4_localization_launch/launch/pose_twist_estimator/pose_twist_estimator.launch.xml#L3">pose_twist_estimator.launch.xml</a>.</p>
 <h3 id="without-this-condition-default">Without this condition (default)<a class="headerlink" href="#without-this-condition-default" title="Permanent link">#</a></h3>
 <ul>
-<li>The output of the <a href="../../localization/ndt_scan_matcher">ndt_scan_matcher</a> is directly sent
-  to <a href="../../localization/ekf_localizer">ekf_localizer</a>.<ul>
+<li>The output of the <a href="../../localization/autoware_ndt_scan_matcher">ndt_scan_matcher</a> is directly sent
+  to <a href="../../localization/autoware_ekf_localizer">ekf_localizer</a>.<ul>
 <li>It has a preset covariance value.</li>
 <li><strong>topic name:</strong> <code>/localization/pose_estimator/pose_with_covariance</code></li>
 </ul>
@@ -13446,13 +13443,13 @@ the <a href="../../launch/tier4_localization_launch/launch/pose_twist_estimator/
 </ul>
 <h3 id="with-this-condition">With this condition<a class="headerlink" href="#with-this-condition" title="Permanent link">#</a></h3>
 <ul>
-<li>The output of the <a href="../../localization/ndt_scan_matcher">ndt_scan_matcher</a> is renamed<ul>
+<li>The output of the <a href="../../localization/autoware_ndt_scan_matcher">ndt_scan_matcher</a> is renamed<ul>
 <li><strong>from:</strong> <code>/localization/pose_estimator/pose_with_covariance</code>.</li>
 <li><strong>to:</strong> <code>/localization/pose_estimator/ndt_scan_matcher/pose_with_covariance</code>.</li>
 </ul>
 </li>
 <li>The <code>ndt_scan_matcher</code> output enters the <code>autoware_pose_covariance_modifier</code>.</li>
-<li>The output of this package goes to <a href="../../localization/ekf_localizer">ekf_localizer</a> with:<ul>
+<li>The output of this package goes to <a href="../../localization/autoware_ekf_localizer">ekf_localizer</a> with:<ul>
 <li><strong>topic name:</strong> <code>/localization/pose_estimator/pose_with_covariance</code>.</li>
 </ul>
 </li>
