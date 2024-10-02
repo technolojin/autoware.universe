@@ -62,7 +62,7 @@ NormalVehicleTracker::NormalVehicleTracker(
   // velocity deviation threshold
   //   if the predicted velocity is close to the observed velocity,
   //   the observed velocity is used as the measurement.
-  velocity_deviation_threshold_ = autoware::universe_utils::kmph2mps(10);  // [m/s]
+  velocity_deviation_threshold_ = 12;  // [m/s]
 
   // OBJECT SHAPE MODEL
   if (object.shape.type == autoware_perception_msgs::msg::Shape::BOUNDING_BOX) {
@@ -214,6 +214,7 @@ bool NormalVehicleTracker::measureWithPose(
       is_velocity_available = true;
     }
   }
+  is_velocity_available = object.kinematics.has_twist;
 
   // update
   bool is_updated = false;
