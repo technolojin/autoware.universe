@@ -137,7 +137,7 @@ public:
         size_limit.height_max = 5.0;
 
         process_noise.acc_long = const_g * 0.60;
-        process_noise.acc_lat = const_g * 0.15;
+        process_noise.acc_lat = const_g * 0.25;
         process_noise.yaw_rate_min = deg2rad(1.5);
         process_noise.yaw_rate_max = deg2rad(15.0);
 
@@ -181,7 +181,7 @@ public:
         size_limit.height_max = 10.0;
 
         process_noise.acc_long = const_g * 0.60;
-        process_noise.acc_lat = const_g * 0.15;
+        process_noise.acc_lat = const_g * 0.25;
         process_noise.yaw_rate_min = deg2rad(1.5);
         process_noise.yaw_rate_max = deg2rad(15.0);
 
@@ -225,7 +225,7 @@ public:
         size_limit.height_max = 2.5;
 
         process_noise.acc_long = const_g * 0.60;
-        process_noise.acc_lat = const_g * 0.15;
+        process_noise.acc_lat = const_g * 0.25;
         process_noise.yaw_rate_min = deg2rad(5.0);
         process_noise.yaw_rate_max = deg2rad(15.0);
 
