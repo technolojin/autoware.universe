@@ -14,7 +14,7 @@
 //
 //
 // Author: v1.0 Yukihiro Saito
-//
+
 #define EIGEN_MPL2_ONLY
 
 #include "autoware/multi_object_tracker/tracker/model/normal_vehicle_tracker.hpp"
@@ -221,11 +221,14 @@ bool NormalVehicleTracker::measureWithPose(
     const double x = object.kinematics.pose_with_covariance.pose.position.x;
     const double y = object.kinematics.pose_with_covariance.pose.position.y;
     const double yaw = tf2::getYaw(object.kinematics.pose_with_covariance.pose.orientation);
-    const double vel = object.kinematics.twist_with_covariance.twist.linear.x;
+    const double vel_x = object.kinematics.twist_with_covariance.twist.linear.x;
+    const double vel_y = object.kinematics.twist_with_covariance.twist.linear.y;
+    const double vel = std::hypot(vel_x, vel_y);
+    const double slip = std::atan2(vel_y, vel_x);
 
     if (is_velocity_available) {
-      is_updated = motion_model_.updateStatePoseHeadVel(
-        x, y, yaw, object.kinematics.pose_with_covariance.covariance, vel,
+      is_updated = motion_model_.updateStatePoseHeadVelSlip(
+        x, y, yaw, object.kinematics.pose_with_covariance.covariance, vel, slip,
         object.kinematics.twist_with_covariance.covariance);
     } else {
       is_updated = motion_model_.updateStatePoseHead(
