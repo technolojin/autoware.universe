@@ -222,6 +222,58 @@ bool BicycleMotionModel::updateStatePoseHeadVel(
   return ekf_.update(Y, C, R);
 }
 
+bool BicycleMotionModel::updateStatePoseHeadVelSlip(
+  const double & x, const double & y, const double & yaw, const std::array<double, 36> & pose_cov,
+  const double & vel, const double & slip, const std::array<double, 36> & twist_cov)
+{
+  // check if the state is initialized
+  if (!checkInitialized()) return false;
+
+  // update state, with velocity, slip
+  constexpr int DIM_Y = 5;
+
+  // fix yaw
+  double estimated_yaw = getStateElement(IDX::YAW);
+  double fixed_yaw = yaw;
+  double limiting_delta_yaw = M_PI_2;
+  while (std::fabs(estimated_yaw - fixed_yaw) > limiting_delta_yaw) {
+    if (fixed_yaw < estimated_yaw) {
+      fixed_yaw += 2 * limiting_delta_yaw;
+    } else {
+      fixed_yaw -= 2 * limiting_delta_yaw;
+    }
+  }
+
+  // update state
+  Eigen::MatrixXd Y(DIM_Y, 1);
+  Y << x, y, fixed_yaw, vel, slip;
+
+  Eigen::MatrixXd C = Eigen::MatrixXd::Zero(DIM_Y, DIM);
+  C(0, IDX::X) = 1.0;
+  C(1, IDX::Y) = 1.0;
+  C(2, IDX::YAW) = 1.0;
+  C(3, IDX::VEL) = 1.0;
+  C(4, IDX::SLIP) = 1.0;
+
+  Eigen::MatrixXd R = Eigen::MatrixXd::Zero(DIM_Y, DIM_Y);
+  R(0, 0) = pose_cov[XYZRPY_COV_IDX::X_X];
+  R(0, 1) = pose_cov[XYZRPY_COV_IDX::X_Y];
+  R(1, 0) = pose_cov[XYZRPY_COV_IDX::Y_X];
+  R(1, 1) = pose_cov[XYZRPY_COV_IDX::Y_Y];
+  R(0, 2) = pose_cov[XYZRPY_COV_IDX::X_YAW];
+  R(1, 2) = pose_cov[XYZRPY_COV_IDX::Y_YAW];
+  R(2, 0) = pose_cov[XYZRPY_COV_IDX::YAW_X];
+  R(2, 1) = pose_cov[XYZRPY_COV_IDX::YAW_Y];
+  R(2, 2) = pose_cov[XYZRPY_COV_IDX::YAW_YAW];
+  R(3, 3) = twist_cov[XYZRPY_COV_IDX::X_X];
+  R(4, 4) = std::min(
+    twist_cov[XYZRPY_COV_IDX::Y_Y] * std::cos(slip) * std::cos(slip) +
+      twist_cov[XYZRPY_COV_IDX::X_X] * std::sin(slip) * std::sin(slip),
+    1e32);
+
+  return ekf_.update(Y, C, R);
+}
+
 bool BicycleMotionModel::limitStates()
 {
   Eigen::MatrixXd X_t(DIM, 1);
