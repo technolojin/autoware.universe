@@ -14,20 +14,20 @@
 //
 //
 // Author: v1.0 Yukihiro Saito
-//
+
 #define EIGEN_MPL2_ONLY
 
 #include "autoware/multi_object_tracker/tracker/model/big_vehicle_tracker.hpp"
 
 #include "autoware/multi_object_tracker/utils/utils.hpp"
-#include "autoware/universe_utils/geometry/boost_polygon_utils.hpp"
-#include "autoware/universe_utils/math/normalization.hpp"
-#include "autoware/universe_utils/math/unit_conversion.hpp"
-#include "autoware/universe_utils/ros/msg_covariance.hpp"
-#include "object_recognition_utils/object_recognition_utils.hpp"
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>
+#include <autoware/universe_utils/geometry/boost_polygon_utils.hpp>
+#include <autoware/universe_utils/math/normalization.hpp>
+#include <autoware/universe_utils/math/unit_conversion.hpp>
+#include <autoware/universe_utils/ros/msg_covariance.hpp>
+#include <object_recognition_utils/object_recognition_utils.hpp>
 
 #include <bits/stdc++.h>
 #include <tf2/LinearMath/Matrix3x3.h>
@@ -219,11 +219,14 @@ bool BigVehicleTracker::measureWithPose(
     const double x = object.kinematics.pose_with_covariance.pose.position.x;
     const double y = object.kinematics.pose_with_covariance.pose.position.y;
     const double yaw = tf2::getYaw(object.kinematics.pose_with_covariance.pose.orientation);
-    const double vel = object.kinematics.twist_with_covariance.twist.linear.x;
+    const double vel_x = object.kinematics.twist_with_covariance.twist.linear.x;
+    const double vel_y = object.kinematics.twist_with_covariance.twist.linear.y;
+    const double vel = std::hypot(vel_x, vel_y);
+    const double slip = std::atan2(vel_y, vel_x);
 
     if (is_velocity_available) {
-      is_updated = motion_model_.updateStatePoseHeadVel(
-        x, y, yaw, object.kinematics.pose_with_covariance.covariance, vel,
+      is_updated = motion_model_.updateStatePoseHeadVelSlip(
+        x, y, yaw, object.kinematics.pose_with_covariance.covariance, vel, slip,
         object.kinematics.twist_with_covariance.covariance);
     } else {
       is_updated = motion_model_.updateStatePoseHead(
