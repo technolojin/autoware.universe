@@ -221,12 +221,10 @@ bool BigVehicleTracker::measureWithPose(
     const double yaw = tf2::getYaw(object.kinematics.pose_with_covariance.pose.orientation);
     const double vel_x = object.kinematics.twist_with_covariance.twist.linear.x;
     const double vel_y = object.kinematics.twist_with_covariance.twist.linear.y;
-    const double vel = std::hypot(vel_x, vel_y);
-    const double slip = std::atan2(vel_y, vel_x);
 
     if (is_velocity_available) {
-      is_updated = motion_model_.updateStatePoseHeadVelSlip(
-        x, y, yaw, object.kinematics.pose_with_covariance.covariance, vel, slip,
+      is_updated = motion_model_.updateStatePoseHeadVel(
+        x, y, yaw, object.kinematics.pose_with_covariance.covariance, vel_x, vel_y,
         object.kinematics.twist_with_covariance.covariance);
     } else {
       is_updated = motion_model_.updateStatePoseHead(
