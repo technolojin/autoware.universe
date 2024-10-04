@@ -222,9 +222,9 @@ bool BicycleMotionModel::updateStatePoseHeadVel(
   return ekf_.update(Y, C, R);
 }
 
-bool BicycleMotionModel::updateStatePoseHeadVelSlip(
+bool BicycleMotionModel::updateStatePoseHeadVel(
   const double & x, const double & y, const double & yaw, const std::array<double, 36> & pose_cov,
-  const double & vel, const double & slip, const std::array<double, 36> & twist_cov)
+  const double & vel_x, const double & vel_y, const std::array<double, 36> & twist_cov)
 {
   // check if the state is initialized
   if (!checkInitialized()) return false;
@@ -243,6 +243,8 @@ bool BicycleMotionModel::updateStatePoseHeadVelSlip(
       fixed_yaw -= 2 * limiting_delta_yaw;
     }
   }
+  const double vel = std::hypot(vel_x, vel_y);
+  const double slip = std::atan2(vel_y, vel_x);
 
   // update state
   Eigen::MatrixXd Y(DIM_Y, 1);
@@ -265,11 +267,18 @@ bool BicycleMotionModel::updateStatePoseHeadVelSlip(
   R(2, 0) = pose_cov[XYZRPY_COV_IDX::YAW_X];
   R(2, 1) = pose_cov[XYZRPY_COV_IDX::YAW_Y];
   R(2, 2) = pose_cov[XYZRPY_COV_IDX::YAW_YAW];
-  R(3, 3) = twist_cov[XYZRPY_COV_IDX::X_X];
-  R(4, 4) = std::min(
-    twist_cov[XYZRPY_COV_IDX::Y_Y] * std::cos(slip) * std::cos(slip) +
-      twist_cov[XYZRPY_COV_IDX::X_X] * std::sin(slip) * std::sin(slip),
-    1e32);
+
+  // velocity and slip angle covariance
+  Eigen::MatrixXd cov_jacob(2, 2);
+  cov_jacob << vel_x / vel, vel_y / vel, -M_PI_4 * slip / vel_x, M_PI_4 / vel_x;
+  Eigen::MatrixXd cov_twist(2, 2);
+  cov_twist << twist_cov[XYZRPY_COV_IDX::X_X], twist_cov[XYZRPY_COV_IDX::X_Y],
+    twist_cov[XYZRPY_COV_IDX::Y_X], twist_cov[XYZRPY_COV_IDX::Y_Y];
+  Eigen::MatrixXd twist_cov_mat = cov_jacob * cov_twist * cov_jacob.transpose();
+  R(3, 3) = twist_cov_mat(0, 0);
+  R(3, 4) = twist_cov_mat(0, 1);
+  R(4, 3) = twist_cov_mat(1, 0);
+  R(4, 4) = twist_cov_mat(1, 1);
 
   return ekf_.update(Y, C, R);
 }
