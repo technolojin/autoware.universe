@@ -35,6 +35,8 @@ private:
 
   object_model::ObjectModel object_model_ = object_model::bicycle;
 
+  double velocity_deviation_threshold_;
+
   double z_;
 
   struct BoundingBox
