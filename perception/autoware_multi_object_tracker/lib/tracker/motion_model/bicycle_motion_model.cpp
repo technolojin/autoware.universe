@@ -275,10 +275,10 @@ bool BicycleMotionModel::updateStatePoseHeadVel(
   cov_twist << twist_cov[XYZRPY_COV_IDX::X_X], twist_cov[XYZRPY_COV_IDX::X_Y],
     twist_cov[XYZRPY_COV_IDX::Y_X], twist_cov[XYZRPY_COV_IDX::Y_Y];
   Eigen::MatrixXd twist_cov_mat = cov_jacob * cov_twist * cov_jacob.transpose();
-  R(3, 3) = twist_cov_mat(0, 0);
-  R(3, 4) = twist_cov_mat(0, 1);
-  R(4, 3) = twist_cov_mat(1, 0);
-  R(4, 4) = twist_cov_mat(1, 1);
+  R(3, 3) = twist_cov_mat(0, 0);  // vel-vel
+  R(3, 4) = twist_cov_mat(0, 1);  // vel-slip
+  R(4, 3) = twist_cov_mat(1, 0);  // slip-vel
+  R(4, 4) = twist_cov_mat(1, 1);  // slip-slip
 
   return ekf_.update(Y, C, R);
 }

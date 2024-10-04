@@ -172,6 +172,8 @@ bool BicycleTracker::measureWithPose(const autoware_perception_msgs::msg::Detect
   double measurement_yaw = 0.0;
   bool is_yaw_available = utils::getMeasurementYaw(object, tracked_yaw, measurement_yaw);
 
+  bool is_velocity_available = object.kinematics.has_twist;
+
   // update
   bool is_updated = false;
   {
@@ -179,7 +181,13 @@ bool BicycleTracker::measureWithPose(const autoware_perception_msgs::msg::Detect
     const double y = object.kinematics.pose_with_covariance.pose.position.y;
     const double yaw = measurement_yaw;
 
-    if (is_yaw_available) {
+    if (is_yaw_available && is_velocity_available) {
+      const double vel_x = object.kinematics.twist_with_covariance.twist.linear.x;
+      const double vel_y = object.kinematics.twist_with_covariance.twist.linear.y;
+      is_updated = motion_model_.updateStatePoseHeadVel(
+        x, y, yaw, object.kinematics.pose_with_covariance.covariance, vel_x, vel_y,
+        object.kinematics.twist_with_covariance.covariance);
+    } else if (is_velocity_available) {
       is_updated = motion_model_.updateStatePoseHead(
         x, y, yaw, object.kinematics.pose_with_covariance.covariance);
     } else {
