@@ -59,11 +59,6 @@ NormalVehicleTracker::NormalVehicleTracker(
   // initialize existence probability
   initializeExistenceProbabilities(channel_index, object.existence_probability);
 
-  // velocity deviation threshold
-  //   if the predicted velocity is close to the observed velocity,
-  //   the observed velocity is used as the measurement.
-  velocity_deviation_threshold_ = 12;  // [m/s]
-
   // OBJECT SHAPE MODEL
   if (object.shape.type == autoware_perception_msgs::msg::Shape::BOUNDING_BOX) {
     bounding_box_ = {
@@ -204,17 +199,7 @@ bool NormalVehicleTracker::measureWithPose(
   // current (predicted) state
   const double tracked_vel = motion_model_.getStateElement(IDX::VEL);
 
-  // velocity capability is checked only when the object has velocity measurement
-  // and the predicted velocity is close to the observed velocity
-  bool is_velocity_available = false;
-  if (object.kinematics.has_twist) {
-    const double & observed_vel = object.kinematics.twist_with_covariance.twist.linear.x;
-    if (std::fabs(tracked_vel - observed_vel) < velocity_deviation_threshold_) {
-      // Velocity deviation is small
-      is_velocity_available = true;
-    }
-  }
-  is_velocity_available = object.kinematics.has_twist;
+  bool is_velocity_available = object.kinematics.has_twist;
 
   // update
   bool is_updated = false;
