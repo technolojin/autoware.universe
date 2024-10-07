@@ -194,9 +194,6 @@ autoware_perception_msgs::msg::DetectedObject BigVehicleTracker::getUpdatingObje
 bool BigVehicleTracker::measureWithPose(
   const autoware_perception_msgs::msg::DetectedObject & object)
 {
-  // current (predicted) state
-  const double tracked_vel = motion_model_.getStateElement(IDX::VEL);
-
   bool is_velocity_available = object.kinematics.has_twist;
 
   // update
