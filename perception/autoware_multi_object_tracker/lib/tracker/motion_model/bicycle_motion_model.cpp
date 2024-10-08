@@ -403,7 +403,8 @@ bool BicycleMotionModel::predictStateStep(const double dt, KalmanFilter & ekf) c
 
   // Process noise covariance Q
   double q_stddev_yaw_rate = motion_params_.q_stddev_yaw_rate_min;
-  if (vel > 0.01) {
+  double q_cov_slip_rate = motion_params_.q_cov_slip_rate_min;
+  if (std::abs(vel) > 0.01) {
     /* uncertainty of the yaw rate is limited by the following:
      *  - centripetal acceleration a_lat : d(yaw)/dt = w = a_lat/v
      *  - or maximum slip angle slip_max : w = v*sin(slip_max)/l_r
@@ -414,11 +415,7 @@ bool BicycleMotionModel::predictStateStep(const double dt, KalmanFilter & ekf) c
     q_stddev_yaw_rate = std::clamp(
       q_stddev_yaw_rate, motion_params_.q_stddev_yaw_rate_min,
       motion_params_.q_stddev_yaw_rate_max);
-  }
-  double q_cov_slip_rate{0.0};
-  if (vel <= 0.01) {
-    q_cov_slip_rate = motion_params_.q_cov_slip_rate_min;
-  } else {
+
     /* The slip angle rate uncertainty is modeled as follows:
      * d(slip)/dt ~ - sin(slip)/v * d(v)/dt + l_r/v * d(w)/dt
      * where sin(slip) = w * l_r / v
