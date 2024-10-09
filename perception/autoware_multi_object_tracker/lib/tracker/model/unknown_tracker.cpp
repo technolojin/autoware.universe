@@ -61,8 +61,8 @@ UnknownTracker::UnknownTracker(
 
   // Set motion model parameters
   {
-    constexpr double q_stddev_x = 0.5;         // [m/s]
-    constexpr double q_stddev_y = 0.5;         // [m/s]
+    constexpr double q_stddev_x = 0.5;  // [m/s]
+    constexpr double q_stddev_y = 0.5;  // [m/s]
     motion_model_.setMotionParams(q_stddev_x, q_stddev_y);
   }
 
@@ -109,7 +109,6 @@ autoware_perception_msgs::msg::DetectedObject UnknownTracker::getUpdatingObject(
     auto & pose_cov = updating_object.kinematics.pose_with_covariance.covariance;
     pose_cov[XYZRPY_COV_IDX::X_X] = r_cov_x;
     pose_cov[XYZRPY_COV_IDX::Y_Y] = r_cov_y;
-
   }
   return updating_object;
 }
