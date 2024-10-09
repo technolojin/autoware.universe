@@ -63,16 +63,8 @@ UnknownTracker::UnknownTracker(
   {
     constexpr double q_stddev_x = 0.5;         // [m/s]
     constexpr double q_stddev_y = 0.5;         // [m/s]
-    constexpr double q_stddev_vx = 9.8 * 0.3;  // [m/(s*s)]
-    constexpr double q_stddev_vy = 9.8 * 0.3;  // [m/(s*s)]
-    motion_model_.setMotionParams(q_stddev_x, q_stddev_y, q_stddev_vx, q_stddev_vy);
+    motion_model_.setMotionParams(q_stddev_x, q_stddev_y);
   }
-
-  // Set motion limits
-  motion_model_.setMotionLimits(
-    autoware::universe_utils::kmph2mps(60), /* [m/s] maximum velocity, x */
-    autoware::universe_utils::kmph2mps(60)  /* [m/s] maximum velocity, y */
-  );
 
   // Set initial state
   {
@@ -80,60 +72,20 @@ UnknownTracker::UnknownTracker(
     const double x = object.kinematics.pose_with_covariance.pose.position.x;
     const double y = object.kinematics.pose_with_covariance.pose.position.y;
     auto pose_cov = object.kinematics.pose_with_covariance.covariance;
-    auto twist_cov = object.kinematics.twist_with_covariance.covariance;
-    const double yaw = tf2::getYaw(object.kinematics.pose_with_covariance.pose.orientation);
-
-    double vx = 0.0;
-    double vy = 0.0;
-    if (object.kinematics.has_twist) {
-      const double & vel_x = object.kinematics.twist_with_covariance.twist.linear.x;
-      const double & vel_y = object.kinematics.twist_with_covariance.twist.linear.y;
-      vx = std::cos(yaw) * vel_x - std::sin(yaw) * vel_y;
-      vy = std::sin(yaw) * vel_x + std::cos(yaw) * vel_y;
-    }
 
     if (!object.kinematics.has_position_covariance) {
       constexpr double p0_stddev_x = 1.0;  // [m]
       constexpr double p0_stddev_y = 1.0;  // [m]
 
-      const double p0_cov_x = std::pow(p0_stddev_x, 2.0);
-      const double p0_cov_y = std::pow(p0_stddev_y, 2.0);
+      const double p0_cov_x = p0_stddev_x * p0_stddev_x;
+      const double p0_cov_y = p0_stddev_y * p0_stddev_y;
 
-      const double cos_yaw = std::cos(yaw);
-      const double sin_yaw = std::sin(yaw);
-      const double sin_2yaw = std::sin(2.0 * yaw);
-      pose_cov[XYZRPY_COV_IDX::X_X] = p0_cov_x * cos_yaw * cos_yaw + p0_cov_y * sin_yaw * sin_yaw;
-      pose_cov[XYZRPY_COV_IDX::X_Y] = 0.5 * (p0_cov_x - p0_cov_y) * sin_2yaw;
-      pose_cov[XYZRPY_COV_IDX::Y_Y] = p0_cov_x * sin_yaw * sin_yaw + p0_cov_y * cos_yaw * cos_yaw;
-      pose_cov[XYZRPY_COV_IDX::Y_X] = pose_cov[XYZRPY_COV_IDX::X_Y];
+      pose_cov[XYZRPY_COV_IDX::X_X] = p0_cov_x;
+      pose_cov[XYZRPY_COV_IDX::Y_Y] = p0_cov_y;
     }
-
-    if (!object.kinematics.has_twist_covariance) {
-      constexpr double p0_stddev_vx = autoware::universe_utils::kmph2mps(10);  // [m/s]
-      constexpr double p0_stddev_vy = autoware::universe_utils::kmph2mps(10);  // [m/s]
-      const double p0_cov_vx = std::pow(p0_stddev_vx, 2.0);
-      const double p0_cov_vy = std::pow(p0_stddev_vy, 2.0);
-      twist_cov[XYZRPY_COV_IDX::X_X] = p0_cov_vx;
-      twist_cov[XYZRPY_COV_IDX::X_Y] = 0.0;
-      twist_cov[XYZRPY_COV_IDX::Y_X] = 0.0;
-      twist_cov[XYZRPY_COV_IDX::Y_Y] = p0_cov_vy;
-    }
-
-    // rotate twist covariance matrix, since it is in the vehicle coordinate system
-    Eigen::MatrixXd twist_cov_rotate(2, 2);
-    twist_cov_rotate(0, 0) = twist_cov[XYZRPY_COV_IDX::X_X];
-    twist_cov_rotate(0, 1) = twist_cov[XYZRPY_COV_IDX::X_Y];
-    twist_cov_rotate(1, 0) = twist_cov[XYZRPY_COV_IDX::Y_X];
-    twist_cov_rotate(1, 1) = twist_cov[XYZRPY_COV_IDX::Y_Y];
-    Eigen::MatrixXd R_yaw = Eigen::Rotation2Dd(-yaw).toRotationMatrix();
-    Eigen::MatrixXd twist_cov_rotated = R_yaw * twist_cov_rotate * R_yaw.transpose();
-    twist_cov[XYZRPY_COV_IDX::X_X] = twist_cov_rotated(0, 0);
-    twist_cov[XYZRPY_COV_IDX::X_Y] = twist_cov_rotated(0, 1);
-    twist_cov[XYZRPY_COV_IDX::Y_X] = twist_cov_rotated(1, 0);
-    twist_cov[XYZRPY_COV_IDX::Y_Y] = twist_cov_rotated(1, 1);
 
     // initialize motion model
-    motion_model_.initialize(time, x, y, pose_cov, vx, vy, twist_cov);
+    motion_model_.initialize(time, x, y, pose_cov);
   }
 }
 
@@ -155,16 +107,9 @@ autoware_perception_msgs::msg::DetectedObject UnknownTracker::getUpdatingObject(
     const double & r_cov_x = ekf_params_.r_cov_x;
     const double & r_cov_y = ekf_params_.r_cov_y;
     auto & pose_cov = updating_object.kinematics.pose_with_covariance.covariance;
-    const double pose_yaw = tf2::getYaw(object.kinematics.pose_with_covariance.pose.orientation);
-    const double cos_yaw = std::cos(pose_yaw);
-    const double sin_yaw = std::sin(pose_yaw);
-    const double sin_2yaw = std::sin(2.0f * pose_yaw);
-    pose_cov[XYZRPY_COV_IDX::X_X] =
-      r_cov_x * cos_yaw * cos_yaw + r_cov_y * sin_yaw * sin_yaw;            // x - x
-    pose_cov[XYZRPY_COV_IDX::X_Y] = 0.5f * (r_cov_x - r_cov_y) * sin_2yaw;  // x - y
-    pose_cov[XYZRPY_COV_IDX::Y_Y] =
-      r_cov_x * sin_yaw * sin_yaw + r_cov_y * cos_yaw * cos_yaw;    // y - y
-    pose_cov[XYZRPY_COV_IDX::Y_X] = pose_cov[XYZRPY_COV_IDX::X_Y];  // y - x
+    pose_cov[XYZRPY_COV_IDX::X_X] = r_cov_x;
+    pose_cov[XYZRPY_COV_IDX::Y_Y] = r_cov_y;
+
   }
   return updating_object;
 }
