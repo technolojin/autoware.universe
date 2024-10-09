@@ -16,8 +16,8 @@
 // Author: v1.0 Taekjin Lee
 //
 
-#ifndef AUTOWARE__MULTI_OBJECT_TRACKER__TRACKER__MOTION_MODEL__STATIC_MOTION_MODEL_HPP_
-#define AUTOWARE__MULTI_OBJECT_TRACKER__TRACKER__MOTION_MODEL__STATIC_MOTION_MODEL_HPP_
+#ifndef AUTOWARE__MULTI_OBJECT_TRACKER__TRACKER__MOTION_MODEL__STATIC_MODEL_HPP_
+#define AUTOWARE__MULTI_OBJECT_TRACKER__TRACKER__MOTION_MODEL__STATIC_MODEL_HPP_
 
 #include "autoware/kalman_filter/kalman_filter.hpp"
 #include "autoware/multi_object_tracker/tracker/motion_model/motion_model_base.hpp"
@@ -35,7 +35,7 @@
 namespace autoware::multi_object_tracker
 {
 
-class StaticMotionModel : public MotionModel
+class StaticModel : public MotionModel
 {
 private:
   // attributes
@@ -49,7 +49,7 @@ private:
   } motion_params_;
 
 public:
-  StaticMotionModel();
+  StaticModel();
 
   enum IDX { X = 0, Y = 1 };
   const char DIM = 2;
@@ -75,4 +75,4 @@ public:
 
 }  // namespace autoware::multi_object_tracker
 
-#endif  // AUTOWARE__MULTI_OBJECT_TRACKER__TRACKER__MOTION_MODEL__STATIC_MOTION_MODEL_HPP_
+#endif  // AUTOWARE__MULTI_OBJECT_TRACKER__TRACKER__MOTION_MODEL__STATIC_MODEL_HPP_
