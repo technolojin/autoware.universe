@@ -17,7 +17,7 @@
 //
 #define EIGEN_MPL2_ONLY
 
-#include "autoware/multi_object_tracker/tracker/motion_model/static_motion_model.hpp"
+#include "autoware/multi_object_tracker/tracker/motion_model/static_model.hpp"
 
 #include "autoware/multi_object_tracker/tracker/motion_model/motion_model_base.hpp"
 #include "autoware/multi_object_tracker/utils/utils.hpp"
@@ -32,24 +32,24 @@
 
 namespace autoware::multi_object_tracker
 {
-// static motion model
+// static model
 using autoware::universe_utils::xyzrpy_covariance_index::XYZRPY_COV_IDX;
 
-StaticMotionModel::StaticMotionModel() : logger_(rclcpp::get_logger("StaticMotionModel"))
+StaticModel::StaticModel() : logger_(rclcpp::get_logger("StaticModel"))
 {
   // set prediction parameters
   constexpr double dt_max = 0.11;  // [s] maximum time interval for prediction
   setMaxDeltaTime(dt_max);
 }
 
-void StaticMotionModel::setMotionParams(const double & q_stddev_x, const double & q_stddev_y)
+void StaticModel::setMotionParams(const double & q_stddev_x, const double & q_stddev_y)
 {
   // set process noise covariance parameters
   motion_params_.q_cov_x = q_stddev_x * q_stddev_x;
   motion_params_.q_cov_y = q_stddev_y * q_stddev_y;
 }
 
-bool StaticMotionModel::initialize(
+bool StaticModel::initialize(
   const rclcpp::Time & time, const double & x, const double & y,
   const std::array<double, 36> & pose_cov)
 {
@@ -65,7 +65,7 @@ bool StaticMotionModel::initialize(
   return MotionModel::initialize(time, X, P);
 }
 
-bool StaticMotionModel::updateStatePose(
+bool StaticModel::updateStatePose(
   const double & x, const double & y, const std::array<double, 36> & pose_cov)
 {
   // check if the state is initialized
@@ -91,13 +91,13 @@ bool StaticMotionModel::updateStatePose(
   return ekf_.update(Y, C, R);
 }
 
-bool StaticMotionModel::limitStates()
+bool StaticModel::limitStates()
 {
   // do nothing
   return true;
 }
 
-bool StaticMotionModel::adjustPosition(const double & x, const double & y)
+bool StaticModel::adjustPosition(const double & x, const double & y)
 {
   // check if the state is initialized
   if (!checkInitialized()) return false;
@@ -114,7 +114,7 @@ bool StaticMotionModel::adjustPosition(const double & x, const double & y)
   return true;
 }
 
-bool StaticMotionModel::predictStateStep(const double dt, KalmanFilter & ekf) const
+bool StaticModel::predictStateStep(const double dt, KalmanFilter & ekf) const
 {
   /*  Motion model: Constant position
    *
@@ -155,7 +155,7 @@ bool StaticMotionModel::predictStateStep(const double dt, KalmanFilter & ekf) co
   return ekf.predict(X_next_t, A, Q);
 }
 
-bool StaticMotionModel::getPredictedState(
+bool StaticModel::getPredictedState(
   const rclcpp::Time & time, geometry_msgs::msg::Pose & pose, std::array<double, 36> & pose_cov,
   geometry_msgs::msg::Twist & twist, std::array<double, 36> & twist_cov) const
 {
