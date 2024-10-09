@@ -21,7 +21,7 @@
 
 #include "autoware/kalman_filter/kalman_filter.hpp"
 #include "autoware/multi_object_tracker/tracker/model/tracker_base.hpp"
-#include "autoware/multi_object_tracker/tracker/motion_model/cv_motion_model.hpp"
+#include "autoware/multi_object_tracker/tracker/motion_model/static_motion_model.hpp"
 
 namespace autoware::multi_object_tracker
 {
@@ -42,8 +42,8 @@ private:
 
   double z_;
 
-  CVMotionModel motion_model_;
-  using IDX = CVMotionModel::IDX;
+  StaticMotionModel motion_model_;
+  using IDX = StaticMotionModel::IDX;
 
 public:
   UnknownTracker(
