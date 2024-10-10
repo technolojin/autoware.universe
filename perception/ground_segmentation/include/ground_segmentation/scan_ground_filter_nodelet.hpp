@@ -92,7 +92,14 @@ private:
     std::vector<float> height_list;
 
     PointsCentroid()
-    : radius_sum(0.0f), height_sum(0.0f), radius_avg(0.0f), height_avg(0.0f), point_num(0)
+    : radius_sum(0.0f),
+      height_sum(0.0f),
+      radius_avg(0.0f),
+      height_avg(0.0f),
+      height_max(0.0f),
+      height_min(10.0f),
+      point_num(0),
+      grid_id(0)
     {
     }
 
@@ -129,18 +136,13 @@ private:
 
     float getAverageSlope() { return std::atan2(height_avg, radius_avg); }
 
-    float getAverageHeight() { return height_avg; }
+    float getAverageHeight() const { return height_avg; }
 
-    float getAverageRadius() { return radius_avg; }
+    float getAverageRadius() const { return radius_avg; }
 
-    float getMaxHeight() { return height_max; }
+    float getMaxHeight() const { return height_max; }
 
-    float getMinHeight() { return height_min; }
-
-    uint16_t getGridId() { return grid_id; }
-
-    pcl::PointIndices getIndices() { return pcl_indices; }
-    std::vector<float> getHeightList() { return height_list; }
+    float getMinHeight() const { return height_min; }
 
     pcl::PointIndices & getIndicesRef() { return pcl_indices; }
     std::vector<float> & getHeightListRef() { return height_list; }
@@ -162,6 +164,7 @@ private:
   int y_offset_;
   int z_offset_;
   int intensity_offset_;
+  int intensity_type_;
   bool offset_initialized_;
 
   void set_field_offsets(const PointCloud2ConstPtr & input);
@@ -211,15 +214,15 @@ private:
   /*!
    * Convert sensor_msgs::msg::PointCloud2 to sorted PointCloudVector
    * @param[in] in_cloud Input Point Cloud to be organized in radial segments
-   * @param[out] out_radial_ordered_points_manager Vector of Points Clouds,
+   * @param[out] out_radial_ordered_points Vector of Points Clouds,
    *     each element will contain the points ordered
    */
   void convertPointcloud(
     const PointCloud2ConstPtr & in_cloud,
-    std::vector<PointCloudVector> & out_radial_ordered_points_manager);
+    std::vector<PointCloudVector> & out_radial_ordered_points);
   void convertPointcloudGridScan(
     const PointCloud2ConstPtr & in_cloud,
-    std::vector<PointCloudVector> & out_radial_ordered_points_manager);
+    std::vector<PointCloudVector> & out_radial_ordered_points);
   /*!
    * Output ground center of front wheels as the virtual ground point
    * @param[out] point Virtual ground origin point
@@ -240,18 +243,19 @@ private:
     const float h, const float r, const uint16_t id, std::vector<GridCenter> & gnd_grids);
 
   void checkContinuousGndGrid(
-    PointData & p, pcl::PointXYZ & p_orig_point, const std::vector<GridCenter> & gnd_grids_list);
+    PointData & p, const pcl::PointXYZ & p_orig_point,
+    const std::vector<GridCenter> & gnd_grids_list);
   void checkDiscontinuousGndGrid(
-    PointData & p, pcl::PointXYZ & p_orig_point, const std::vector<GridCenter> & gnd_grids_list);
+    PointData & p, const pcl::PointXYZ & p_orig_point,
+    const std::vector<GridCenter> & gnd_grids_list);
   void checkBreakGndGrid(
-    PointData & p, pcl::PointXYZ & p_orig_point, const std::vector<GridCenter> & gnd_grids_list);
+    PointData & p, const pcl::PointXYZ & p_orig_point,
+    const std::vector<GridCenter> & gnd_grids_list);
   void classifyPointCloud(
-    const PointCloud2ConstPtr & in_cloud_ptr,
-    std::vector<PointCloudVector> & in_radial_ordered_clouds,
+    const PointCloud2ConstPtr & in_cloud, std::vector<PointCloudVector> & in_radial_ordered_clouds,
     pcl::PointIndices & out_no_ground_indices);
   void classifyPointCloudGridScan(
-    const PointCloud2ConstPtr & in_cloud_ptr,
-    std::vector<PointCloudVector> & in_radial_ordered_clouds,
+    const PointCloud2ConstPtr & in_cloud, std::vector<PointCloudVector> & in_radial_ordered_clouds,
     pcl::PointIndices & out_no_ground_indices);
   /*!
    * Re-classifies point of ground cluster based on their height
