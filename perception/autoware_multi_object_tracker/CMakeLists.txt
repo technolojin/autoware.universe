@@ -35,7 +35,7 @@ set(${PROJECT_NAME}_lib
   # cspell: ignore ctrv
   lib/tracker/motion_model/ctrv_motion_model.cpp
   lib/tracker/motion_model/cv_motion_model.cpp
-  lib/tracker/motion_model/static_model.cpp
+  lib/tracker/motion_model/static_motion_model.cpp
   lib/tracker/model/tracker_base.cpp
   lib/tracker/model/big_vehicle_tracker.cpp
   lib/tracker/model/normal_vehicle_tracker.cpp
