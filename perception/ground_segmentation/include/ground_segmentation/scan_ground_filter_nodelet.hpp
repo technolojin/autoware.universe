@@ -76,6 +76,8 @@ private:
     float radius;
     float avg_height;
     float max_height;
+    float gradient;
+    float intercept;
     uint16_t grid_id;
   };
 
@@ -110,7 +112,7 @@ private:
       height_sum = 0.0f;
       radius_avg = 0.0f;
       height_avg = 0.0f;
-      height_max = 0.0f;
+      height_max = -10.0f;
       height_min = 10.0f;
       point_num = 0;
       grid_id = 0;
@@ -250,6 +252,9 @@ private:
   void initializeFirstGndGrids(
     const float h, const float r, const uint16_t id, std::vector<GridCenter> & gnd_grids) const;
 
+  void fitLineFromGndGrid(
+    const std::vector<GridCenter> & gnd_grids_list, const size_t start_idx, const size_t end_idx,
+    float & a, float & b) const;
   void checkContinuousGndGrid(
     PointData & pd, const pcl::PointXYZ & point_curr,
     const std::vector<GridCenter> & gnd_grids_list) const;
