@@ -240,42 +240,57 @@ void ScanGroundFilterComponent::checkContinuousGndGrid(
   PointData & pd, const pcl::PointXYZ & point_curr,
   const std::vector<GridCenter> & gnd_grids_list) const
 {
-  float next_gnd_z = 0.0f;
-  float curr_gnd_slope_ratio = 0.0f;
+  // 1. check local slope
+  {
+    // reference gird is the last-1
+    const auto reference_grid_it = gnd_grids_list.end() - 2;
+    const float delta_z = point_curr.z - reference_grid_it->avg_height;
+    const float delta_radius = pd.radius - reference_grid_it->radius;
+    const float local_slope_ratio = delta_z / delta_radius;
+
+    if (abs(local_slope_ratio) < local_slope_max_ratio_) {
+      pd.point_state = PointLabel::GROUND;
+      return;
+    }
+  }
+
+  // 2. mean of grid buffer(filtering)
+  // get mean of buffer except the last grid
   float gnd_buff_z_mean = 0.0f;
   float gnd_buff_radius = 0.0f;
-
   for (auto it = gnd_grids_list.end() - gnd_grid_buffer_size_ - 1; it < gnd_grids_list.end() - 1;
        ++it) {
     gnd_buff_radius += it->radius;
     gnd_buff_z_mean += it->avg_height;
   }
+  gnd_buff_radius /= static_cast<float>(gnd_grid_buffer_size_);
+  gnd_buff_z_mean /= static_cast<float>(gnd_grid_buffer_size_);
 
-  gnd_buff_radius /= static_cast<float>(gnd_grid_buffer_size_ - 1);
-  gnd_buff_z_mean /= static_cast<float>(gnd_grid_buffer_size_ - 1);
+  // reference gradient(slope) from mean of previous gnd grids
+  // reference position is the last grid
+  const float delta_z = gnd_grids_list.back().avg_height - gnd_buff_z_mean;
+  const float delta_radius = gnd_grids_list.back().radius - gnd_buff_radius;
+  float curr_gnd_slope_ratio = delta_z / delta_radius;
 
-  float tmp_delta_mean_z = gnd_grids_list.back().avg_height - gnd_buff_z_mean;
-  float tmp_delta_radius = gnd_grids_list.back().radius - gnd_buff_radius;
-
-  curr_gnd_slope_ratio = tmp_delta_mean_z / tmp_delta_radius;
   curr_gnd_slope_ratio = curr_gnd_slope_ratio < -global_slope_max_ratio_ ? -global_slope_max_ratio_
                                                                          : curr_gnd_slope_ratio;
   curr_gnd_slope_ratio =
     curr_gnd_slope_ratio > global_slope_max_ratio_ ? global_slope_max_ratio_ : curr_gnd_slope_ratio;
 
-  next_gnd_z = curr_gnd_slope_ratio * (pd.radius - gnd_buff_radius) + gnd_buff_z_mean;
+  // extrapolate next ground height
+  float next_gnd_z = curr_gnd_slope_ratio * (pd.radius - gnd_buff_radius) + gnd_buff_z_mean;
 
-  float gnd_z_local_thresh = std::tan(DEG2RAD(5.0)) * (pd.radius - gnd_grids_list.back().radius);
+  // calculate fixed angular threshold from the reference position
+  const float gnd_z_local_thresh =
+    std::tan(DEG2RAD(5.0)) * (pd.radius - gnd_grids_list.back().radius);
 
-  tmp_delta_mean_z = point_curr.z - (gnd_grids_list.end() - 2)->avg_height;
-  tmp_delta_radius = pd.radius - (gnd_grids_list.end() - 2)->radius;
-  float local_slope_ratio = tmp_delta_mean_z / tmp_delta_radius;
-  if (
-    abs(point_curr.z - next_gnd_z) <= non_ground_height_threshold_ + gnd_z_local_thresh ||
-    abs(local_slope_ratio) <= local_slope_max_ratio_) {
+  if (abs(point_curr.z - next_gnd_z) < non_ground_height_threshold_ + gnd_z_local_thresh) {
     pd.point_state = PointLabel::GROUND;
-  } else if (point_curr.z - next_gnd_z > non_ground_height_threshold_ + gnd_z_local_thresh) {
+    return;
+  }
+  if (point_curr.z - next_gnd_z >= non_ground_height_threshold_ + gnd_z_local_thresh) {
     pd.point_state = PointLabel::NON_GROUND;
+    return;
   }
 }
 
@@ -283,18 +298,26 @@ void ScanGroundFilterComponent::checkDiscontinuousGndGrid(
   PointData & pd, const pcl::PointXYZ & point_curr,
   const std::vector<GridCenter> & gnd_grids_list) const
 {
-  float tmp_delta_max_z = point_curr.z - gnd_grids_list.back().max_height;
-  float tmp_delta_avg_z = point_curr.z - gnd_grids_list.back().avg_height;
-  float tmp_delta_radius = pd.radius - gnd_grids_list.back().radius;
-  float local_slope_ratio = tmp_delta_avg_z / tmp_delta_radius;
-
-  if (
-    abs(local_slope_ratio) < local_slope_max_ratio_ ||
-    abs(tmp_delta_avg_z) < non_ground_height_threshold_ ||
-    abs(tmp_delta_max_z) < non_ground_height_threshold_) {
+  const auto & grid_ref = gnd_grids_list.back();
+  const float delta_avg_z = point_curr.z - grid_ref.avg_height;
+  if (abs(delta_avg_z) < non_ground_height_threshold_) {
     pd.point_state = PointLabel::GROUND;
-  } else if (local_slope_ratio > global_slope_max_ratio_) {
+    return;
+  }
+  const float delta_max_z = point_curr.z - grid_ref.max_height;
+  if (abs(delta_max_z) < non_ground_height_threshold_) {
+    pd.point_state = PointLabel::GROUND;
+    return;
+  }
+  const float delta_radius = pd.radius - grid_ref.radius;
+  const float local_slope_ratio = delta_avg_z / delta_radius;
+  if (abs(local_slope_ratio) < local_slope_max_ratio_) {
+    pd.point_state = PointLabel::GROUND;
+    return;
+  }
+  if (local_slope_ratio >= local_slope_max_ratio_) {
     pd.point_state = PointLabel::NON_GROUND;
+    return;
   }
 }
 
@@ -302,13 +325,17 @@ void ScanGroundFilterComponent::checkBreakGndGrid(
   PointData & pd, const pcl::PointXYZ & point_curr,
   const std::vector<GridCenter> & gnd_grids_list) const
 {
-  float tmp_delta_avg_z = point_curr.z - gnd_grids_list.back().avg_height;
-  float tmp_delta_radius = pd.radius - gnd_grids_list.back().radius;
-  float local_slope_ratio = tmp_delta_avg_z / tmp_delta_radius;
+  const auto & grid_ref = gnd_grids_list.back();
+  const float delta_avg_z = point_curr.z - grid_ref.avg_height;
+  const float delta_radius = pd.radius - grid_ref.radius;
+  const float local_slope_ratio = delta_avg_z / delta_radius;
   if (abs(local_slope_ratio) < global_slope_max_ratio_) {
     pd.point_state = PointLabel::GROUND;
-  } else if (local_slope_ratio > global_slope_max_ratio_) {
+    return;
+  }
+  if (local_slope_ratio >= global_slope_max_ratio_) {
     pd.point_state = PointLabel::NON_GROUND;
+    return;
   }
 }
 
@@ -346,62 +373,70 @@ void ScanGroundFilterComponent::classifyPointCloudGridScan(
     }
 
     bool initialized_first_gnd_grid = false;
-    bool prev_list_init = false;
 
     PointData pd_curr, pd_prev;
     pcl::PointXYZ point_curr, point_prev;
 
     // initialize the previous point
-    pd_curr = in_radial_ordered_clouds[i][0];
+    {
+      pd_curr = in_radial_ordered_clouds[i][0];
+      const size_t data_index = in_cloud->point_step * pd_curr.orig_index;
+      get_point_from_data_index(in_cloud, data_index, point_curr);
+    }
 
     // iterate over the points in the ray
     for (const auto & point : in_radial_ordered_clouds[i]) {
       // set the previous point
-      point_prev = point_curr;
       pd_prev = pd_curr;
+      point_prev = point_curr;
 
       // set the current point
       pd_curr = point;
       const size_t data_index = in_cloud->point_step * pd_curr.orig_index;
       get_point_from_data_index(in_cloud, data_index, point_curr);
 
-      // set the thresholds
-      const float global_slope_ratio_p = point_curr.z / pd_curr.radius;
-      float non_ground_height_threshold_local = non_ground_height_threshold_;
-      if (point_curr.x < low_priority_region_x_) {
-        non_ground_height_threshold_local =
-          non_ground_height_threshold_ * abs(point_curr.x / low_priority_region_x_);
-      }
+      // determine if the current point is in new grid
+      const bool is_curr_in_next_grid = pd_curr.grid_id > pd_prev.grid_id;
 
+      // initialization process for the first grid and interpolate the previous grids
       if (!initialized_first_gnd_grid) {
-        // classify first grid's point cloud
+        // set the thresholds
+        const float global_slope_ratio_p = point_prev.z / pd_prev.radius;
+        float non_ground_height_threshold_local = non_ground_height_threshold_;
+        if (point_prev.x < low_priority_region_x_) {
+          non_ground_height_threshold_local =
+            non_ground_height_threshold_ * abs(point_prev.x / low_priority_region_x_);
+        }
+        // is non_ground_height_threshold_local only for initialization?
+
+        // prepare centroid_bin for the first grid
         if (
+          // classify previous point
           global_slope_ratio_p >= global_slope_max_ratio_ &&
-          point_curr.z > non_ground_height_threshold_local) {
-          out_no_ground_indices.indices.push_back(pd_curr.orig_index);
-          pd_curr.point_state = PointLabel::NON_GROUND;
+          point_prev.z > non_ground_height_threshold_local) {
+          out_no_ground_indices.indices.push_back(pd_prev.orig_index);
+          pd_prev.point_state = PointLabel::NON_GROUND;
         } else if (
           abs(global_slope_ratio_p) < global_slope_max_ratio_ &&
-          abs(point_curr.z) < non_ground_height_threshold_local) {
-          centroid_bin.addPoint(pd_curr.radius, point_curr.z, pd_curr.orig_index);
-          pd_curr.point_state = PointLabel::GROUND;
-          // if the gird id is not the initial grid_id, then the first gnd grid is initialized
-          initialized_first_gnd_grid = static_cast<bool>(pd_curr.grid_id - pd_prev.grid_id);
+          abs(point_prev.z) < non_ground_height_threshold_local) {
+          centroid_bin.addPoint(pd_prev.radius, point_prev.z, pd_prev.orig_index);
+          pd_prev.point_state = PointLabel::GROUND;
+          // centroid_bin is filled at least once
+          // if the current point is in the next gird, it is ready to be initialized
+          initialized_first_gnd_grid = is_curr_in_next_grid;
         }
-        // else, the point is not classified
-        continue;
-      }
-
-      // initialize gnd_grids based on the initial centroid_bin
-      if (!prev_list_init) {
+        // keep filling the centroid_bin until it is ready to be initialized
+        if (!initialized_first_gnd_grid) {
+          continue;
+        }
+        // estimate previous grids by linear interpolation
         float h = centroid_bin.getAverageHeight();
         float r = centroid_bin.getAverageRadius();
-        initializeFirstGndGrids(h, r, pd_curr.grid_id, gnd_grids);
-        prev_list_init = true;
+        initializeFirstGndGrids(h, r, pd_prev.grid_id, gnd_grids);
       }
 
       // finalize the current centroid_bin and update the gnd_grids
-      if (pd_curr.grid_id > pd_prev.grid_id && centroid_bin.getAverageRadius() > 0.0) {
+      if (is_curr_in_next_grid) {
         // check if the prev grid have ground point cloud
         if (use_recheck_ground_cluster_) {
           recheckGroundCluster(
@@ -419,8 +454,12 @@ void ScanGroundFilterComponent::classifyPointCloudGridScan(
         centroid_bin.initialize();
       }
 
+      // 0: set the thresholds
+      const float global_slope_ratio_p = point_curr.z / pd_curr.radius;
+      const auto & grid_ref = gnd_grids.back();
+
       // 1: height is out-of-range
-      if (point_curr.z - gnd_grids.back().avg_height > detection_range_z_max_) {
+      if (point_curr.z - grid_ref.avg_height > detection_range_z_max_) {
         pd_curr.point_state = PointLabel::OUT_OF_RANGE;
         continue;
       }
@@ -444,17 +483,17 @@ void ScanGroundFilterComponent::classifyPointCloudGridScan(
         continue;
       }
 
-      uint16_t next_gnd_grid_id_thresh = (gnd_grids.end() - gnd_grid_buffer_size_)->grid_id +
-                                         gnd_grid_buffer_size_ + gnd_grid_continual_thresh_;
-      float curr_grid_size = grid_.getGridSize(pd_curr.radius, pd_curr.grid_id);
+      const uint16_t next_gnd_grid_id_thresh = (gnd_grids.end() - gnd_grid_buffer_size_)->grid_id +
+                                               gnd_grid_buffer_size_ + gnd_grid_continual_thresh_;
+      const float curr_grid_width = grid_.getGridSize(pd_curr.radius, pd_curr.grid_id);
       if (
         // 4: the point is continuous with the previous grid
         pd_curr.grid_id < next_gnd_grid_id_thresh &&
-        pd_curr.radius - gnd_grids.back().radius < gnd_grid_continual_thresh_ * curr_grid_size) {
+        pd_curr.radius - grid_ref.radius < gnd_grid_continual_thresh_ * curr_grid_width) {
         checkContinuousGndGrid(pd_curr, point_curr, gnd_grids);
       } else if (
         // 5: the point is discontinuous with the previous grid
-        pd_curr.radius - gnd_grids.back().radius < gnd_grid_continual_thresh_ * curr_grid_size) {
+        pd_curr.radius - grid_ref.radius < gnd_grid_continual_thresh_ * curr_grid_width) {
         checkDiscontinuousGndGrid(pd_curr, point_curr, gnd_grids);
       } else {
         // 6: the point is break the previous grid
