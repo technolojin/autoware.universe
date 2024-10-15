@@ -453,12 +453,6 @@ void ScanGroundFilterComponent::classifyPointCloudGridScan(
 
       // finalize the current centroid_bin and update the gnd_grids
       if (is_curr_in_next_grid && centroid_bin.getIndicesRef().indices.size() > 0) {
-        // check if the prev grid have ground point cloud
-        if (use_recheck_ground_cluster_) {
-          recheckGroundCluster(
-            centroid_bin, non_ground_height_threshold_, use_lowest_point_, out_no_ground_indices);
-          // centroid_bin is not modified. should be rechecked by out_no_ground_indices?
-        }
         // convert the centroid_bin to grid-center and add it to the gnd_grids
         GridCenter curr_gnd_grid;
         curr_gnd_grid.radius = centroid_bin.getAverageRadius();
@@ -535,7 +529,7 @@ void ScanGroundFilterComponent::classifyPointCloudGridScan(
 
     // debug message
     // print only the first azimuth division
-    if (i == 0) {
+    if (i == 180) {
       // print the gnd_grids radius and avg_height, max_height
       for (const auto & grid : gnd_grids) {
         RCLCPP_INFO(
