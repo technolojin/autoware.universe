@@ -13398,12 +13398,12 @@ system.</p>
         pc1gnss_pose_yaw&lt;br/&gt;stddev
         pc1 --&gt;|"&lt;= 0.3 rad"| pc2gnss_pose_z&lt;br/&gt;stddev
         pc2 --&gt;|"&lt;= 0.1 m"| pc3gnss_pose_xy&lt;br/&gt;stddev
-        pc2 --&gt;|"&gt; 0.1 m"| ndt_pose("NDT Pose")
+        pc2 --&gt;|"&amp;gt; 0.1 m"| ndt_pose("NDT Pose")
         pc3 --&gt;|"&lt;= 0.1 m"| gnss_pose("GNSS Pose")
         pc3 --&gt;|"0.1 m &lt; x &lt;= 0.2 m"| gnss_ndt_pose("`Both GNSS and NDT Pose
         (_with modified covariance_)`")
-        pc3 --&gt;|"&gt; 0.2 m"| ndt_pose
-        pc1 --&gt;|"&gt; 0.3 rad"| ndt_pose
+        pc3 --&gt;|"&amp;gt; 0.2 m"| ndt_pose
+        pc1 --&gt;|"&amp;gt; 0.3 rad"| ndt_pose
     end
 
     pose_covariance_modifier_node --&gt;|"/localization/pose_estimator/pose_with_covariance"| ekf_localizer["ekf_localizer"]
