@@ -45,9 +45,9 @@ Eigen::Vector2d calcRawImageProjectedPoint(
 {
   const cv::Point2d rectified_image_point = pinhole_camera_model.project3dToPixel(point3d);
 
-  const cv::Point2d raw_image_point = pinhole_camera_model.unrectifyPoint(rectified_image_point);
+  // const cv::Point2d raw_image_point = pinhole_camera_model.unrectifyPoint(rectified_image_point);
 
-  return Eigen::Vector2d(raw_image_point.x, raw_image_point.y);
+  return Eigen::Vector2d(rectified_image_point.x, rectified_image_point.y);
 }
 
 std::optional<geometry_msgs::msg::TransformStamped> getTransformStamped(
