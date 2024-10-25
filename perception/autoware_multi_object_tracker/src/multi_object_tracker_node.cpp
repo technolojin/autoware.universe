@@ -287,6 +287,9 @@ void MultiObjectTracker::runProcess(
     return;
   }
 
+  // detected object filter (by max/min area)
+  association_->objectFilter(transformed_objects);
+
   /* prediction */
   processor_->predict(measurement_time);
 
