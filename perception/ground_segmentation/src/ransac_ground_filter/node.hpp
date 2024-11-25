@@ -12,10 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GROUND_SEGMENTATION__RANSAC_GROUND_FILTER_NODELET_HPP_
-#define GROUND_SEGMENTATION__RANSAC_GROUND_FILTER_NODELET_HPP_
+#ifndef RANSAC_GROUND_FILTER__NODE_HPP_
+#define RANSAC_GROUND_FILTER__NODE_HPP_
 
+#include "autoware/universe_utils/system/time_keeper.hpp"
 #include "pointcloud_preprocessor/filter.hpp"
+
+#include <autoware/universe_utils/ros/managed_transform_buffer.hpp>
 
 #include <geometry_msgs/msg/pose_array.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
@@ -35,10 +38,11 @@
 #include <tf2_ros/transform_listener.h>
 
 #include <chrono>
+#include <memory>
 #include <string>
 #include <vector>
 
-namespace ground_segmentation
+namespace autoware::ground_segmentation
 {
 struct PlaneBasis
 {
@@ -79,7 +83,14 @@ private:
   double voxel_size_z_ = 0.1;
   bool debug_ = false;
   bool is_initialized_debug_message_ = false;
+  bool has_static_tf_only_ = false;
   Eigen::Vector3d unit_vec_ = Eigen::Vector3d::UnitZ();
+  std::unique_ptr<autoware::universe_utils::ManagedTransformBuffer> managed_tf_buffer_{nullptr};
+
+  // time keeper related
+  rclcpp::Publisher<autoware::universe_utils::ProcessingTimeDetail>::SharedPtr
+    detailed_processing_time_publisher_;
+  std::shared_ptr<autoware::universe_utils::TimeKeeper> time_keeper_;
 
   /*!
    * Output transformed PointCloud from in_cloud_ptr->header.frame_id to in_target_frame
@@ -129,6 +140,6 @@ public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   explicit RANSACGroundFilterComponent(const rclcpp::NodeOptions & options);
 };
-}  // namespace ground_segmentation
+}  // namespace autoware::ground_segmentation
 
-#endif  // GROUND_SEGMENTATION__RANSAC_GROUND_FILTER_NODELET_HPP_
+#endif  // RANSAC_GROUND_FILTER__NODE_HPP_

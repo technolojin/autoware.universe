@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "ground_segmentation/ransac_ground_filter_nodelet.hpp"
+#include "node.hpp"
 
 #include <pcl_ros/transforms.hpp>
 
@@ -54,15 +54,6 @@ Eigen::Vector3d getArbitraryOrthogonalVector(const Eigen::Vector3d & input)
   return unit_vec;
 }
 
-ground_segmentation::PlaneBasis getPlaneBasis(const Eigen::Vector3d & plane_normal)
-{
-  ground_segmentation::PlaneBasis basis;
-  basis.e_z = plane_normal;
-  basis.e_x = getArbitraryOrthogonalVector(plane_normal);
-  basis.e_y = basis.e_x.cross(basis.e_z);
-  return basis;
-}
-
 geometry_msgs::msg::Pose getDebugPose(const Eigen::Affine3d & plane_affine)
 {
   geometry_msgs::msg::Pose debug_pose;
@@ -78,8 +69,18 @@ geometry_msgs::msg::Pose getDebugPose(const Eigen::Affine3d & plane_affine)
 }
 }  // namespace
 
-namespace ground_segmentation
+namespace autoware::ground_segmentation
 {
+PlaneBasis getPlaneBasis(const Eigen::Vector3d & plane_normal)
+{
+  PlaneBasis basis;
+  basis.e_z = plane_normal;
+  basis.e_x = getArbitraryOrthogonalVector(plane_normal);
+  basis.e_y = basis.e_x.cross(basis.e_z);
+  return basis;
+}
+
+using autoware::universe_utils::ScopedTimeTrack;
 using pointcloud_preprocessor::get_param;
 
 RANSACGroundFilterComponent::RANSACGroundFilterComponent(const rclcpp::NodeOptions & options)
@@ -97,6 +98,7 @@ RANSACGroundFilterComponent::RANSACGroundFilterComponent(const rclcpp::NodeOptio
   voxel_size_z_ = declare_parameter<double>("voxel_size_z");
   height_threshold_ = declare_parameter<double>("height_threshold");
   debug_ = declare_parameter<bool>("debug");
+  has_static_tf_only_ = static_cast<bool>(declare_parameter("has_static_tf_only", false));
 
   if (unit_axis_ == "x") {
     unit_vec_ = Eigen::Vector3d::UnitX();
@@ -115,6 +117,18 @@ RANSACGroundFilterComponent::RANSACGroundFilterComponent(const rclcpp::NodeOptio
     std::bind(&RANSACGroundFilterComponent::paramCallback, this, _1));
 
   pcl::console::setVerbosityLevel(pcl::console::L_ALWAYS);
+
+  managed_tf_buffer_ =
+    std::make_unique<autoware::universe_utils::ManagedTransformBuffer>(this, has_static_tf_only_);
+
+  bool use_time_keeper = declare_parameter<bool>("publish_processing_time_detail");
+  if (use_time_keeper) {
+    detailed_processing_time_publisher_ =
+      this->create_publisher<autoware::universe_utils::ProcessingTimeDetail>(
+        "~/debug/processing_time_detail_ms", 1);
+    auto time_keeper = autoware::universe_utils::TimeKeeper(detailed_processing_time_publisher_);
+    time_keeper_ = std::make_shared<autoware::universe_utils::TimeKeeper>(time_keeper);
+  }
 }
 
 void RANSACGroundFilterComponent::setDebugPublisher()
@@ -161,20 +175,7 @@ bool RANSACGroundFilterComponent::transformPointCloud(
     return true;
   }
 
-  geometry_msgs::msg::TransformStamped transform_stamped;
-  try {
-    transform_stamped = tf_buffer_->lookupTransform(
-      in_target_frame, in_cloud_ptr->header.frame_id, in_cloud_ptr->header.stamp,
-      rclcpp::Duration::from_seconds(1.0));
-  } catch (tf2::TransformException & ex) {
-    RCLCPP_WARN(this->get_logger(), "%s", ex.what());
-    return false;
-  }
-  // tf2::doTransform(*in_cloud_ptr, *out_cloud_ptr, transform_stamped);
-  Eigen::Matrix4f mat = tf2::transformToEigen(transform_stamped.transform).matrix().cast<float>();
-  pcl_ros::transformPointCloud(mat, *in_cloud_ptr, *out_cloud_ptr);
-  out_cloud_ptr->header.frame_id = in_target_frame;
-  return true;
+  return managed_tf_buffer_->transformPointcloud(in_target_frame, *in_cloud_ptr, *out_cloud_ptr);
 }
 
 void RANSACGroundFilterComponent::extractPointsIndices(
@@ -203,7 +204,7 @@ Eigen::Affine3d RANSACGroundFilterComponent::getPlaneAffine(
   pcl::PointXYZ centroid_point;
   centroid.get(centroid_point);
   Eigen::Translation<double, 3> trans(centroid_point.x, centroid_point.y, centroid_point.z);
-  const ground_segmentation::PlaneBasis basis = getPlaneBasis(plane_normal);
+  const PlaneBasis basis = getPlaneBasis(plane_normal);
   Eigen::Matrix3d rot;
   rot << basis.e_x.x(), basis.e_y.x(), basis.e_z.x(), basis.e_x.y(), basis.e_y.y(), basis.e_z.y(),
     basis.e_x.z(), basis.e_y.z(), basis.e_z.z();
@@ -214,6 +215,9 @@ void RANSACGroundFilterComponent::applyRANSAC(
   const pcl::PointCloud<PointType>::Ptr & input, pcl::PointIndices::Ptr & output_inliers,
   pcl::ModelCoefficients::Ptr & output_coefficients)
 {
+  std::unique_ptr<ScopedTimeTrack> st_ptr;
+  if (time_keeper_) st_ptr = std::make_unique<ScopedTimeTrack>(__func__, *time_keeper_);
+
   pcl::SACSegmentation<PointType> seg;
   seg.setOptimizeCoefficients(true);
   seg.setRadiusLimits(0.3, std::numeric_limits<double>::max());
@@ -229,6 +233,9 @@ void RANSACGroundFilterComponent::filter(
   const PointCloud2::ConstSharedPtr & input, [[maybe_unused]] const IndicesPtr & indices,
   PointCloud2 & output)
 {
+  std::unique_ptr<ScopedTimeTrack> st_ptr;
+  if (time_keeper_) st_ptr = std::make_unique<ScopedTimeTrack>(__func__, *time_keeper_);
+
   std::scoped_lock lock(mutex_);
   sensor_msgs::msg::PointCloud2::SharedPtr input_transformed_ptr(new sensor_msgs::msg::PointCloud2);
   if (!transformPointCloud(base_frame_, input, input_transformed_ptr)) {
@@ -396,7 +403,7 @@ rcl_interfaces::msg::SetParametersResult RANSACGroundFilterComponent::paramCallb
   return result;
 }
 
-}  // namespace ground_segmentation
+}  // namespace autoware::ground_segmentation
 
 #include <rclcpp_components/register_node_macro.hpp>
-RCLCPP_COMPONENTS_REGISTER_NODE(ground_segmentation::RANSACGroundFilterComponent)
+RCLCPP_COMPONENTS_REGISTER_NODE(autoware::ground_segmentation::RANSACGroundFilterComponent)

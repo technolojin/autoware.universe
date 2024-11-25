@@ -42,8 +42,10 @@
  *  v1.0: amc-nu (abrahammonrroy@yahoo.com)
  */
 
-#ifndef GROUND_SEGMENTATION__RAY_GROUND_FILTER_NODELET_HPP_
-#define GROUND_SEGMENTATION__RAY_GROUND_FILTER_NODELET_HPP_
+#ifndef RAY_GROUND_FILTER__NODE_HPP_
+#define RAY_GROUND_FILTER__NODE_HPP_
+
+#include "autoware/universe_utils/system/time_keeper.hpp"
 
 #include <sensor_msgs/msg/point_cloud2.hpp>
 
@@ -58,14 +60,7 @@
 #include <tf2_eigen/tf2_eigen.hpp>
 #endif
 
-#include <tf2_ros/transform_listener.h>
-
-#include <chrono>
-#include <string>
-#include <vector>
-// #include <pcl_ros/point_cloud.h>
-
-#include "ground_segmentation/gencolors.hpp"
+#include "gencolors.hpp"
 #include "pointcloud_preprocessor/filter.hpp"
 
 #include <opencv2/core.hpp>
@@ -76,11 +71,18 @@
 #include <boost/geometry/geometries/point_xy.hpp>
 #include <boost/optional.hpp>
 
+#include <tf2_ros/transform_listener.h>
+
+#include <chrono>
+#include <memory>
+#include <string>
+#include <vector>
+
 namespace bg = boost::geometry;
 using Point = bg::model::d2::point_xy<double>;
 using Polygon = bg::model::polygon<Point>;
 
-namespace ground_segmentation
+namespace autoware::ground_segmentation
 {
 class RayGroundFilterComponent : public pointcloud_preprocessor::Filter
 {
@@ -141,6 +143,11 @@ private:
   pcl::PointCloud<PointType_>::Ptr previous_cloud_ptr_;  // holds the previous groundless result of
                                                          // ground classification
 
+  // time keeper related
+  rclcpp::Publisher<autoware::universe_utils::ProcessingTimeDetail>::SharedPtr
+    detailed_processing_time_publisher_;
+  std::shared_ptr<autoware::universe_utils::TimeKeeper> time_keeper_;
+
   /*!
    * Output transformed PointCloud from in_cloud_ptr->header.frame_id to in_target_frame
    * @param[in] in_target_frame Coordinate system to perform transform
@@ -186,16 +193,16 @@ private:
    * @param out_removed_indices_cloud_ptr Resulting PointCloud with the indices removed
    */
   void ExtractPointsIndices(
-    const PointCloud2::ConstSharedPtr in_cloud_ptr, pcl::PointIndices & in_indices,
-    PointCloud2::SharedPtr out_only_indices_cloud_ptr,
-    PointCloud2::SharedPtr out_removed_indices_cloud_ptr);
+    const PointCloud2::ConstSharedPtr in_cloud_ptr, const pcl::PointIndices & in_indices,
+    PointCloud2::SharedPtr ground_cloud_msg_ptr, PointCloud2::SharedPtr no_ground_cloud_msg_ptr);
 
   boost::optional<float> calcPointVehicleIntersection(const Point & point);
 
   void setVehicleFootprint(
     const double min_x, const double max_x, const double min_y, const double max_y);
   void initializePointCloud2(
-    const PointCloud2::ConstSharedPtr & in_cloud_ptr, PointCloud2::SharedPtr & out_cloud_msg_ptr);
+    const PointCloud2::ConstSharedPtr & in_cloud_ptr,
+    const PointCloud2::SharedPtr & out_cloud_msg_ptr);
   /** \brief Parameter service callback result : needed to be hold */
   OnSetParametersCallbackHandle::SharedPtr set_param_res_;
 
@@ -206,6 +213,6 @@ public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   explicit RayGroundFilterComponent(const rclcpp::NodeOptions & options);
 };
-}  // namespace ground_segmentation
+}  // namespace autoware::ground_segmentation
 
-#endif  // GROUND_SEGMENTATION__RAY_GROUND_FILTER_NODELET_HPP_
+#endif  // RAY_GROUND_FILTER__NODE_HPP_
