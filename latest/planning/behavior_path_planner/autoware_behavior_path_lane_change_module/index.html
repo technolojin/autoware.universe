@@ -856,7 +856,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../common/global_parameter_loader/Readme" class="md-nav__link">
+      <a href="../../../common/autoware_global_parameter_loader/Readme" class="md-nav__link">
         Global Parameter Loader
       </a>
     </li>
@@ -870,7 +870,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../common/glog_component" class="md-nav__link">
+      <a href="../../../common/autoware_glog_component" class="md-nav__link">
         Glog Component
       </a>
     </li>
@@ -10483,39 +10483,6 @@
       
         
           
-        
-      
-      
-        <label class="md-nav__link" for="__nav_9_12" id="__nav_9_12_label" tabindex="0">
-          Livox
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_9_12_label" aria-expanded="false">
-        <label class="md-nav__title" for="__nav_9_12">
-          <span class="md-nav__icon md-icon"></span>
-          Livox
-        </label>
-        <ul class="md-nav__list" data-md-scrollfix>
-          
-            
-              
-  
-  
-  
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-      
-      
-      
-        
-      
-      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9_12_1" >
-      
-      
-        
-          
             
           
         
@@ -10524,24 +10491,17 @@
         
         
         <div class="md-nav__link md-nav__link--index ">
-          <a href="../../../sensing/livox/autoware_livox_tag_filter/">Autoware livox tag filter</a>
+          <a href="../../../sensing/autoware_vehicle_velocity_converter/">Autoware vehicle velocity converter</a>
           
         </div>
       
-      <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_9_12_1_label" aria-expanded="false">
-        <label class="md-nav__title" for="__nav_9_12_1">
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_9_12_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_9_12">
           <span class="md-nav__icon md-icon"></span>
-          Autoware livox tag filter
+          Autoware vehicle velocity converter
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
-            
-          
-        </ul>
-      </nav>
-    </li>
-  
-
             
           
         </ul>
@@ -10571,6 +10531,39 @@
       
         
           
+        
+      
+      
+        <label class="md-nav__link" for="__nav_9_13" id="__nav_9_13_label" tabindex="0">
+          Livox
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_9_13_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_9_13">
+          <span class="md-nav__icon md-icon"></span>
+          Livox
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+        
+      
+      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9_13_1" >
+      
+      
+        
+          
             
           
         
@@ -10579,17 +10572,24 @@
         
         
         <div class="md-nav__link md-nav__link--index ">
-          <a href="../../../sensing/vehicle_velocity_converter/">Vehicle velocity converter</a>
+          <a href="../../../sensing/livox/autoware_livox_tag_filter/">Autoware livox tag filter</a>
           
         </div>
       
-      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_9_13_label" aria-expanded="false">
-        <label class="md-nav__title" for="__nav_9_13">
+      <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_9_13_1_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_9_13_1">
           <span class="md-nav__icon md-icon"></span>
-          Vehicle velocity converter
+          Autoware livox tag filter
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
             
           
         </ul>
@@ -13825,11 +13825,18 @@ If the ego vehicle velocity is smaller than <code>stuck_detection.velocity</code
 <td>5.0</td>
 </tr>
 <tr>
-<td align="left"><code>trajectory.prepare_duration</code></td>
-<td>[m]</td>
+<td align="left"><code>trajectory.max_prepare_duration</code></td>
+<td>[s]</td>
 <td>double</td>
-<td>The preparation time for the ego vehicle to be ready to perform lane change.</td>
+<td>The maximum preparation time for the ego vehicle to be ready to perform lane change.</td>
 <td>4.0</td>
+</tr>
+<tr>
+<td align="left"><code>trajectory.min_prepare_duration</code></td>
+<td>[s]</td>
+<td>double</td>
+<td>The minimum preparation time for the ego vehicle to be ready to perform lane change.</td>
+<td>2.0</td>
 </tr>
 <tr>
 <td align="left"><code>trajectory.lateral_jerk</code></td>
@@ -13872,6 +13879,13 @@ If the ego vehicle velocity is smaller than <code>stuck_detection.velocity</code
 <td>double</td>
 <td>maximum longitudinal deceleration for lane change</td>
 <td>-1.0</td>
+</tr>
+<tr>
+<td align="left"><code>trajectory.lane_changing_decel_factor</code></td>
+<td>[-]</td>
+<td>double</td>
+<td>longitudinal deceleration factor during lane changing phase</td>
+<td>0.5</td>
 </tr>
 <tr>
 <td align="left"><code>min_length_for_turn_signal_activation</code></td>
