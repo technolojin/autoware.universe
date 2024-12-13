@@ -319,10 +319,7 @@ dc   | dc dc dc  dc ||zc|
 
   auto objects = input_roi_msg.feature_objects;
   int iterations = painted_pointcloud_msg.data.size() / painted_pointcloud_msg.point_step;
-  // iterate points
-  // Requires 'OMP_NUM_THREADS=N'
-  omp_set_num_threads(omp_num_threads_);
-#pragma omp parallel for
+
   for (int i = 0; i < iterations; i++) {
     int stride = p_step * i;
     unsigned char * data = &painted_pointcloud_msg.data[0];
@@ -347,23 +344,26 @@ dc   | dc dc dc  dc ||zc|
 
     // iterate 2d bbox
     for (const auto & feature_object : objects) {
-      sensor_msgs::msg::RegionOfInterest roi = feature_object.feature.roi;
+      const sensor_msgs::msg::RegionOfInterest & roi = feature_object.feature.roi;
       // paint current point if it is inside bbox
-      int label2d = feature_object.object.classification.front().label;
-      if (!isUnknown(label2d) && isInsideBbox(projected_point.x(), projected_point.y(), roi, 1.0)) {
-        // cppcheck-suppress invalidPointerCast
-        auto p_class = reinterpret_cast<float *>(&output[stride + class_offset]);
-        for (const auto & cls : isClassTable_) {
-          // add up the class values if the point belongs to multiple classes
-          *p_class = cls.second(label2d) ? (class_index_[cls.first] + *p_class) : *p_class;
-        }
+      const int label2d = feature_object.object.classification.front().label;
+
+      if (isUnknown(label2d)) continue;
+      if (projected_point.x() < roi.x_offset) continue;
+      if (projected_point.x() > roi.x_offset + roi.width) continue;
+      if (projected_point.y() < roi.y_offset) continue;
+      if (projected_point.y() > roi.y_offset + roi.height) continue;
+
+      // cppcheck-suppress invalidPointerCast
+      auto p_class = reinterpret_cast<float *>(&output[stride + class_offset]);
+      for (const auto & cls : isClassTable_) {
+        // add up the class values if the point belongs to multiple classes
+        *p_class = cls.second(label2d) ? (class_index_[cls.first] + *p_class) : *p_class;
       }
-#if 0
-      // Parallelizing loop don't support push_back
-      if (debugger_) {
-        debug_image_points.push_back(projected_point);
-      }
-#endif
+      
+      // if (debugger_) {
+      //   debug_image_points.push_back(projected_point);
+      // }
     }
   }
 
