@@ -21,6 +21,7 @@
 
 #include <autoware/universe_utils/ros/debug_publisher.hpp>
 #include <autoware/universe_utils/ros/published_time_publisher.hpp>
+#include <autoware/universe_utils/system/stop_watch.hpp>
 #include <rclcpp/rclcpp.hpp>
 
 #include <autoware_perception_msgs/msg/detected_objects.hpp>
@@ -142,10 +143,14 @@ private:
   Sync sync_;
   PointsNumThresholdParam points_num_threshold_param_;
 
-  std::shared_ptr<Debugger> debugger_;
   bool using_2d_validator_;
   std::unique_ptr<Validator> validator_;
+
+  // debug
+  std::unique_ptr<autoware::universe_utils::StopWatch<std::chrono::milliseconds>> stop_watch_ptr_;
+  std::unique_ptr<autoware::universe_utils::DebugPublisher> processing_time_publisher_;
   std::unique_ptr<autoware::universe_utils::PublishedTimePublisher> published_time_publisher_;
+  std::shared_ptr<Debugger> debugger_;
 
 private:
   void onObjectsAndObstaclePointCloud(
