@@ -18,6 +18,7 @@
 
 #include <autoware/object_recognition_utils/object_recognition_utils.hpp>
 #include <autoware/universe_utils/geometry/boost_polygon_utils.hpp>
+#include <autoware_utils/autoware_utils.hpp>
 
 #include <boost/geometry.hpp>
 
@@ -33,6 +34,7 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
+#include <chrono>
 #include <cmath>
 
 namespace autoware::detected_object_validation
@@ -313,18 +315,26 @@ ObstaclePointCloudBasedValidator::ObstaclePointCloudBasedValidator(
 
   objects_pub_ = create_publisher<autoware_perception_msgs::msg::DetectedObjects>(
     "~/output/objects", rclcpp::QoS{1});
+
+  // Debug
   debug_publisher_ = std::make_unique<autoware::universe_utils::DebugPublisher>(
     this, "obstacle_pointcloud_based_validator");
+  processing_time_publisher_ = std::make_unique<autoware::universe_utils::DebugPublisher>(
+    this, "obstacle_pointcloud_based_validator");
+  published_time_publisher_ =
+    std::make_unique<autoware::universe_utils::PublishedTimePublisher>(this);
+  stop_watch_ptr_ =
+    std::make_unique<autoware::universe_utils::StopWatch<std::chrono::milliseconds>>();
 
   const bool enable_debugger = declare_parameter<bool>("enable_debugger");
   if (enable_debugger) debugger_ = std::make_shared<Debugger>(this);
-  published_time_publisher_ =
-    std::make_unique<autoware::universe_utils::PublishedTimePublisher>(this);
 }
 void ObstaclePointCloudBasedValidator::onObjectsAndObstaclePointCloud(
   const autoware_perception_msgs::msg::DetectedObjects::ConstSharedPtr & input_objects,
   const sensor_msgs::msg::PointCloud2::ConstSharedPtr & input_obstacle_pointcloud)
 {
+  if (stop_watch_ptr_) stop_watch_ptr_->tic("processing_time");
+
   autoware_perception_msgs::msg::DetectedObjects output, removed_objects;
   output.header = input_objects->header;
   removed_objects.header = input_objects->header;
@@ -388,6 +398,11 @@ void ObstaclePointCloudBasedValidator::onObjectsAndObstaclePointCloud(
       .count();
   debug_publisher_->publish<tier4_debug_msgs::msg::Float64Stamped>(
     "debug/pipeline_latency_ms", pipeline_latency);
+  if (stop_watch_ptr_) {
+    const auto processing_time_ms = stop_watch_ptr_->toc("processing_time");
+    processing_time_publisher_->publish<tier4_debug_msgs::msg::Float64Stamped>(
+      "debug/processing_time_ms", processing_time_ms);
+  }
 }
 
 }  // namespace obstacle_pointcloud
