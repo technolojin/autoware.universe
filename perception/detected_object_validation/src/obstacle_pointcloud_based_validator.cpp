@@ -310,8 +310,6 @@ ObstaclePointCloudBasedValidator::ObstaclePointCloudBasedValidator(
   // Debug
   debug_publisher_ = std::make_unique<autoware::universe_utils::DebugPublisher>(
     this, "obstacle_pointcloud_based_validator");
-  processing_time_publisher_ = std::make_unique<autoware::universe_utils::DebugPublisher>(
-    this, "obstacle_pointcloud_based_validator");
   published_time_publisher_ =
     std::make_unique<autoware::universe_utils::PublishedTimePublisher>(this);
   stop_watch_ptr_ =
@@ -325,6 +323,21 @@ void ObstaclePointCloudBasedValidator::onObjectsAndObstaclePointCloud(
   const sensor_msgs::msg::PointCloud2::ConstSharedPtr & input_obstacle_pointcloud)
 {
   if (stop_watch_ptr_) stop_watch_ptr_->tic("processing_time");
+  if (stop_watch_ptr_) {
+    // input latency
+    const double input_latency_1_ms =
+    std::chrono::duration<double, std::milli>(
+      std::chrono::nanoseconds((this->get_clock()->now() - input_objects->header.stamp).nanoseconds()))
+      .count();
+    debug_publisher_->publish<tier4_debug_msgs::msg::Float64Stamped>(
+      "debug/input_latency_1_ms", input_latency_1_ms);
+    const double input_latency_2_ms =
+    std::chrono::duration<double, std::milli>(
+      std::chrono::nanoseconds((this->get_clock()->now() - input_obstacle_pointcloud->header.stamp).nanoseconds()))
+      .count();
+    debug_publisher_->publish<tier4_debug_msgs::msg::Float64Stamped>(
+      "debug/input_latency_2_ms", input_latency_2_ms);
+  }
 
   autoware_perception_msgs::msg::DetectedObjects output, removed_objects;
   output.header = input_objects->header;
@@ -379,7 +392,7 @@ void ObstaclePointCloudBasedValidator::onObjectsAndObstaclePointCloud(
     "debug/pipeline_latency_ms", pipeline_latency);
   if (stop_watch_ptr_) {
     const auto processing_time_ms = stop_watch_ptr_->toc("processing_time");
-    processing_time_publisher_->publish<tier4_debug_msgs::msg::Float64Stamped>(
+    debug_publisher_->publish<tier4_debug_msgs::msg::Float64Stamped>(
       "debug/processing_time_ms", processing_time_ms);
   }
 }
