@@ -325,16 +325,10 @@ void ObstaclePointCloudBasedValidator::onObjectsAndObstaclePointCloud(
   if (stop_watch_ptr_) stop_watch_ptr_->tic("processing_time");
   if (stop_watch_ptr_) {
     // input latency
-    const double input_latency_1_ms =
-    std::chrono::duration<double, std::milli>(
-      std::chrono::nanoseconds((this->get_clock()->now() - input_objects->header.stamp).nanoseconds()))
-      .count();
+    const double input_latency_1_ms =(this->get_clock()->now() - input_objects->header.stamp).seconds() * 1e3;
     debug_publisher_->publish<tier4_debug_msgs::msg::Float64Stamped>(
       "debug/input_latency_1_ms", input_latency_1_ms);
-    const double input_latency_2_ms =
-    std::chrono::duration<double, std::milli>(
-      std::chrono::nanoseconds((this->get_clock()->now() - input_obstacle_pointcloud->header.stamp).nanoseconds()))
-      .count();
+    const double input_latency_2_ms = (this->get_clock()->now() - input_obstacle_pointcloud->header.stamp).seconds() * 1e3;
     debug_publisher_->publish<tier4_debug_msgs::msg::Float64Stamped>(
       "debug/input_latency_2_ms", input_latency_2_ms);
   }
@@ -384,10 +378,7 @@ void ObstaclePointCloudBasedValidator::onObjectsAndObstaclePointCloud(
   }
 
   // Publish processing time info
-  const double pipeline_latency =
-    std::chrono::duration<double, std::milli>(
-      std::chrono::nanoseconds((this->get_clock()->now() - output.header.stamp).nanoseconds()))
-      .count();
+  const double pipeline_latency = (this->get_clock()->now() - input_objects->header.stamp).seconds() * 1e3;
   debug_publisher_->publish<tier4_debug_msgs::msg::Float64Stamped>(
     "debug/pipeline_latency_ms", pipeline_latency);
   if (stop_watch_ptr_) {
