@@ -196,7 +196,12 @@ void DetectionByTracker::onObjects(
 
   objects_pub_->publish(detected_objects);
   published_time_publisher_->publish_if_subscribed(objects_pub_, detected_objects.header.stamp);
-  debugger_->publishProcessingTime();
+  const double pipeline_latency_ms =
+    std::chrono::duration<double, std::milli>(
+      std::chrono::nanoseconds(
+        (this->get_clock()->now() - detected_objects.header.stamp).nanoseconds()))
+      .count();
+  debugger_->publishProcessingTime(pipeline_latency_ms);
 }
 
 void DetectionByTracker::divideUnderSegmentedObjects(

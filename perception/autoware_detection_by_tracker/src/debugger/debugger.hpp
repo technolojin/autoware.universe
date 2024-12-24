@@ -87,12 +87,14 @@ public:
     stop_watch_ptr_->tic("processing_time");
   }
   void startMeasureProcessingTime() { stop_watch_ptr_->tic("processing_time"); }
-  void publishProcessingTime()
+  void publishProcessingTime(const double pipeline_latency_ms)
   {
     processing_time_publisher_->publish<tier4_debug_msgs::msg::Float64Stamped>(
       "debug/cyclic_time_ms", stop_watch_ptr_->toc("cyclic_time", true));
     processing_time_publisher_->publish<tier4_debug_msgs::msg::Float64Stamped>(
       "debug/processing_time_ms", stop_watch_ptr_->toc("processing_time", true));
+    processing_time_publisher_->publish<tier4_debug_msgs::msg::Float64Stamped>(
+      "debug/pipeline_latency_ms", pipeline_latency_ms);
   }
 
 private:
