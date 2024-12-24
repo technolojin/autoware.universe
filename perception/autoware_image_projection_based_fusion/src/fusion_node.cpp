@@ -334,7 +334,6 @@ void FusionNode<TargetMsg3D, Obj, Msg2D>::subCallback(
     postprocess(*output_msg);
     publish(*output_msg);
     std::fill(is_fused_.begin(), is_fused_.end(), false);
-    cached_msg_.second = nullptr;
 
     // add processing time for debug
     if (debug_publisher_) {
@@ -344,8 +343,17 @@ void FusionNode<TargetMsg3D, Obj, Msg2D>::subCallback(
         "debug/cyclic_time_ms", cyclic_time_ms);
       debug_publisher_->publish<tier4_debug_msgs::msg::Float64Stamped>(
         "debug/processing_time_ms", processing_time_ms);
+      const double pipeline_latency_ms =
+        std::chrono::duration<double, std::milli>(
+          std::chrono::nanoseconds(
+            (this->get_clock()->now() - output_msg->header.stamp).nanoseconds()))
+          .count();
+      debug_publisher_->publish<tier4_debug_msgs::msg::Float64Stamped>(
+        "debug/pipeline_latency_ms", pipeline_latency_ms);
       processing_time_ms = 0;
     }
+    cached_msg_.second = nullptr;
+
   } else {
     cached_msg_.first = timestamp_nsec;
     cached_msg_.second = output_msg;
@@ -399,7 +407,6 @@ void FusionNode<TargetMsg3D, Obj, Msg2D>::roiCallback(
         postprocess(*(cached_msg_.second));
         publish(*(cached_msg_.second));
         std::fill(is_fused_.begin(), is_fused_.end(), false);
-        cached_msg_.second = nullptr;
 
         // add processing time for debug
         if (debug_publisher_) {
@@ -409,8 +416,16 @@ void FusionNode<TargetMsg3D, Obj, Msg2D>::roiCallback(
           debug_publisher_->publish<tier4_debug_msgs::msg::Float64Stamped>(
             "debug/processing_time_ms",
             processing_time_ms + stop_watch_ptr_->toc("processing_time", true));
+          const double pipeline_latency_ms =
+            std::chrono::duration<double, std::milli>(
+              std::chrono::nanoseconds(
+                (this->get_clock()->now() - cached_msg_.second->header.stamp).nanoseconds()))
+              .count();
+          debug_publisher_->publish<tier4_debug_msgs::msg::Float64Stamped>(
+            "debug/pipeline_latency_ms", pipeline_latency_ms);
           processing_time_ms = 0;
         }
+        cached_msg_.second = nullptr;
       }
       processing_time_ms = processing_time_ms + stop_watch_ptr_->toc("processing_time", true);
       return;
@@ -451,6 +466,13 @@ void FusionNode<TargetMsg3D, Obj, Msg2D>::timer_callback()
         debug_publisher_->publish<tier4_debug_msgs::msg::Float64Stamped>(
           "debug/processing_time_ms",
           processing_time_ms + stop_watch_ptr_->toc("processing_time", true));
+        const double pipeline_latency_ms =
+          std::chrono::duration<double, std::milli>(
+            std::chrono::nanoseconds(
+              (this->get_clock()->now() - cached_msg_.second->header.stamp).nanoseconds()))
+            .count();
+        debug_publisher_->publish<tier4_debug_msgs::msg::Float64Stamped>(
+          "debug/pipeline_latency_ms", pipeline_latency_ms);
         processing_time_ms = 0;
       }
     }
