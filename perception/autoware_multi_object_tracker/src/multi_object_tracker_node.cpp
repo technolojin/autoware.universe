@@ -46,12 +46,13 @@ boost::optional<geometry_msgs::msg::Transform> getTransformAnonymous(
   const std::string & target_frame_id, const rclcpp::Time & time)
 {
   try {
-    // Check if the frames are ready
-    std::string errstr;  // This argument prevents error msg from being displayed in the terminal.
-    if (!tf_buffer.canTransform(
-          target_frame_id, source_frame_id, tf2::TimePointZero, tf2::Duration::zero(), &errstr)) {
-      return boost::none;
-    }
+    // // Check if the frames are ready
+    // std::string errstr;  // This argument prevents error msg from being displayed in the
+    // terminal. if (!tf_buffer.canTransform(
+    //       target_frame_id, source_frame_id, tf2::TimePointZero, tf2::Duration::zero(), &errstr))
+    //       {
+    //   return boost::none;
+    // }
 
     // Lookup the transform
     geometry_msgs::msg::TransformStamped self_transform_stamped;
@@ -90,65 +91,6 @@ MultiObjectTracker::MultiObjectTracker(const rclcpp::NodeOptions & node_options)
   bool enable_delay_compensation{declare_parameter<bool>("enable_delay_compensation")};
   enable_odometry_uncertainty_ = declare_parameter<bool>("consider_odometry_uncertainty");
 
-  declare_parameter("selected_input_channels", std::vector<std::string>());
-  std::vector<std::string> selected_input_channels =
-    get_parameter("selected_input_channels").as_string_array();
-
-  // ROS interface - Publisher
-  tracked_objects_pub_ =
-    create_publisher<autoware_perception_msgs::msg::TrackedObjects>("output", rclcpp::QoS{1});
-
-  // ROS interface - Input channels
-  // Get input channels
-  std::vector<std::string> input_topic_names;
-  std::vector<std::string> input_names_long;
-  std::vector<std::string> input_names_short;
-  std::vector<bool> input_is_spawn_enabled;
-
-  if (selected_input_channels.empty()) {
-    RCLCPP_ERROR(this->get_logger(), "No input topics are specified.");
-    return;
-  }
-
-  for (const auto & selected_input_channel : selected_input_channels) {
-    // required parameters, no default value
-    const std::string input_topic_name =
-      declare_parameter<std::string>("input_channels." + selected_input_channel + ".topic");
-    input_topic_names.push_back(input_topic_name);
-
-    // required parameter, but can set a default value
-    const bool spawn_enabled = declare_parameter<bool>(
-      "input_channels." + selected_input_channel + ".can_spawn_new_tracker", true);
-    input_is_spawn_enabled.push_back(spawn_enabled);
-
-    // optional parameters
-    const std::string default_name = selected_input_channel;
-    const std::string name_long = declare_parameter<std::string>(
-      "input_channels." + selected_input_channel + ".optional.name", default_name);
-    input_names_long.push_back(name_long);
-
-    const std::string default_name_short = selected_input_channel.substr(0, 3);
-    const std::string name_short = declare_parameter<std::string>(
-      "input_channels." + selected_input_channel + ".optional.short_name", default_name_short);
-    input_names_short.push_back(name_short);
-  }
-
-  input_channel_size_ = input_topic_names.size();
-  input_channels_.resize(input_channel_size_);
-
-  for (size_t i = 0; i < input_channel_size_; i++) {
-    input_channels_[i].input_topic = input_topic_names[i];
-    input_channels_[i].long_name = input_names_long[i];
-    input_channels_[i].short_name = input_names_short[i];
-    input_channels_[i].is_spawn_enabled = input_is_spawn_enabled[i];
-  }
-
-  // Initialize input manager
-  input_manager_ = std::make_unique<InputManager>(*this);
-  input_manager_->init(input_channels_);  // Initialize input manager, set subscriptions
-  input_manager_->setTriggerFunction(
-    std::bind(&MultiObjectTracker::onTrigger, this));  // Set trigger function
-
   // Create tf timer
   auto cti = std::make_shared<tf2_ros::CreateTimerROS>(
     this->get_node_base_interface(), this->get_node_timers_interface());
@@ -163,6 +105,66 @@ MultiObjectTracker::MultiObjectTracker(const rclcpp::NodeOptions & node_options)
     const auto timer_period = rclcpp::Rate(publish_rate * timer_multiplier).period();
     publish_timer_ = rclcpp::create_timer(
       this, get_clock(), timer_period, std::bind(&MultiObjectTracker::onTimer, this));
+  }
+
+  // ROS interface - Publisher
+  tracked_objects_pub_ =
+    create_publisher<autoware_perception_msgs::msg::TrackedObjects>("output", rclcpp::QoS{1});
+
+  // ROS interface - Input channels
+  {
+    declare_parameter("selected_input_channels", std::vector<std::string>());
+    std::vector<std::string> selected_input_channels =
+      get_parameter("selected_input_channels").as_string_array();
+    // Get input channels
+    std::vector<std::string> input_topic_names;
+    std::vector<std::string> input_names_long;
+    std::vector<std::string> input_names_short;
+    std::vector<bool> input_is_spawn_enabled;
+
+    if (selected_input_channels.empty()) {
+      RCLCPP_ERROR(this->get_logger(), "No input topics are specified.");
+      return;
+    }
+
+    for (const auto & selected_input_channel : selected_input_channels) {
+      // required parameters, no default value
+      const std::string input_topic_name =
+        declare_parameter<std::string>("input_channels." + selected_input_channel + ".topic");
+      input_topic_names.push_back(input_topic_name);
+
+      // required parameter, but can set a default value
+      const bool spawn_enabled = declare_parameter<bool>(
+        "input_channels." + selected_input_channel + ".can_spawn_new_tracker", true);
+      input_is_spawn_enabled.push_back(spawn_enabled);
+
+      // optional parameters
+      const std::string default_name = selected_input_channel;
+      const std::string name_long = declare_parameter<std::string>(
+        "input_channels." + selected_input_channel + ".optional.name", default_name);
+      input_names_long.push_back(name_long);
+
+      const std::string default_name_short = selected_input_channel.substr(0, 3);
+      const std::string name_short = declare_parameter<std::string>(
+        "input_channels." + selected_input_channel + ".optional.short_name", default_name_short);
+      input_names_short.push_back(name_short);
+    }
+
+    input_channel_size_ = input_topic_names.size();
+    input_channels_.resize(input_channel_size_);
+
+    for (size_t i = 0; i < input_channel_size_; i++) {
+      input_channels_[i].input_topic = input_topic_names[i];
+      input_channels_[i].long_name = input_names_long[i];
+      input_channels_[i].short_name = input_names_short[i];
+      input_channels_[i].is_spawn_enabled = input_is_spawn_enabled[i];
+    }
+
+    // Initialize input manager
+    input_manager_ = std::make_unique<InputManager>(*this);
+    input_manager_->init(input_channels_);  // Initialize input manager, set subscriptions
+    input_manager_->setTriggerFunction(
+      std::bind(&MultiObjectTracker::onTrigger, this));  // Set trigger function
   }
 
   // Initialize processor
