@@ -332,8 +332,17 @@ void RoiDetectedObjectFusionNode::publish(const DetectedObjects & output_msg)
 
   pub_ptr_->publish(output_objects_msg);
 
-  debug_publisher_->publish<DetectedObjects>("debug/fused_objects", debug_fused_objects_msg);
-  debug_publisher_->publish<DetectedObjects>("debug/ignored_objects", debug_ignored_objects_msg);
+  if (debug_publisher_) {
+    debug_publisher_->publish<DetectedObjects>("debug/fused_objects", debug_fused_objects_msg);
+    debug_publisher_->publish<DetectedObjects>("debug/ignored_objects", debug_ignored_objects_msg);
+    const double pipeline_latency_ms =
+      std::chrono::duration<double, std::milli>(
+        std::chrono::nanoseconds(
+          (this->get_clock()->now() - output_msg.header.stamp).nanoseconds()))
+        .count();
+    debug_publisher_->publish<tier4_debug_msgs::msg::Float64Stamped>(
+      "debug/pipeline_latency_ms", pipeline_latency_ms);
+  }
 
   passthrough_object_flags_map_.erase(timestamp_nsec);
   fused_object_flags_map_.erase(timestamp_nsec);

@@ -233,6 +233,15 @@ void RoiClusterFusionNode::fuseOnSingleImage(
   if (debugger_) {
     debugger_->publishImage(image_id, input_roi_msg.header.stamp);
   }
+  if (debug_publisher_) {
+    const double pipeline_latency_ms =
+      std::chrono::duration<double, std::milli>(
+        std::chrono::nanoseconds(
+          (this->get_clock()->now() - output_cluster_msg.header.stamp).nanoseconds()))
+        .count();
+    debug_publisher_->publish<tier4_debug_msgs::msg::Float64Stamped>(
+      "debug/pipeline_latency_ms", pipeline_latency_ms);
+  }
 }
 
 bool RoiClusterFusionNode::out_of_scope(const DetectedObjectWithFeature & obj)
