@@ -27,6 +27,8 @@ DetectedObjectFeatureRemover::DetectedObjectFeatureRemover(const rclcpp::NodeOpt
     "~/input", 1, std::bind(&DetectedObjectFeatureRemover::objectCallback, this, _1));
   published_time_publisher_ =
     std::make_unique<autoware::universe_utils::PublishedTimePublisher>(this);
+  processing_time_publisher_ = std::make_unique<autoware::universe_utils::DebugPublisher>(
+    this, "detected_object_feature_remover");
 }
 
 void DetectedObjectFeatureRemover::objectCallback(
@@ -35,7 +37,14 @@ void DetectedObjectFeatureRemover::objectCallback(
   DetectedObjects output;
   convert(*input, output);
   pub_->publish(output);
+
   published_time_publisher_->publish_if_subscribed(pub_, output.header.stamp);
+  const double pipeline_latency_ms =
+    std::chrono::duration<double, std::milli>(
+      std::chrono::nanoseconds((this->get_clock()->now() - output.header.stamp).nanoseconds()))
+      .count();
+  processing_time_publisher_->publish<tier4_debug_msgs::msg::Float64Stamped>(
+    "debug/pipeline_latency_ms", pipeline_latency_ms);
 }
 
 void DetectedObjectFeatureRemover::convert(
