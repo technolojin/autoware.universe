@@ -1631,6 +1631,11 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
+         <loc>https://autowarefoundation.github.io/autoware.universe/latest/visualization/autoware_overlay_rviz_plugin/autoware_string_stamped_overlay_rviz_plugin/</loc>
+         <lastmod>2024-12-26</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
          <loc>https://autowarefoundation.github.io/autoware.universe/latest/visualization/autoware_perception_rviz_plugin/</loc>
          <lastmod>2024-12-26</lastmod>
          <changefreq>daily</changefreq>
