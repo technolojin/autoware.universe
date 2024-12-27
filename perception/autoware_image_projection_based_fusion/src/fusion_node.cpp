@@ -271,7 +271,6 @@ void FusionNode<Msg3D, Msg2D, ExportObj>::printTimestamps()
       int64_t det2d_stamp_ms = det2d.matched_stamp_nsec / 1000000;
       int64_t det2d_latency_ms =
         det2d.cached_det2d_arrivals[det2d.matched_stamp_nsec] / 1000000 - det2d_stamp_ms;
-      det2d.cached_det2d_arrivals.erase(det2d.matched_stamp_nsec);
       int64_t delta_time = (det2d_stamp_ms - det2d.input_offset_ms) - det3d_stamp_ms;
       std::cout << "roi" << idx << " cache size: " << cache_size
                 << " timestamp [ms]: " << det2d_stamp_ms % 10000
