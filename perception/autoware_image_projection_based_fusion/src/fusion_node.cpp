@@ -243,10 +243,12 @@ void FusionNode<Msg3D, Msg2D, ExportObj>::exportProcess()
     auto & det2d = det2d_list_.at(idx);
     // if it is matched, print the matched roi timestamp
     if (det2d.is_fused) {
+      size_t cache_size = det2d.cached_det2d_msgs.size();
       int64_t det2d_stamp_ms = static_cast<int64_t>(det2d.matched_stamp_nsec);
       det2d_stamp_ms = det2d_stamp_ms / 1000000;  // ns to ms
       int64_t delta_time = (det2d_stamp_ms - det2d.input_offset_ms) - det3d_stamp_ms;
-      std::cout << "roi" << idx << " timestamp [ms]: " << det2d_stamp_ms % 10000
+      std::cout << "roi" << idx << " cache size: " << cache_size
+                << " timestamp [ms]: " << det2d_stamp_ms % 10000
                 << " offset [ms]: " << det2d.input_offset_ms
                 << " timestamp difference [ms]: " << delta_time << std::endl;
     } else {
@@ -297,6 +299,7 @@ void FusionNode<Msg3D, Msg2D, ExportObj>::subCallback(
     // message may processed partially with arrived 2d rois
     stop_watch_ptr_->toc("processing_time", true);
     std::lock_guard<std::mutex> lock_det3d(mutex_det3d_msg_);
+    std::cout << "=== det3d callback cleanup export ===" << std::endl;
     exportProcess();
 
     // reset flags
@@ -390,6 +393,7 @@ void FusionNode<Msg3D, Msg2D, ExportObj>::subCallback(
   cached_det3d_msg_ptr_ = output_msg;
   if (checkAllDet2dFused()) {
     // if all camera fused, postprocess and publish the main message
+    std::cout << "=== det3d callback fresh export ===" << std::endl;
     exportProcess();
 
     // reset flags
@@ -452,6 +456,7 @@ void FusionNode<Msg3D, Msg2D, ExportObj>::roiCallback(
 
       // PROCESS: if all camera fused, postprocess and publish the main message
       if (checkAllDet2dFused()) {
+        std::cout << "=== det2d callback export ===" << std::endl;
         exportProcess();
         // reset flags
         clearAllDet2dFlags();
@@ -482,6 +487,7 @@ void FusionNode<Msg3D, Msg2D, ExportObj>::timer_callback()
     // PROCESS: if timeout, postprocess cached msg
     if (cached_det3d_msg_ptr_ != nullptr) {
       stop_watch_ptr_->toc("processing_time", true);
+      std::cout << "=== timeout export ===" << std::endl;
       exportProcess();
     }
 
