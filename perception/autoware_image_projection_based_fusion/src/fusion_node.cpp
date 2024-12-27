@@ -291,9 +291,12 @@ void FusionNode<Msg3D, Msg2D, ExportObj>::printTimestamps()
         int64_t det2d_arrival_ms = det2d.cached_det2d_arrivals[det2d_stamp] / 1000000;
         int64_t det2d_latency_ms = det2d_arrival_ms - det2d_stamp_ms + det2d.input_offset_ms;
         int64_t delta_time = (det2d_stamp_ms - det2d.input_offset_ms) - det3d_stamp_ms;
-        std::cout << "    cache" << idx << " timestamp [ms]: " << det2d_stamp_ms % 10000
+        int64_t arrival_delta_ms = det2d_arrival_ms - det3d_arrival_ms;
+
+        std::cout << "              cache" << idx << " timestamp [ms]: " << det2d_stamp_ms % 10000
                   << ", offset [ms]: " << det2d.input_offset_ms << ", diff [ms]: " << delta_time
-                  << ", latency [ms]: " << det2d_latency_ms << std::endl;
+                  << ", latency [ms]: " << det2d_latency_ms
+                  << ", arrival delta [ms]: " << arrival_delta_ms << std::endl;
         idx++;
       }
     }
