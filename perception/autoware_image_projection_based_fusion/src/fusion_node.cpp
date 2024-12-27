@@ -275,13 +275,14 @@ void FusionNode<Msg3D, Msg2D, ExportObj>::printTimestamps()
       size_t cache_size = det2d.cached_det2d_msgs.size();
       int64_t det2d_stamp_ms = det2d.matched_stamp_nsec / 1000000;
       int64_t det2d_arrival_ms = det2d.cached_det2d_arrivals[det2d.matched_stamp_nsec] / 1000000;
-      int64_t det2d_latency_ms = det2d_arrival_ms - det2d_stamp_ms + det2d.input_offset_ms;
+      int64_t det_stamp_offset_ms = det2d_stamp_ms - det3d_stamp_ms;
+      int64_t det2d_latency_ms = det2d_arrival_ms - det3d_stamp_ms;
       int64_t delta_time = (det2d_stamp_ms - det2d.input_offset_ms) - det3d_stamp_ms;
       int64_t arrival_delta_ms = det2d_arrival_ms - det3d_arrival_ms;
       std::cout << "roi" << idx << " cache size: " << cache_size
                 << ", timestamp [ms]: " << det2d_stamp_ms % 10000
-                << ", offset [ms]: " << det2d.input_offset_ms << ", diff [ms]: " << delta_time
-                << ", latency [ms]: " << det2d_latency_ms
+                << ", offset [ms]: " << det_stamp_offset_ms << "/" << det2d.input_offset_ms
+                << ", diff [ms]: " << delta_time << ", latency [ms]: " << det2d_latency_ms
                 << ", arrival delta [ms]: " << arrival_delta_ms << std::endl;
     } else {
       std::cout << "roi" << idx << " is not matched" << std::endl;
@@ -289,13 +290,13 @@ void FusionNode<Msg3D, Msg2D, ExportObj>::printTimestamps()
       for (const auto & [det2d_stamp, value] : det2d.cached_det2d_msgs) {
         int64_t det2d_stamp_ms = det2d_stamp / 1000000;
         int64_t det2d_arrival_ms = det2d.cached_det2d_arrivals[det2d_stamp] / 1000000;
-        int64_t det2d_latency_ms = det2d_arrival_ms - det2d_stamp_ms + det2d.input_offset_ms;
+        int64_t det_stamp_offset_ms = det2d_stamp_ms - det3d_stamp_ms;
+        int64_t det2d_latency_ms = det2d_arrival_ms - det3d_stamp_ms;
         int64_t delta_time = (det2d_stamp_ms - det2d.input_offset_ms) - det3d_stamp_ms;
         int64_t arrival_delta_ms = det2d_arrival_ms - det3d_arrival_ms;
-
         std::cout << "              cache" << idx << " timestamp [ms]: " << det2d_stamp_ms % 10000
-                  << ", offset [ms]: " << det2d.input_offset_ms << ", diff [ms]: " << delta_time
-                  << ", latency [ms]: " << det2d_latency_ms
+                  << ", offset [ms]: " << det_stamp_offset_ms << "/" << det2d.input_offset_ms
+                  << ", diff [ms]: " << delta_time << ", latency [ms]: " << det2d_latency_ms
                   << ", arrival delta [ms]: " << arrival_delta_ms << std::endl;
         idx++;
       }
@@ -370,8 +371,9 @@ void FusionNode<Msg3D, Msg2D, ExportObj>::subCallback(
     int64_t matched_stamp = -1;
     std::list<int64_t> outdate_stamps;
     for (const auto & [det2d_stamp, value] : det2d_msgs) {
-      int64_t new_stamp = det3d_stamp_nsec + det2d.input_offset_ms * static_cast<int64_t>(1e6);
-      int64_t time_diff = abs(det2d_stamp - new_stamp);
+      int64_t expected_det2d_timeing =
+        det3d_stamp_nsec + (det2d.input_offset_ms + 40) * static_cast<int64_t>(1e6);
+      int64_t time_diff = abs(det2d_stamp - expected_det2d_timeing);
 
       if (
         time_diff <= min_time_diff &&
@@ -379,7 +381,8 @@ void FusionNode<Msg3D, Msg2D, ExportObj>::subCallback(
         min_time_diff = time_diff;
         matched_stamp = det2d_stamp;
       } else if (
-        det2d_stamp < new_stamp && time_diff > match_threshold_ms_ * static_cast<int64_t>(1e6)) {
+        det2d_stamp < expected_det2d_timeing &&
+        time_diff > match_threshold_ms_ * static_cast<int64_t>(1e6)) {
         outdate_stamps.push_back(det2d_stamp);
       }
     }
@@ -395,7 +398,7 @@ void FusionNode<Msg3D, Msg2D, ExportObj>::subCallback(
       }
 
       fuseOnSingleImage(*det3d_msg, det2d, *(det2d_msgs[matched_stamp]), *output_msg);
-      det2d_msgs.erase(matched_stamp);
+      // det2d_msgs.erase(matched_stamp);
       setDet2dFused(det2d);
       det2d.matched_stamp_nsec = matched_stamp;
 
@@ -456,9 +459,9 @@ void FusionNode<Msg3D, Msg2D, ExportObj>::roiCallback(
   if (cached_det3d_msg_ptr_ != nullptr) {
     std::lock_guard<std::mutex> lock_det3d(mutex_det3d_msg_);
 
-    int64_t new_stamp =
-      cached_det3d_msg_timestamp_ + det2d.input_offset_ms * static_cast<int64_t>(1e6);
-    int64_t time_diff = abs(det2d_stamp_nsec - new_stamp);
+    int64_t expected_det2d_timeing =
+      cached_det3d_msg_timestamp_ + (det2d.input_offset_ms + 40) * static_cast<int64_t>(1e6);
+    int64_t time_diff = abs(det2d_stamp_nsec - expected_det2d_timeing);
 
     // PROCESS: if matched, fuse the main message with the roi message
     if (time_diff < match_threshold_ms_ * static_cast<int64_t>(1e6) && det2d.is_fused == false) {
