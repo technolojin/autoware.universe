@@ -258,9 +258,12 @@ void FusionNode<Msg3D, Msg2D, ExportObj>::printTimestamps()
 
   // 3d detection timestamp
   int64_t det3d_stamp_ms = cached_det3d_msg_timestamp_ / 1000000;
-  int64_t det3d_latency_ms = det3d_arrival_nsec_ / 1000000 - det3d_stamp_ms;
-  std::cout << "3d detection timestamp [ms]: " << det3d_stamp_ms % 10000 << " latency [ms] "
-            << det3d_latency_ms << std::endl;
+  int64_t det3d_arrival_ms = det3d_arrival_nsec_ / 1000000;
+  int64_t det3d_latency_ms = det3d_arrival_ms - det3d_stamp_ms;
+  int64_t det3d_delay_ms = this->get_clock()->now().nanoseconds() / 1000000 - det3d_arrival_ms;
+  std::cout << "3d detection timestamp [ms]: " << det3d_stamp_ms % 10000
+            << ", latency [ms]: " << det3d_latency_ms << ", delay [ms]: " << det3d_delay_ms
+            << std::endl;
 
   // all of the roi timestamp with the offset
   for (size_t idx = 0; idx < det2d_list_.size(); idx++) {
@@ -269,13 +272,15 @@ void FusionNode<Msg3D, Msg2D, ExportObj>::printTimestamps()
     if (det2d.is_fused) {
       size_t cache_size = det2d.cached_det2d_msgs.size();
       int64_t det2d_stamp_ms = det2d.matched_stamp_nsec / 1000000;
-      int64_t det2d_latency_ms =
-        det2d.cached_det2d_arrivals[det2d.matched_stamp_nsec] / 1000000 - det2d_stamp_ms;
+      int64_t det2d_arrival_ms = det2d.cached_det2d_arrivals[det2d.matched_stamp_nsec] / 1000000;
+      int64_t det2d_latency_ms = det2d_arrival_ms - det2d_stamp_ms;
       int64_t delta_time = (det2d_stamp_ms - det2d.input_offset_ms) - det3d_stamp_ms;
+      int64_t arrival_delta_ms = det2d_arrival_ms - det3d_arrival_ms;
       std::cout << "roi" << idx << " cache size: " << cache_size
-                << " timestamp [ms]: " << det2d_stamp_ms % 10000
-                << " offset [ms]: " << det2d.input_offset_ms << " diff [ms]: " << delta_time
-                << " latency [ms]: " << det2d_latency_ms << std::endl;
+                << ", timestamp [ms]: " << det2d_stamp_ms % 10000
+                << ", offset [ms]: " << det2d.input_offset_ms << ", diff [ms]: " << delta_time
+                << ", latency [ms]: " << det2d_latency_ms
+                << ", arrival delta [ms]: " << arrival_delta_ms << std::endl;
     } else {
       std::cout << "roi" << idx << " is not matched" << std::endl;
       int idx = 0;
@@ -285,8 +290,8 @@ void FusionNode<Msg3D, Msg2D, ExportObj>::printTimestamps()
           det2d.cached_det2d_arrivals[det2d_stamp] / 1000000 - det2d_stamp_ms;
         int64_t delta_time = (det2d_stamp_ms - det2d.input_offset_ms) - det3d_stamp_ms;
         std::cout << "    cache" << idx << " timestamp [ms]: " << det2d_stamp_ms % 10000
-                  << " offset [ms]: " << det2d.input_offset_ms << " diff [ms]: " << delta_time
-                  << " latency [ms]: " << det2d_latency_ms << std::endl;
+                  << ", offset [ms]: " << det2d.input_offset_ms << ", diff [ms]: " << delta_time
+                  << ", latency [ms]: " << det2d_latency_ms << std::endl;
         idx++;
       }
     }
@@ -306,10 +311,10 @@ void FusionNode<Msg3D, Msg2D, ExportObj>::subCallback(
     stop_watch_ptr_->toc("processing_time", true);
     std::lock_guard<std::mutex> lock_det3d(mutex_det3d_msg_);
 
+    exportProcess();
+
     std::cout << "=== det3d callback cleanup export ===" << std::endl;
     printTimestamps();
-
-    exportProcess();
 
     // reset flags
     clearAllDet2dFlags();
@@ -387,7 +392,6 @@ void FusionNode<Msg3D, Msg2D, ExportObj>::subCallback(
       det2d_msgs.erase(matched_stamp);
       setDet2dFused(det2d);
       det2d.matched_stamp_nsec = matched_stamp;
-      det2d.cached_det2d_arrivals[matched_stamp] = det3d_arrival_nsec;
 
       // add timestamp interval for debug
       if (debug_publisher_) {
@@ -410,10 +414,10 @@ void FusionNode<Msg3D, Msg2D, ExportObj>::subCallback(
   if (checkAllDet2dFused()) {
     // if all camera fused, postprocess and publish the main message
 
+    exportProcess();
+
     std::cout << "=== det3d callback fresh export ===" << std::endl;
     printTimestamps();
-
-    exportProcess();
 
     // reset flags
     clearAllDet2dFlags();
@@ -481,10 +485,10 @@ void FusionNode<Msg3D, Msg2D, ExportObj>::roiCallback(
 
       // PROCESS: if all camera fused, postprocess and publish the main message
       if (checkAllDet2dFused()) {
+        exportProcess();
+
         std::cout << "=== det2d callback all-det2d-aligned export ===" << std::endl;
         printTimestamps();
-
-        exportProcess();
 
         // reset flags
         clearAllDet2dFlags();
@@ -517,10 +521,10 @@ void FusionNode<Msg3D, Msg2D, ExportObj>::timer_callback()
     if (cached_det3d_msg_ptr_ != nullptr) {
       stop_watch_ptr_->toc("processing_time", true);
 
+      exportProcess();
+
       std::cout << "=== timeout export ===" << std::endl;
       printTimestamps();
-      
-      exportProcess();
     }
 
     // reset flags whether the message is fused or not
