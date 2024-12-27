@@ -261,6 +261,8 @@ void FusionNode<Msg3D, Msg2D, ExportObj>::printTimestamps()
   int64_t det3d_arrival_ms = det3d_arrival_nsec_ / 1000000;
   int64_t det3d_latency_ms = det3d_arrival_ms - det3d_stamp_ms;
   int64_t det3d_delay_ms = this->get_clock()->now().nanoseconds() / 1000000 - det3d_arrival_ms;
+  int64_t total_latency_ms = this->get_clock()->now().nanoseconds() / 1000000 - det3d_stamp_ms;
+  std::cout << "            Total latency [ms]: " << total_latency_ms << std::endl;
   std::cout << "3d detection timestamp [ms]: " << det3d_stamp_ms % 10000
             << ", latency [ms]: " << det3d_latency_ms << ", delay [ms]: " << det3d_delay_ms
             << std::endl;
@@ -273,7 +275,7 @@ void FusionNode<Msg3D, Msg2D, ExportObj>::printTimestamps()
       size_t cache_size = det2d.cached_det2d_msgs.size();
       int64_t det2d_stamp_ms = det2d.matched_stamp_nsec / 1000000;
       int64_t det2d_arrival_ms = det2d.cached_det2d_arrivals[det2d.matched_stamp_nsec] / 1000000;
-      int64_t det2d_latency_ms = det2d_arrival_ms - det2d_stamp_ms;
+      int64_t det2d_latency_ms = det2d_arrival_ms - det2d_stamp_ms + det2d.input_offset_ms;
       int64_t delta_time = (det2d_stamp_ms - det2d.input_offset_ms) - det3d_stamp_ms;
       int64_t arrival_delta_ms = det2d_arrival_ms - det3d_arrival_ms;
       std::cout << "roi" << idx << " cache size: " << cache_size
@@ -286,8 +288,8 @@ void FusionNode<Msg3D, Msg2D, ExportObj>::printTimestamps()
       int idx = 0;
       for (const auto & [det2d_stamp, value] : det2d.cached_det2d_msgs) {
         int64_t det2d_stamp_ms = det2d_stamp / 1000000;
-        int64_t det2d_latency_ms =
-          det2d.cached_det2d_arrivals[det2d_stamp] / 1000000 - det2d_stamp_ms;
+        int64_t det2d_arrival_ms = det2d.cached_det2d_arrivals[det2d_stamp] / 1000000;
+        int64_t det2d_latency_ms = det2d_arrival_ms - det2d_stamp_ms + det2d.input_offset_ms;
         int64_t delta_time = (det2d_stamp_ms - det2d.input_offset_ms) - det3d_stamp_ms;
         std::cout << "    cache" << idx << " timestamp [ms]: " << det2d_stamp_ms % 10000
                   << ", offset [ms]: " << det2d.input_offset_ms << ", diff [ms]: " << delta_time
