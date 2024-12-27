@@ -25,6 +25,7 @@
 #include <boost/optional.hpp>
 
 #include <cmath>
+#include <iostream>
 #include <list>
 #include <memory>
 #include <string>
@@ -230,6 +231,43 @@ void FusionNode<Msg3D, Msg2D, ExportObj>::exportProcess()
   postprocess(*(cached_det3d_msg_ptr_));
   publish(*(cached_det3d_msg_ptr_));
 
+  // debug message, print all the timestamp information
+
+  // 3d detection timestamp
+  int64_t det3d_stamp_ms = static_cast<int64_t>(cached_det3d_msg_timestamp_);
+  det3d_stamp_ms = det3d_stamp_ms / 1000000;  // ns to ms
+  // det3d_stamp_ms = det3d_stamp_ms % 1000; // cut off the second
+  std::cout << "3d detection timestamp [ms]: " << det3d_stamp_ms % 10000 << std::endl;
+
+  // all of the roi timestamp with the offset
+  for (size_t idx = 0; idx < det2d_list_.size(); idx++) {
+    auto & det2d = det2d_list_.at(idx);
+    // if it is matched, print the matched roi timestamp
+    if (det2d.is_fused) {
+      int64_t det2d_stamp_ms = static_cast<int64_t>(det2d.matched_det3d_stamp_nsec);
+      det2d_stamp_ms = det2d_stamp_ms / 1000000;  // ns to ms
+      // det2d_stamp_ms = det2d_stamp_ms % 1000; // cut off the second
+      int64_t delta_time = (det2d_stamp_ms - det2d.input_offset_ms) - det3d_stamp_ms;
+      std::cout << "roi" << idx << " timestamp [ms]: " << det2d_stamp_ms % 10000
+                << " offset [ms]: " << det2d.input_offset_ms
+                << " timestamp difference [ms]: " << delta_time << std::endl;
+    } else {
+      std::cout << "roi" << idx << " is not matched" << std::endl;
+      int idx = 0;
+      for (const auto & [det2d_stamp, value] : det2d.cached_det2d_msgs) {
+        int64_t det2d_stamp_ms = static_cast<int64_t>(det2d_stamp);
+        det2d_stamp_ms = det2d_stamp_ms / 1000000;  // ns to ms
+        // det2d_stamp_ms = det2d_stamp_ms % 1000; // cut off the second
+        int64_t delta_time = (det2d_stamp_ms - det2d.input_offset_ms) - det3d_stamp_ms;
+        std::cout << "    cache" << idx << " timestamp [ms]: " << det2d_stamp_ms % 10000
+                  << " offset [ms]: " << det2d.input_offset_ms
+                  << " timestamp difference [ms]: " << delta_time << std::endl;
+        idx++;
+      }
+    }
+  }
+  // if it is not matched, print the cached roi timestamp
+
   // add processing time for debug
   if (debug_publisher_) {
     const double cyclic_time_ms = stop_watch_ptr_->toc("cyclic_time", true);
@@ -335,6 +373,7 @@ void FusionNode<Msg3D, Msg2D, ExportObj>::subCallback(
       fuseOnSingleImage(*det3d_msg, det2d, *(det2d_msgs[matched_stamp]), *output_msg);
       det2d_msgs.erase(matched_stamp);
       setDet2dFused(det2d);
+      det2d.matched_det3d_stamp_nsec = matched_stamp;
 
       // add timestamp interval for debug
       if (debug_publisher_) {
