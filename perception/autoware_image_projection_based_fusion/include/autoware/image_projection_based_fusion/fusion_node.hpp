@@ -77,6 +77,7 @@ struct Det2dManager
   double input_offset_ms = 0.0;
   // cache
   std::map<int64_t, typename Msg2D::ConstSharedPtr> cached_det2d_msgs;
+  std::map<int64_t, int64_t> cached_det2d_arrivals;
   std::unique_ptr<std::mutex> mtx_ptr;
 };
 
@@ -105,6 +106,9 @@ protected:
   void timer_callback();
   void setPeriod(const int64_t new_period);
   void exportProcess();
+
+  // debug
+  void printTimestamps();
 
   // 2d detection management methods
   bool checkAllDet2dFused()
@@ -163,6 +167,7 @@ protected:
 
   // cache for fusion
   int64_t cached_det3d_msg_timestamp_;
+  int64_t det3d_arrival_nsec_;
   typename Msg3D::SharedPtr cached_det3d_msg_ptr_;
   std::mutex mutex_det3d_msg_;
 
