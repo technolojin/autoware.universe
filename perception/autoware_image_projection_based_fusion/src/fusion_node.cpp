@@ -286,7 +286,7 @@ void FusionNode<Msg3D, Msg2D, ExportObj>::subCallback(
 
   // PROCESS: fuse the main message with the cached roi messages
   // (please ask maintainers before parallelize this loop because debugger is not thread safe)
-  int64_t timestamp_nsec =
+  int64_t det3d_stamp_nsec =
     (*output_msg).header.stamp.sec * static_cast<int64_t>(1e9) + (*output_msg).header.stamp.nanosec;
   // for loop for each roi
   for (auto & det2d : det2d_list_) {
@@ -305,20 +305,21 @@ void FusionNode<Msg3D, Msg2D, ExportObj>::subCallback(
     if (det2d_msgs.size() == 0) continue;
 
     // MATCH: get the closest roi message, and remove outdated messages
-    int64_t min_interval = 1e9;
+    int64_t min_time_diff = 1e9;
     int64_t matched_stamp = -1;
     std::list<int64_t> outdate_stamps;
-    for (const auto & [roi_stamp, value] : det2d_msgs) {
-      int64_t new_stamp = timestamp_nsec + det2d.input_offset_ms * static_cast<int64_t>(1e6);
-      int64_t interval = abs(static_cast<int64_t>(roi_stamp) - new_stamp);
+    for (const auto & [det2d_stamp, value] : det2d_msgs) {
+      int64_t new_stamp = det3d_stamp_nsec + det2d.input_offset_ms * static_cast<int64_t>(1e6);
+      int64_t time_diff = abs(det2d_stamp - new_stamp);
 
-      if (interval <= min_interval && interval <= match_threshold_ms_ * static_cast<int64_t>(1e6)) {
-        min_interval = interval;
-        matched_stamp = roi_stamp;
+      if (
+        time_diff <= min_time_diff &&
+        time_diff <= match_threshold_ms_ * static_cast<int64_t>(1e6)) {
+        min_time_diff = time_diff;
+        matched_stamp = det2d_stamp;
       } else if (
-        static_cast<int64_t>(roi_stamp) < new_stamp &&
-        interval > match_threshold_ms_ * static_cast<int64_t>(1e6)) {
-        outdate_stamps.push_back(static_cast<int64_t>(roi_stamp));
+        det2d_stamp < new_stamp && time_diff > match_threshold_ms_ * static_cast<int64_t>(1e6)) {
+        outdate_stamps.push_back(det2d_stamp);
       }
     }
     for (auto stamp : outdate_stamps) {
@@ -337,7 +338,7 @@ void FusionNode<Msg3D, Msg2D, ExportObj>::subCallback(
 
       // add timestamp interval for debug
       if (debug_publisher_) {
-        double timestamp_interval_ms = (matched_stamp - timestamp_nsec) / 1e6;
+        double timestamp_interval_ms = (matched_stamp - det3d_stamp_nsec) / 1e6;
         debug_publisher_->publish<tier4_debug_msgs::msg::Float64Stamped>(
           "debug/roi" + std::to_string(roi_i) + "/timestamp_interval_ms", timestamp_interval_ms);
         debug_publisher_->publish<tier4_debug_msgs::msg::Float64Stamped>(
@@ -349,7 +350,7 @@ void FusionNode<Msg3D, Msg2D, ExportObj>::subCallback(
 
   // PROCESS: check if the fused message is ready to publish
   std::lock_guard<std::mutex> lock_det3d(mutex_det3d_msg_);
-  cached_det3d_msg_timestamp_ = timestamp_nsec;
+  cached_det3d_msg_timestamp_ = det3d_stamp_nsec;
   cached_det3d_msg_ptr_ = output_msg;
   if (checkAllDet2dFused()) {
     // if all camera fused, postprocess and publish the main message
@@ -376,7 +377,7 @@ void FusionNode<Msg3D, Msg2D, ExportObj>::roiCallback(
   auto & det2d = det2d_list_.at(roi_i);
   std::lock_guard<std::mutex> lock_det2d(*(det2d.mtx_ptr));
 
-  int64_t timestamp_nsec =
+  int64_t det2d_stamp_nsec =
     (*det2d_msg).header.stamp.sec * static_cast<int64_t>(1e9) + (*det2d_msg).header.stamp.nanosec;
   // if cached Msg exist, try to match
   if (cached_det3d_msg_ptr_ != nullptr) {
@@ -384,15 +385,15 @@ void FusionNode<Msg3D, Msg2D, ExportObj>::roiCallback(
 
     int64_t new_stamp =
       cached_det3d_msg_timestamp_ + det2d.input_offset_ms * static_cast<int64_t>(1e6);
-    int64_t interval = abs(timestamp_nsec - new_stamp);
+    int64_t time_diff = abs(det2d_stamp_nsec - new_stamp);
 
     // PROCESS: if matched, fuse the main message with the roi message
-    if (interval < match_threshold_ms_ * static_cast<int64_t>(1e6) && det2d.is_fused == false) {
+    if (time_diff < match_threshold_ms_ * static_cast<int64_t>(1e6) && det2d.is_fused == false) {
       // check camera info
       if (det2d.camera_projector_ptr == nullptr) {
         RCLCPP_WARN_THROTTLE(
           this->get_logger(), *this->get_clock(), 5000, "no camera info. id is %zu", roi_i);
-        det2d.cached_det2d_msgs[timestamp_nsec] = det2d_msg;
+        det2d.cached_det2d_msgs[det2d_stamp_nsec] = det2d_msg;
         return;
       }
 
@@ -404,7 +405,7 @@ void FusionNode<Msg3D, Msg2D, ExportObj>::roiCallback(
       setDet2dFused(det2d);
 
       if (debug_publisher_) {
-        double timestamp_interval_ms = (timestamp_nsec - cached_det3d_msg_timestamp_) / 1e6;
+        double timestamp_interval_ms = (det2d_stamp_nsec - cached_det3d_msg_timestamp_) / 1e6;
         debug_publisher_->publish<tier4_debug_msgs::msg::Float64Stamped>(
           "debug/roi" + std::to_string(roi_i) + "/timestamp_interval_ms", timestamp_interval_ms);
         debug_publisher_->publish<tier4_debug_msgs::msg::Float64Stamped>(
@@ -423,7 +424,7 @@ void FusionNode<Msg3D, Msg2D, ExportObj>::roiCallback(
     }
   }
   // store roi msg if not matched
-  det2d.cached_det2d_msgs[timestamp_nsec] = det2d_msg;
+  det2d.cached_det2d_msgs[det2d_stamp_nsec] = det2d_msg;
 }
 
 template <class Msg3D, class Msg2D, class ExportObj>
