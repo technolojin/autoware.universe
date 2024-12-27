@@ -72,7 +72,7 @@ struct Det2dManager
   bool approximate_camera_projection = false;
   // process flags
   bool is_fused = false;
-  int64_t matched_det3d_stamp_nsec = 0;
+  int64_t matched_stamp_nsec = 0;
   // timing
   double input_offset_ms = 0.0;
   // cache
