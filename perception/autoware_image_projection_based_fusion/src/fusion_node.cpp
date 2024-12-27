@@ -305,6 +305,8 @@ void FusionNode<Msg3D, Msg2D, ExportObj>::subCallback(
   std::unique_ptr<ScopedTimeTrack> st_ptr;
   if (time_keeper_) st_ptr = std::make_unique<ScopedTimeTrack>(__func__, *time_keeper_);
 
+  int64_t det3d_arrival_nsec = this->get_clock()->now().nanoseconds();
+
   if (cached_det3d_msg_ptr_ != nullptr) {
     // PROCESS: if the main message is remained (and roi is not collected all) publish the main
     // message may processed partially with arrived 2d rois
@@ -335,8 +337,7 @@ void FusionNode<Msg3D, Msg2D, ExportObj>::subCallback(
   // PROCESS: preprocess the main message
   typename Msg3D::SharedPtr output_msg = std::make_shared<Msg3D>(*det3d_msg);
   int64_t det3d_stamp_nsec =
-    (*output_msg).header.stamp.sec * static_cast<int64_t>(1e9) + (*output_msg).header.stamp.nanosec;
-  int64_t det3d_arrival_nsec = this->get_clock()->now().nanoseconds();
+    (*det3d_msg).header.stamp.sec * static_cast<int64_t>(1e9) + (*det3d_msg).header.stamp.nanosec;
 
   preprocess(*output_msg);
 
@@ -426,8 +427,8 @@ void FusionNode<Msg3D, Msg2D, ExportObj>::subCallback(
     // current Msg
     processing_time_ms = stop_watch_ptr_->toc("processing_time", true);
 
-    std::cout << "=== det3d callback cached ===" << std::endl;
-    printTimestamps();
+    // std::cout << "=== det3d callback cached ===" << std::endl;
+    // printTimestamps();
   }
 }
 
