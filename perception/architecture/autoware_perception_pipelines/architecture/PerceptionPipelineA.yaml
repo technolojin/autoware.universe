@@ -22,16 +22,10 @@ external_interface:
   output:
     - name: objects
   parameter:
-    - name: model_a/param_path
-    - name: model_a/ml_package_param_path
-    - name: model_a/class_remapper_param_path
-    - name: model_b/param_path
-    - name: model_b/ml_package_param_path
-    - name: model_b/class_remapper_param_path
-    - name: filter_a/filtering_range_param
-    - name: tracker/tracker_setting_path
-    - name: tracker/data_association_matrix_path
-    - name: tracker/input_channels_path
+    - name: model_a
+    - name: model_b
+    - name: filter_a
+    - name: tracker
 
 connections:
   - from: pointcloud
@@ -50,26 +44,14 @@ connections:
     to: objects
 
 parameters:
-  - name: model_a/param_path
-    to: node_detector_1.parameter.model_param_path
-  - name: model_a/ml_package_param_path
-    to: node_detector_1.parameter.ml_package_param_path
-  - name: model_a/class_remapper_param_path
-    to: node_detector_1.parameter.class_remapper_param_path
-  - name: model_b/param_path
-    to: node_detector_2.parameter.model_param_path
-  - name: model_b/ml_package_param_path
-    to: node_detector_2.parameter.ml_package_param_path
-  - name: model_b/class_remapper_param_path
-    to: node_detector_2.parameter.class_remapper_param_path
-  - name: filter_a/filtering_range_param
-    to: node_filter_a.parameter.filtering_range_param
-  - name: tracker/tracker_setting_path
-    to: node_tracker.parameter.tracker_setting_path
-  - name: tracker/data_association_matrix_path
-    to: node_tracker.parameter.data_association_matrix_path
-  - name: tracker/input_channels_path
-    to: node_tracker.parameter.input_channels_path
+  - name: model_a.*
+    to: node_detector_1.parameter.*
+  - name: model_b.*
+    to: node_detector_2.parameter.*
+  - name: filter_a.*
+    to: node_filter_a.parameter.*
+  - name: tracker.*
+    to: node_tracker.parameter.*
 
 configurations:
   - name: model_a/build_only

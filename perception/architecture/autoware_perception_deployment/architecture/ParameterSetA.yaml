@@ -1,0 +1,19 @@
+parameter_sets:
+  - name: detector_a
+    parameters:
+      - model_param_path: "path/to/model_a.param.yaml"
+      - ml_package_param_path: "path/to/model_a_ml_package.param.yaml"
+      - class_remapper_param_path: "path/to/model_a_class_remapper.param.yaml"
+  - name: detector_b
+    parameters:
+    - model_param_path: "path/to/model_b.param.yaml"
+    - ml_package_param_path: "path/to/model_b_ml_package.param.yaml"
+    - class_remapper_param_path: "path/to/model_b_class_remapper.param.yaml"
+  - name: filter_a
+    parameters:
+      - filtering_range_param: "path/to/filter_a.param.yaml"
+  - name: tracker
+    parameters:
+      - tracker_setting_path: "path/to/tracker.param.yaml"
+      - data_association_matrix_path: "path/to/data_association_matrix.param.yaml"
+      - input_channels_path: "path/to/input_channels.param.yaml"

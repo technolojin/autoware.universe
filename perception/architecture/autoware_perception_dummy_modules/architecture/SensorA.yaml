@@ -5,10 +5,10 @@ plugin: autoware::perception_dummy_nodes::SensorADriver
 
 # interface
 input: []
-
 output:
   - name: pointcloud
     message_type: sensor_msgs/msg/PointCloud2
+parameter: []
 
 # process
 process:
