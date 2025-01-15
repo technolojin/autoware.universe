@@ -1,0 +1,19 @@
+# module
+module: SensorA
+package: autoware_perception_dummy_nodes
+plugin: autoware::perception_dummy_nodes::SensorADriver
+
+# interface
+input: []
+output:
+  - name: pointcloud
+    message_type: sensor_msgs/msg/PointCloud2
+parameter: []
+
+# process
+process:
+  - name: detector
+    trigger_conditions:
+      - periodic: 10.0
+    outcome:
+      - to_output: pointcloud

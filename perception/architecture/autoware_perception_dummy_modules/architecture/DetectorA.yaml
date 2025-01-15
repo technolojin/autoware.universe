@@ -1,0 +1,40 @@
+# reference: centerpoint
+
+# module information
+module: DetectorA
+package: autoware_perception_dummy_nodes
+plugin: autoware::perception_dummy_nodes::DetectorA
+
+# interface
+input:
+  - name: pointcloud
+    message_type: sensor_msgs/msg/PointCloud2
+output:
+  - name: objects
+    message_type: autoware_perception_msgs/msg/DetectedObjects
+    qos:
+      reliability: reliable
+      durability: transient_local
+parameter:
+  - name: model_param_path
+    default: "path/to/model_param.yaml"
+    allow_substs: true
+  - name: ml_package_param_path
+    default: "path/to/ml_package_param.yaml"
+    allow_substs: true
+  - name: class_remapper_param_path
+    default: "path/to/class_remapper_param.yaml"
+
+# configuration
+configuration:
+  - name: build_only
+    type: bool
+    default: false
+
+# process
+process:
+  - name: detector
+    trigger_conditions:
+      - on_input: pointcloud
+    outcome:
+      - to_output: objects

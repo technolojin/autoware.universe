@@ -1,0 +1,60 @@
+module: PerceptionPipelineA
+
+depends:
+  - DetectorA
+  - FilterA
+  - Tracker
+
+nodes:
+  - node: node_detector_1
+    module: DetectorA
+  - node: node_detector_2
+    module: DetectorA
+  - node: node_filter_a
+    module: FilterA
+  - node: node_tracker
+    module: Tracker
+
+external_interface:
+  input:
+    - name: vector_map
+    - name: pointcloud
+  output:
+    - name: objects
+  parameter:
+    - name: model_a
+    - name: model_b
+    - name: filter_a
+    - name: tracker
+
+connections:
+  - from: pointcloud
+    to: node_detector_1.input.pointcloud
+  - from: pointcloud
+    to: node_detector_2.input.pointcloud
+  - from: node_detector_1.output.objects
+    to: node_filter_a.input.objects
+  - from: vector_map
+    to: node_filter_a.input.vector_map
+  - from: node_detector_1.output.objects
+    to: node_tracker.input.objects1
+  - from: node_detector_2.output.objects
+    to: node_tracker.input.objects2
+  - from: node_tracker.output.objects
+    to: objects
+
+parameters:
+  - name: model_a.*
+    to: node_detector_1.parameter.*
+  - name: model_b.*
+    to: node_detector_2.parameter.*
+  - name: filter_a.*
+    to: node_filter_a.parameter.*
+  - name: tracker.*
+    to: node_tracker.parameter.*
+
+configurations:
+  - name: model_a/build_only
+    to: node_detector_1.configuration.build_only
+  - name: model_b/build_only
+    to: node_detector_2.configuration.build_only
