@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="3">
-  <name>autoware_perception_dummy_modules</name>
+  <name>autoware_perception_dummy_modules_b</name>
   <version>0.40.0</version>
-  <description>The autoware_perception_dummy_modules package</description>
+  <description>The autoware_perception_dummy_modules_b package</description>
 
   <maintainer email="taekjin.lee@tier4.jp">Taekjin Lee</maintainer>
   <license>Apache License 2.0</license>
