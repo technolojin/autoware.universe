@@ -11,7 +11,7 @@
   <buildtool_depend>ament_cmake_auto</buildtool_depend>
   <buildtool_depend>autoware_cmake</buildtool_depend>
 
-  <depend>autoware_perception_dummy_nodes</depend>
+  <depend>autoware_perception_dummy_modules</depend>
 
   <export>
     <build_type>ament_cmake</build_type>

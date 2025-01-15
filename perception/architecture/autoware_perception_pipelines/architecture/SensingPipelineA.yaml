@@ -1,0 +1,21 @@
+module: SensingPipelineA
+
+depends:
+  - SensorA
+
+nodes:
+  - node: sensor_a
+    module: SensorA
+
+external_interface:
+  input: []
+  output:
+    - name: pointcloud
+
+connections:
+  - from: sensor_a.output.pointcloud
+    to: pointcloud
+
+parameters: []
+
+configurations: []

@@ -1,0 +1,78 @@
+module: PerceptionPipelineA
+
+depends:
+  - DetectorA
+  - FilterA
+  - Tracker
+
+nodes:
+  - node: node_detector_1
+    module: DetectorA
+  - node: node_detector_2
+    module: DetectorA
+  - node: node_filter_a
+    module: FilterA
+  - node: node_tracker
+    module: Tracker
+
+external_interface:
+  input:
+    - name: vector_map
+    - name: pointcloud
+  output:
+    - name: objects
+  parameter:
+    - name: model_a/param_path
+    - name: model_a/ml_package_param_path
+    - name: model_a/class_remapper_param_path
+    - name: model_b/param_path
+    - name: model_b/ml_package_param_path
+    - name: model_b/class_remapper_param_path
+    - name: filter_a/filtering_range_param
+    - name: tracker/tracker_setting_path
+    - name: tracker/data_association_matrix_path
+    - name: tracker/input_channels_path
+
+connections:
+  - from: pointcloud
+    to: node_detector_1.input.pointcloud
+  - from: pointcloud
+    to: node_detector_2.input.pointcloud
+  - from: node_detector_1.output.objects
+    to: node_filter_a.input.objects
+  - from: vector_map
+    to: node_filter_a.input.vector_map
+  - from: node_detector_1.output.objects
+    to: node_tracker.input.objects1
+  - from: node_detector_2.output.objects
+    to: node_tracker.input.objects2
+  - from: node_tracker.output.objects
+    to: objects
+
+parameters:
+  - name: model_a/param_path
+    to: node_detector_1.parameter.model_param_path
+  - name: model_a/ml_package_param_path
+    to: node_detector_1.parameter.ml_package_param_path
+  - name: model_a/class_remapper_param_path
+    to: node_detector_1.parameter.class_remapper_param_path
+  - name: model_b/param_path
+    to: node_detector_2.parameter.model_param_path
+  - name: model_b/ml_package_param_path
+    to: node_detector_2.parameter.ml_package_param_path
+  - name: model_b/class_remapper_param_path
+    to: node_detector_2.parameter.class_remapper_param_path
+  - name: filter_a/filtering_range_param
+    to: node_filter_a.parameter.filtering_range_param
+  - name: tracker/tracker_setting_path
+    to: node_tracker.parameter.tracker_setting_path
+  - name: tracker/data_association_matrix_path
+    to: node_tracker.parameter.data_association_matrix_path
+  - name: tracker/input_channels_path
+    to: node_tracker.parameter.input_channels_path
+
+configurations:
+  - name: model_a/build_only
+    to: node_detector_1.configuration.build_only
+  - name: model_b/build_only
+    to: node_detector_2.configuration.build_only
