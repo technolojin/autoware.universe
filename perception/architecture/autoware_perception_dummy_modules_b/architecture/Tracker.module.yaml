@@ -1,7 +1,7 @@
 # reference: multi object tracker
 
 # module information
-module: Tracker
+name: Tracker.module
 package: autoware_perception_dummy_nodes
 plugin: autoware::perception_dummy_nodes::Tracker
 

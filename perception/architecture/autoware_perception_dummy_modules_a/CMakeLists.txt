@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.14)
-project(autoware_perception_pipelines)
+project(autoware_perception_dummy_modules_a)
 
 find_package(autoware_cmake REQUIRED)
 autoware_package()

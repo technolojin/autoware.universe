@@ -1,7 +1,7 @@
 # reference: object lanelet filter
 
 # module information
-module: FilterA
+name: FilterA.module
 package: autoware_perception_dummy_nodes
 plugin: autoware::perception_dummy_nodes::FilterA
 

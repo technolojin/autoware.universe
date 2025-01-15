@@ -1,4 +1,4 @@
-module: SensingPipelineA
+name: SensingA.pipeline
 
 depends:
   - SensorA
@@ -14,8 +14,10 @@ external_interface:
 
 connections:
   - from: sensor_a.output.pointcloud
-    to: pointcloud
+    to: output.pointcloud
 
 parameters: []
 
-configurations: []
+configurations:
+  - name: sensor_a.composable_node
+    to: sensor_a.configuration.composable_node

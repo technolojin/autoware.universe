@@ -1,7 +1,7 @@
 # reference: centerpoint
 
 # module information
-module: DetectorA
+name: DetectorA.module
 package: autoware_perception_dummy_nodes
 plugin: autoware::perception_dummy_nodes::DetectorA
 
@@ -30,6 +30,12 @@ configuration:
   - name: build_only
     type: bool
     default: false
+  - name: use_container
+    type: bool
+    default: false
+  - name: container_name
+    type: string
+    default: "pointcloud_container"
 
 # process
 process:

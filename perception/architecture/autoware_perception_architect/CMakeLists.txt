@@ -1,10 +1,22 @@
 cmake_minimum_required(VERSION 3.14)
 project(autoware_perception_architect)
 
-find_package(autoware_cmake REQUIRED)
-autoware_package()
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# ament_auto_package(
-#   INSTALL_TO_SHARE
-#   launch
-# )
+find_package(ament_cmake REQUIRED)
+
+ament_package(
+  CONFIG_EXTRAS "autoware_architect-extras.cmake"
+)
+
+# Copy the script to the build directory, all of them
+file(GLOB_RECURSE SCRIPT_FILES ${CMAKE_SOURCE_DIR}/script/*.py)
+foreach(SCRIPT_FILE ${SCRIPT_FILES})
+  get_filename_component(SCRIPT_FILE_NAME ${SCRIPT_FILE} NAME)
+  configure_file(${SCRIPT_FILE} ${CMAKE_BINARY_DIR}/script/${SCRIPT_FILE_NAME} COPYONLY)
+endforeach()
+
+install(
+  DIRECTORY cmake
+  DESTINATION share/${PROJECT_NAME}
+)

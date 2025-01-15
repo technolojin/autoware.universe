@@ -1,5 +1,5 @@
 # module
-module: SensorA
+name: SensorA.module
 package: autoware_perception_dummy_nodes
 plugin: autoware::perception_dummy_nodes::SensorADriver
 
@@ -9,6 +9,12 @@ output:
   - name: pointcloud
     message_type: sensor_msgs/msg/PointCloud2
 parameter: []
+
+# configuration
+configuration:
+  - name: composable_node
+    type: bool
+    default: false
 
 # process
 process:
