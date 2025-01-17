@@ -9,26 +9,26 @@ launch:
   node_output: screen
 
 # interface
-input:
+inputs:
   - name: vector_map
     message_type: autoware_map_msgs/msg/LaneletMapBin
   - name: objects
     message_type: autoware_perception_msgs/msg/DetectedObjects
-output:
+outputs:
   - name: objects
     message_type: autoware_perception_msgs/msg/DetectedObjects
     qos:
       reliability: reliable
       durability: transient_local
-parameter:
+parameters:
   - name: filtering_range_param
     default: "path/to/filtering_range_param.yaml"
 
-# configuration
-configuration: []
+# configurations
+configurations: []
 
-# process
-process:
+# processes
+processes:
   - name: filter
     trigger_conditions:
       - and:

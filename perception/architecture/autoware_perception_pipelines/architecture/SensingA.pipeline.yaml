@@ -1,13 +1,13 @@
 name: SensingA.pipeline
 
 depends:
-  - SensorA
+  - SensorA.module
 
 nodes:
   - node: sensor_a
-    module: SensorA
+    element: SensorA.module
 
-external_interface:
+external_interfaces:
   input: []
   output:
     - name: pointcloud

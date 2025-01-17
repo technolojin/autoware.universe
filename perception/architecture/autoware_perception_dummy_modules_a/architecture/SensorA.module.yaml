@@ -5,21 +5,21 @@ launch:
   package: autoware_perception_dummy_nodes
   plugin: autoware::perception_dummy_nodes::SensorADriver
 
-# interface
-input: []
-output:
+# interfaces
+inputs: []
+outputs:
   - name: pointcloud
     message_type: sensor_msgs/msg/PointCloud2
-parameter: []
+parameters: []
 
-# configuration
-configuration:
+# configurations
+configurations:
   - name: composable_node
     type: bool
     default: false
 
-# process
-process:
+# processes
+processes:
   - name: detector
     trigger_conditions:
       - periodic: 10.0

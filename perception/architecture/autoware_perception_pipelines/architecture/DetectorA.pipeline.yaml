@@ -1,0 +1,39 @@
+name: DetectorA.pipeline
+
+depends:
+  - DetectorA.module
+  - FilterA.module
+
+nodes:
+  - node: node_detector
+    element: DetectorA.module
+  - node: node_filter
+    element: FilterA.module
+
+external_interfaces:
+  input:
+    - name: pointcloud
+    - name: vector_map
+  output:
+    - name: objects
+  parameter:
+    - name: detector
+    - name: filter
+
+connections:
+  - from: input.pointcloud
+    to: node_detector.input.pointcloud
+  - from: node_detector.output.objects
+    to: node_filter.input.objects
+  - from: node_filter.output.objects
+    to: output.objects
+
+parameters:
+  - name: parameter.detector.*
+    to: node_detector.parameter.*
+  - name: parameter.filter.*
+    to: node_filter.parameter.*
+
+configurations:
+  - name: model.build_only
+    to: node_detector.configuration.build_only

@@ -7,11 +7,13 @@ depends:
 
 compute_units:
   - unit: main_ecu
-    nodes:
-      - node: sensor_pipeline_a
-        module: SensingA.pipeline
-      - node: perception_pipeline_a
-        module: PerceptionA.pipeline
+    components:
+      - component: sensor_pipeline_a
+        element: SensingA.pipeline
+        namespace: sensing
+      - component: perception_pipeline_a
+        element: PerceptionA.pipeline
+        namespace: perception
 
 connections:
   - from: sensor_pipeline_a.output.pointcloud

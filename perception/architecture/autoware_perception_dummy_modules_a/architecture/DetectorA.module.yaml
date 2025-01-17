@@ -11,34 +11,36 @@ launch:
   container_name: pointcloud_container
 
 # interface
-input:
+inputs:
   - name: pointcloud
     message_type: sensor_msgs/msg/PointCloud2
-output:
+outputs:
   - name: objects
     message_type: autoware_perception_msgs/msg/DetectedObjects
     qos:
       reliability: reliable
       durability: transient_local
-parameter:
+parameters:
   - name: model_param_path
     default: "path/to/model_param.yaml"
+    schema: "path/to/model_param.schema.json"
     allow_substs: true
   - name: ml_package_param_path
     default: "path/to/ml_package_param.yaml"
+    schema: "path/to/ml_package_param.schema.json"
     allow_substs: true
   - name: class_remapper_param_path
     default: "path/to/class_remapper_param.yaml"
 
-# configuration
-configuration:
+# configurations
+configurations:
   - name: build_only
     type: bool
     default: false
     description: "If true, the module will only build the model and exit."
 
-# process
-process:
+# processes
+processes:
   - name: detector
     trigger_conditions:
       - on_input: pointcloud

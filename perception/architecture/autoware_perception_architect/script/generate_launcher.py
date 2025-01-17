@@ -19,18 +19,18 @@ import sys
 import yaml
 
 
-def pascal_to_snake(name):
+def pascal_to_snake(name: str) -> str:
     """Convert PascalCase to snake_case."""
     s1 = re.sub("(.)([A-Z][a-z]+)", r"\1_\2", name)
     return re.sub("([a-z0-9])([A-Z])", r"\1_\2", s1).lower()
 
 
-def check_module_configuration(module_yaml):
+def check_module_configuration(module_yaml) -> bool:
     #
     return True
 
 
-def create_module_launcher_xml(module_yaml, executable_name):
+def create_module_launcher_xml(module_yaml, executable_name: str) -> str:
 
     # Extract necessary information from the module YAML
     launch_config = module_yaml.get("launch")
@@ -44,14 +44,14 @@ def create_module_launcher_xml(module_yaml, executable_name):
     container_name = launch_config.get("container_name")
 
     # Extract interface information
-    input_list = module_yaml.get("input")
-    output_list = module_yaml.get("output")
+    input_list = module_yaml.get("inputs")
+    output_list = module_yaml.get("outputs")
 
     # Extract parameter information
-    param_path_list = module_yaml.get("parameter")
+    param_path_list = module_yaml.get("parameters")
 
     # Extract configuration information
-    configuration_list = module_yaml.get("configuration")
+    configuration_list = module_yaml.get("configurations")
 
     # node name is snake case of the module name which the original is in pascal case
     # e.g. ObjectDetector.module -> object_detector
@@ -144,7 +144,7 @@ def create_module_launcher_xml(module_yaml, executable_name):
     return launcher
 
 
-def generate_launcher(module_yaml_dir, executable_name, launch_file_dir):
+def generate_launcher(module_yaml_dir, executable_name, launch_file_dir) -> None:
     # parse the architecture yaml configuration
     with open(module_yaml_dir, "r") as stream:
         try:
@@ -173,6 +173,10 @@ def generate_launcher(module_yaml_dir, executable_name, launch_file_dir):
     # if the directory does not exist, create the directory
     if not os.path.exists(os.path.dirname(launch_file_path)):
         os.makedirs(os.path.dirname(launch_file_path))
+
+    # if file exists, remove the file
+    if os.path.exists(launch_file_path):
+        os.remove(launch_file_path)
 
     # save the launch file to the launch file directory
     with open(launch_file_path, "w") as f:

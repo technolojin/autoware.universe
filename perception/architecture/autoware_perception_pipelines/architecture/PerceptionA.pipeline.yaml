@@ -1,21 +1,18 @@
 name: PerceptionA.pipeline
 
 depends:
-  - DetectorA.module
-  - FilterA.module
+  - DetectorA.pipeline
   - Tracker.module
 
 nodes:
-  - node: node_detector_1
-    module: DetectorA.module
-  - node: node_detector_2
-    module: DetectorA.module
-  - node: node_filter_a
-    module: FilterA.module
+  - node: detector_a1
+    element: DetectorA.pipeline
+  - node: detector_a2
+    element: DetectorA.pipeline
   - node: node_tracker
-    module: Tracker.module
+    element: Tracker.module
 
-external_interface:
+external_interfaces:
   input:
     - name: vector_map
     - name: pointcloud
@@ -29,32 +26,32 @@ external_interface:
 
 connections:
   - from: input.pointcloud
-    to: node_detector_1.input.pointcloud
+    to: detector_a1.input.pointcloud
   - from: input.pointcloud
-    to: node_detector_2.input.pointcloud
-  - from: node_detector_1.output.objects
-    to: node_filter_a.input.objects
-  - from: vector_map
-    to: node_filter_a.input.vector_map
-  - from: node_detector_1.output.objects
+    to: detector_a2.input.pointcloud
+  - from: input.vector_map
+    to: detector_a1.input.vector_map
+  - from: input.vector_map
+    to: detector_a2.input.vector_map
+  - from: detector_a1.output.objects
     to: node_tracker.input.objects1
-  - from: node_detector_2.output.objects
+  - from: detector_a2.output.objects
     to: node_tracker.input.objects2
   - from: node_tracker.output.objects
     to: output.objects
 
 parameters:
   - name: parameter.detector_a1.*
-    to: node_detector_1.parameter.*
+    to: detector_a1.parameter.detector.*
   - name: parameter.detector_a2.*
-    to: node_detector_2.parameter.*
+    to: detector_a2.parameter.detector.*
   - name: parameter.filter_a.*
-    to: node_filter_a.parameter.*
+    to: detector_a1.parameter.filter.*
+  - name: parameter.filter_a.*
+    to: detector_a2.parameter.filter.*
   - name: parameter.tracker.*
     to: node_tracker.parameter.*
 
 configurations:
   - name: model_a.build_only
-    to: node_detector_1.configuration.build_only
-  - name: model_b.build_only
-    to: node_detector_2.configuration.build_only
+    to: detector_a1.configuration.build_only
