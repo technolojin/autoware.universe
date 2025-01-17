@@ -1,7 +1,9 @@
 # module
 name: SensorA.module
-package: autoware_perception_dummy_nodes
-plugin: autoware::perception_dummy_nodes::SensorADriver
+
+launch:
+  package: autoware_perception_dummy_nodes
+  plugin: autoware::perception_dummy_nodes::SensorADriver
 
 # interface
 input: []

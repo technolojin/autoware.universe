@@ -2,8 +2,13 @@
 
 # module information
 name: DetectorA.module
-package: autoware_perception_dummy_nodes
-plugin: autoware::perception_dummy_nodes::DetectorA
+
+launch:
+  package: autoware_perception_dummy_nodes
+  plugin: autoware::perception_dummy_nodes::DetectorA
+  node_output: screen
+  use_container: true
+  container_name: pointcloud_container
 
 # interface
 input:
@@ -30,12 +35,7 @@ configuration:
   - name: build_only
     type: bool
     default: false
-  - name: use_container
-    type: bool
-    default: false
-  - name: container_name
-    type: string
-    default: "pointcloud_container"
+    description: "If true, the module will only build the model and exit."
 
 # process
 process:

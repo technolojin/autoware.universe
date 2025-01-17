@@ -10,3 +10,8 @@ ament_auto_package(
 )
 
 autoware_architect_configure()
+
+autoware_architect_generate_launcher(
+  Tracker.module
+  tracker_node
+)

@@ -2,8 +2,10 @@
 
 # module information
 name: Tracker.module
-package: autoware_perception_dummy_nodes
-plugin: autoware::perception_dummy_nodes::Tracker
+
+launch:
+  package: autoware_perception_dummy_nodes
+  plugin: autoware::perception_dummy_nodes::Tracker
 
 # interface
 input:

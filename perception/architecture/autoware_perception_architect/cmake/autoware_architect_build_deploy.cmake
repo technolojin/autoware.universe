@@ -17,7 +17,7 @@ macro(autoware_architect_build_deploy project_name deployment_file)
   set(ARCHITECTURE_YAML_LIST "${CMAKE_BINARY_DIR}/../autoware_perception_architect/autoware_architect_yaml_filelist.txt")
   set(DEPLOYMENT_FILE "${CMAKE_SOURCE_DIR}/deployment/${deployment_file}.yaml")
 
-  # run build.py script
+  # run build.py script, without target
   add_custom_target(run_build_py ALL
     COMMAND ${CMAKE_COMMAND} -E env python3 ${BUILD_PY_SCRIPT} ${DEPLOYMENT_FILE} ${ARCHITECTURE_YAML_LIST}
     COMMENT "Running build.py script from autoware_perception_architect package"

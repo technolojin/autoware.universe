@@ -33,12 +33,9 @@ list_input = []
 
 
 class ModuleConfig:
-    def __init__(
-        self, name, package, plugin, if_input, if_output, parameter, configuration, process
-    ):
+    def __init__(self, name, launch, if_input, if_output, parameter, configuration, process):
         self.name = name
-        self.package = package
-        self.plugin = plugin
+        self.launch = launch
         self.if_input = if_input
         self.if_output = if_output
         self.parameter = parameter
@@ -64,8 +61,7 @@ def load_module(module_dir):
 
     required_field = [
         "name",
-        "package",
-        "plugin",
+        "launch",
         "input",
         "output",
         "parameter",
@@ -80,8 +76,7 @@ def load_module(module_dir):
     try:
         module_config = ModuleConfig(
             name=module_yaml.get("name"),
-            package=module_yaml.get("package"),
-            plugin=module_yaml.get("plugin"),
+            launch=module_yaml.get("launch"),
             if_input=module_yaml.get("input", []),
             if_output=module_yaml.get("output", []),
             parameter=module_yaml.get("parameter", []),

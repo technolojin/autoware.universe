@@ -2,8 +2,11 @@
 
 # module information
 name: FilterA.module
-package: autoware_perception_dummy_nodes
-plugin: autoware::perception_dummy_nodes::FilterA
+
+launch:
+  package: autoware_perception_dummy_nodes
+  plugin: autoware::perception_dummy_nodes::FilterA
+  node_output: screen
 
 # interface
 input:

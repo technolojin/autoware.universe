@@ -10,3 +10,18 @@ ament_auto_package(
 )
 
 autoware_architect_configure()
+
+autoware_architect_generate_launcher(
+  DetectorA.module
+  detector_a_node
+)
+
+autoware_architect_generate_launcher(
+  FilterA.module
+  filter_a_node
+)
+
+autoware_architect_generate_launcher(
+  SensorA.module
+  sensor_a_node
+)
