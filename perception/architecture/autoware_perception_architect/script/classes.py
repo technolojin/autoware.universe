@@ -166,25 +166,46 @@ class ParameterSetElement(Element):
 
 # classes for deployment
 class InPort:
-    def __init__(self, msg_type):
+    def __init__(self, name, msg_type, namespace: List[str] = []):
+        self.name = name
         self.msg_type = msg_type
-        self.namespace: List[str] = []
+        self.namespace: List[str] = namespace
+        self.topic = None
+        # to enable/disable connection checker
         self.is_required = True
+
+    def set_topic(self, topic_name, namespace):
+        # input topic is given
+        self.topic = "/".join(namespace) + "/" + topic_name
 
 
 class OutPort:
-    def __init__(self, msg_type):
+    def __init__(self, name, msg_type, namespace: List[str] = []):
+        self.name = name
         self.msg_type = msg_type
-        self.namespace: List[str] = []
+        self.namespace: List[str] = namespace
+        self.topic = None
+
+        # for topic monitor
         self.period = 0.0
         self.is_monitored = False
 
+    def set_topic(self):
+        self.topic = "/".join(self.namespace) + "/" + self.name
+        if debug_mode:
+            print(f"  output port: {self.topic}")
 
-class Links:
+
+class Link:
     def __init__(self, msg_type):
         self.msg_type = msg_type
-        self.from_port: OutPort = None
-        self.to_port: InPort = None
+        # from-port and to-port connection
+        self.from_port: [InPort, OutPort] = None
+        #   from-port type is InPort: from an pipeline external input interface
+        #   from-port type is OutPort: from an module output
+        self.to_port: [OutPort, InPort] = None
+        #   to-port type is OutPort: to an pipeline external output interface
+        #   to-port type is InPort: to an module input
 
     def set_from_port(self, from_port: OutPort):
         if from_port.msg_type != self.msg_type:
@@ -247,25 +268,15 @@ class Instance:
         # interface
         self.in_ports: List[InPort] = []
         self.out_ports: List[OutPort] = []
+        self.links: List[Link] = []
+
+        # status
+        self.is_initialized = False
 
     def set_element(self, element_id, module_list, pipeline_list):
         element_name, element_type = element_name_decode(element_id)
 
-        if element_type == "module":
-            if debug_mode:
-                namespace_str = "/" + "/".join(self.namespace)
-                print(f"Instance set_element: Setting {element_id} instance {namespace_str}")
-            if self.layer == 0:
-                raise ValueError(
-                    "Module is not supported in the top level of the deployment, {element_id}"
-                )
-            self.element = module_list.get(element_name)
-            self.element_type = element_type
-
-            # run the module configuration
-
-            # recursive call is finished
-        elif element_type == "pipeline":
+        if element_type == "pipeline":
             if debug_mode:
                 namespace_str = "/" + "/".join(self.namespace)
                 print(f"Instance set_element: Setting {element_id} instance {namespace_str}")
@@ -285,10 +296,71 @@ class Instance:
                 )
                 instance.parent = self
                 instance.parent_pipeline_list = self.parent_pipeline_list.copy()
+                # recursive call of set_element
                 instance.set_element(node.get("element"), module_list, pipeline_list)
                 self.children.append(instance)
+
+            # run the pipeline configuration
+            self.run_pipeline_configuration()
+
+            # recursive call is finished
+            self.is_initialized = True
+
+        elif element_type == "module":
+            if debug_mode:
+                namespace_str = "/" + "/".join(self.namespace)
+                print(f"Instance set_element: Setting {element_id} instance {namespace_str}")
+            if self.layer == 0:
+                raise ValueError(
+                    "Module is not supported in the top level of the deployment, {element_id}"
+                )
+            self.element = module_list.get(element_name)
+            self.element_type = element_type
+
+            # run the module configuration
+            self.run_module_configuration()
+
+            # recursive call is finished
+            self.is_initialized = True
+
         else:
             raise ValueError(f"Invalid element type: {element_type}")
+
+    def run_module_configuration(self):
+        if self.element_type != "module":
+            raise ValueError("run_module_configuration is only supported for module")
+
+        # set in_ports
+        for in_port in self.element.config_yaml.get("inputs"):
+            in_port_name = in_port.get("name")
+            in_port_msg_type = in_port.get("message_type")
+            in_port_instance = InPort(in_port_name, in_port_msg_type, self.namespace)
+            self.in_ports.append(in_port_instance)
+
+        # set out_ports
+        for out_port in self.element.config_yaml.get("outputs"):
+            out_port_name = out_port.get("name")
+            out_port_msg_type = out_port.get("message_type")
+            out_port_instance = OutPort(out_port_name, out_port_msg_type, self.namespace)
+            self.out_ports.append(out_port_instance)
+
+    def run_pipeline_configuration(self):
+        if self.element_type != "pipeline":
+            raise ValueError("run_pipeline_configuration is only supported for pipeline")
+
+        # collect internal in/out ports from children
+        internal_in_ports: List[InPort] = []
+        internal_out_ports: List[OutPort] = []
+        for child in self.children:
+            if not child.is_initialized:
+                raise ValueError("Child instance is not initialized")
+            internal_in_ports += child.in_ports
+            internal_out_ports += child.out_ports
+
+        # set external interfaces
+        external_input = self.element.config_yaml.get("external_interfaces").get("input")
+
+        # set links
 
 
 class Deployment:
@@ -312,7 +384,7 @@ class Deployment:
 
         # member variables
         self.instances: List[Instance] = []
-        self.connections: List[Links] = []
+        # self.connections: List[Link] = []
 
         # build the deployment
         self.build()
