@@ -310,10 +310,6 @@ class InPort:
         # to enable/disable connection checker
         self.is_required = True
 
-    def set_topic(self, topic_name, namespace):
-        # input topic is given
-        self.topic = "/".join(namespace) + "/" + topic_name
-
 
 class OutPort:
     def __init__(self, name, msg_type, namespace: List[str] = []):
@@ -326,29 +322,73 @@ class OutPort:
         self.period = 0.0
         self.is_monitored = False
 
-    def set_topic(self):
-        self.topic = "/".join(self.namespace) + "/" + self.name
-        if debug_mode:
-            print(f"  output port: {self.topic}")
-
 
 class Link:
-    def __init__(self, msg_type):
-        self.msg_type = msg_type
+    def __init__(self, msg_type, from_port, to_port):
+        self.msg_type: str = msg_type
         # from-port and to-port connection
-        self.from_port: [InPort, OutPort] = None
+        self.from_port: [InPort, OutPort] = from_port
         #   from-port type is InPort: from an pipeline external input interface
         #   from-port type is OutPort: from an module output
-        self.to_port: [OutPort, InPort] = None
+        self.to_port: [InPort, OutPort] = to_port
         #   to-port type is OutPort: to an pipeline external output interface
         #   to-port type is InPort: to an module input
 
-    def set_from_port(self, from_port: OutPort):
-        if from_port.msg_type != self.msg_type:
-            raise ValueError("From port message type does not match")
-        self.from_port = from_port
 
-    def set_to_port(self, to_port: InPort):
-        if to_port.msg_type != self.msg_type:
-            raise ValueError("To port message type does not match")
-        self.to_port = to_port
+class Connection:
+    def __init__(self, connection_dict: dict):
+        
+        # connection type       
+        #   0: undefined
+        #   1: external input to internal input
+        #   2: internal output to external output
+        #   3: internal output to internal input
+        self.type = 0
+    
+        from_instance, from_port_name = self.parse_port_name(connection_dict.get("from"))
+        to_instance, to_port_name = self.parse_port_name(connection_dict.get("to"))
+
+        if from_instance == "" and to_instance == "":
+            raise ValueError(f"Invalid connection: {connection_dict}")
+        elif from_instance == "" and to_instance != "":
+            self.type = 1
+        elif from_instance != "" and to_instance == "":
+            self.type = 2
+        elif from_instance != "" and to_instance != "":
+            self.type = 3
+
+        self.from_instance: str = from_instance
+        self.from_port_name: str = from_port_name
+        self.to_instance: str = to_instance
+        self.to_port_name: str = to_port_name
+
+    def parse_port_name(self, port_name:str)-> (str, str): # (instance_name, port_name)
+        name_splited = port_name.split(".")
+        if len(name_splited) == 2:
+            if name_splited[0] == "input":
+                return "", name_splited[1] # external input
+            if name_splited[0] == "output":
+                return "", name_splited[1] # external output
+            raise ValueError(f"Invalid port name: {port_name}")
+        elif len(name_splited) == 3:
+            if name_splited[1] == "input":
+                return name_splited[0], name_splited[2] # internal input
+            if name_splited[1] == "output":
+                return name_splited[0], name_splited[2] # internal output
+            raise ValueError(f"Invalid port name: {port_name}")
+        else:
+            raise ValueError(f"Invalid port name: {port_name}")
+    
+
+class ConnectionGraph:
+    def __init__(self, connection_list: List[dict]):
+        self.connection_list: List[Connection] = []
+        self.fill_list(connection_list)
+
+    def fill_list(self, connection_list: List[dict]):
+        for connection in connection_list:
+            self.connection_list.append(Connection(connection))
+    
+
+            
+            

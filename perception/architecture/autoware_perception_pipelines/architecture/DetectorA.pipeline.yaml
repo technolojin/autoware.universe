@@ -25,6 +25,8 @@ connections:
     to: node_detector.input.pointcloud
   - from: node_detector.output.objects
     to: node_filter.input.objects
+  - from: input.vector_map
+    to: node_filter.input.vector_map
   - from: node_filter.output.objects
     to: output.objects
 

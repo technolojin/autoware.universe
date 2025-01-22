@@ -27,12 +27,11 @@ external_interfaces:
 connections:
   - from: input.pointcloud
     to: detector_a1.input.pointcloud
-  - from: input.pointcloud
-    to: detector_a2.input.pointcloud
   - from: input.vector_map
     to: detector_a1.input.vector_map
-  - from: input.vector_map
-    to: detector_a2.input.vector_map
+  # wildcard connection
+  - from: input.*
+    to: detector_a2.input.*
   - from: detector_a1.output.objects
     to: node_tracker.input.objects1
   - from: detector_a2.output.objects

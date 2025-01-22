@@ -14,6 +14,7 @@
 
 
 from typing import List
+import re
 
 from classes import ArchitectureElement
 from classes import ArchitectureList
@@ -23,6 +24,7 @@ from classes import Link
 from classes import ModuleElement
 from classes import ModuleList
 from classes import OutPort
+from classes import Connection
 from classes import ParameterSetList
 from classes import PipelineElement
 from classes import PipelineList
@@ -41,6 +43,7 @@ class Instance:
         self.namespace: List[str] = namespace.copy()
         # add the instance name to the namespace
         self.namespace.append(name)
+        self.namespace_str: str = "/" + "/".join(self.namespace)
 
         self.compute_unit: str = compute_unit
         self.layer: int = layer
@@ -89,8 +92,7 @@ class Instance:
 
         if element_type == "pipeline":
             if debug_mode:
-                namespace_str = "/" + "/".join(self.namespace)
-                print(f"Instance set_element: Setting {element_id} instance {namespace_str}")
+                print(f"Instance set_element: Setting {element_id} instance {self.namespace_str}")
             self.element = pipeline_list.get(element_name)
             self.element_type = element_type
 
@@ -119,8 +121,7 @@ class Instance:
 
         elif element_type == "module":
             if debug_mode:
-                namespace_str = "/" + "/".join(self.namespace)
-                print(f"Instance set_element: Setting {element_id} instance {namespace_str}")
+                print(f"Instance set_element: Setting {element_id} instance {self.namespace_str}")
             if self.layer == 0:
                 raise ValueError(
                     "Module is not supported in the top level of the deployment, {element_id}"
@@ -159,24 +160,76 @@ class Instance:
         if self.element_type != "pipeline":
             raise ValueError("run_pipeline_configuration is only supported for pipeline")
 
-        # collect internal in/out ports from children
-        internal_in_ports: List[InPort] = []
-        internal_out_ports: List[OutPort] = []
-        for child in self.children:
-            if not child.is_initialized:
-                raise ValueError("Child instance is not initialized")
-            internal_in_ports += child.in_ports
-            internal_out_ports += child.out_ports
+        # # collect internal in/out ports from children
+        # internal_in_ports: List[InPort] = []
+        # internal_out_ports: List[OutPort] = []
+        # for child in self.children:
+        #     if not child.is_initialized:
+        #         raise ValueError("Child instance is not initialized")
+        #     internal_in_ports += child.in_ports
+        #     internal_out_ports += child.out_ports
 
         # set external interfaces
         external_input_list = self.element.config_yaml.get("external_interfaces").get("input")
         external_output_list = self.element.config_yaml.get("external_interfaces").get("output")
 
-        # set links
-        connection_list = self.element.config_yaml.get("connections")
+        # set connections
+        connection_list_yaml = self.element.config_yaml.get("connections")
+        if len(connection_list_yaml) == 0:
+            raise ValueError("No connections found in the pipeline configuration")
+
+        connection_list: List[Connection] = []
+        for connection in connection_list_yaml:
+            connection_instance = Connection(connection)
+            connection_list.append(connection_instance)
 
         # establish links
+        link_list: List[Link] = []
+        # 1. to internal input from external input
+        for child in self.children:
+            instance_name = child.name
+            print(f"Child instance: {instance_name}")
+            # extract connections to the child
+            connection_list_to_child = [
+                connection for connection in connection_list if connection.to_instance == instance_name
+            ]
+            if len(connection_list_to_child) == 0:
+                # go to the next child
+                continue
 
+            for in_port in child.in_ports:
+                # find the connection to the in_port
+                # if the connection port_name is regex, find the connection by regex
+                connection_list_to_port = [
+                    connection for connection in connection_list_to_child if re.match(connection.to_port_name, in_port.name)
+                ]
+                if len(connection_list_to_port) == 0 and in_port.is_required:
+                    raise ValueError(f"Required connection not found: {instance_name}/{in_port.name}")
+                if len(connection_list_to_port) > 1:
+                    raise ValueError(f"Multiple connections found: {instance_name}/{in_port.name}")
+                port_name = connection_list_to_port[0].from_port_name
+
+                # create link
+                from_port = InPort(port_name, in_port.msg_type, self.namespace)
+                link_list.append(Link(in_port.msg_type, from_port, in_port))
+                
+
+        # create in ports based on the link_list
+        for link in link_list:
+            # check if the in_port is already in the list
+            if link.to_port not in self.in_ports:
+                self.in_ports.append(link.from_port)
+                    
+                
+        if debug_mode:
+            print(f"Instance run_pipeline_configuration: {len(link_list)} links are established")
+            for link in link_list:
+                print(f"Link: {link.from_port.namespace}/{link.from_port.name} -> {link.to_port.namespace}/{link.to_port.name}")
+
+        # 2. to internal input from internal output 
+
+        # 3. to external output from internal output 
+    
 
 class Deployment:
     def __init__(self, config_yaml_dir: str, element_list: ElementList):
