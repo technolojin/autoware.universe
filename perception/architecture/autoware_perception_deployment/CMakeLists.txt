@@ -21,4 +21,4 @@ autoware_architect_configure()
 add_library(${PROJECT_NAME} SHARED src/empty.cpp)
 
 # Call the function to build and deploy the modules
-autoware_architect_build_deploy(${PROJECT_NAME} model_x0.deployment)
+autoware_architect_build_deploy(${PROJECT_NAME} vehicle_x.deployment)

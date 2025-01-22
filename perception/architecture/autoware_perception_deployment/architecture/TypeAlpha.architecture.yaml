@@ -1,19 +1,19 @@
-name: model_x0.deployment
+name: TypeAlpha.architecture
 
 depends:
   - SensingA.pipeline
   - PerceptionA.pipeline
   - PerceptionPipelineA.parameter_set
 
-compute_units:
-  - unit: main_ecu
-    components:
-      - component: sensor_pipeline_a
-        element: SensingA.pipeline
-        namespace: sensing
-      - component: perception_pipeline_a
-        element: PerceptionA.pipeline
-        namespace: perception
+components:
+  - component: sensor_pipeline_a
+    element: SensingA.pipeline
+    namespace: sensing
+    compute_unit: main_ecu
+  - component: perception_pipeline_a
+    element: PerceptionA.pipeline
+    namespace: perception
+    compute_unit: main_ecu
 
 connections:
   - from: sensor_pipeline_a.output.pointcloud

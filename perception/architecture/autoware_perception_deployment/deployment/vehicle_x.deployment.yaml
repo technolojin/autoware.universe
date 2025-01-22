@@ -1,0 +1,9 @@
+name: vehicle_x.deployment
+
+architecture: TypeAlpha.architecture
+
+# additional components for experiment/development
+additional_components: []
+
+# vehicle specific parameters
+individual_parameters: []

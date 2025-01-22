@@ -39,7 +39,7 @@ def create_module_launcher_xml(module_yaml, executable_name: str) -> str:
     node_output = launch_config.get("node_output", "screen")
     use_container = launch_config.get("use_container", False)
     if use_container and not launch_config.get("container_name"):
-        print(f"Container name is required when use_container is True.")
+        ValueError("Container name is required when use_container is True")
         return
     container_name = launch_config.get("container_name")
 
@@ -171,8 +171,7 @@ def generate_launcher(module_yaml_dir, executable_name, launch_file_dir) -> None
     launch_file_path = os.path.join(launch_file_dir, launch_file)
 
     # if the directory does not exist, create the directory
-    if not os.path.exists(os.path.dirname(launch_file_path)):
-        os.makedirs(os.path.dirname(launch_file_path))
+    os.makedirs(os.path.dirname(launch_file_path), exist_ok=True)
 
     # if file exists, remove the file
     if os.path.exists(launch_file_path):

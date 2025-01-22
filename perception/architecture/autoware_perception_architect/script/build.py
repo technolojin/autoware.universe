@@ -12,16 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-import os
-from pathlib import Path
 import sys
 
-import classes
-import yaml
+from classes import ElementList
+from instance import Deployment
 
 # global variables
 debug_mode = True
+
 
 # build the deployment
 # search and connect the connections between the modules
@@ -38,19 +36,10 @@ def build(deployment_file: str, architecture_yaml_list_file: str):
         architecture_yaml_list = file.read().splitlines()
 
     # load the architecture yaml files
-    element_list = classes.ListElement(architecture_yaml_list)
-    module_list = []
-    pipeline_list = []
-    parameter_set_list = []
-    for element in element_list.get_module_list():
-        module_list.append(classes.ModuleElement(element))
-    for element in element_list.get_pipeline_list():
-        pipeline_list.append(classes.PipelineElement(element))
-    for element in element_list.get_parameter_set_list():
-        parameter_set_list.append(classes.ParameterSetElement(element))
+    element_list = ElementList(architecture_yaml_list)
 
     # load the deployment yaml file
-    deployment = classes.Deployment(deployment_file, module_list, pipeline_list, parameter_set_list)
+    deployment = Deployment(deployment_file, element_list)
 
     # search and connect the connections between the modules
 
