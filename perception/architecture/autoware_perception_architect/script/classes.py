@@ -337,14 +337,14 @@ class Link:
 
 class Connection:
     def __init__(self, connection_dict: dict):
-        
-        # connection type       
+
+        # connection type
         #   0: undefined
         #   1: external input to internal input
-        #   2: internal output to external output
-        #   3: internal output to internal input
+        #   2: internal output to internal input
+        #   3: internal output to external output
         self.type = 0
-    
+
         from_instance, from_port_name = self.parse_port_name(connection_dict.get("from"))
         to_instance, to_port_name = self.parse_port_name(connection_dict.get("to"))
 
@@ -353,32 +353,32 @@ class Connection:
         elif from_instance == "" and to_instance != "":
             self.type = 1
         elif from_instance != "" and to_instance == "":
-            self.type = 2
-        elif from_instance != "" and to_instance != "":
             self.type = 3
+        elif from_instance != "" and to_instance != "":
+            self.type = 2
 
         self.from_instance: str = from_instance
         self.from_port_name: str = from_port_name
         self.to_instance: str = to_instance
         self.to_port_name: str = to_port_name
 
-    def parse_port_name(self, port_name:str)-> (str, str): # (instance_name, port_name)
+    def parse_port_name(self, port_name: str) -> (str, str):  # (instance_name, port_name)
         name_splited = port_name.split(".")
         if len(name_splited) == 2:
             if name_splited[0] == "input":
-                return "", name_splited[1] # external input
+                return "", name_splited[1]  # external input
             if name_splited[0] == "output":
-                return "", name_splited[1] # external output
+                return "", name_splited[1]  # external output
             raise ValueError(f"Invalid port name: {port_name}")
         elif len(name_splited) == 3:
             if name_splited[1] == "input":
-                return name_splited[0], name_splited[2] # internal input
+                return name_splited[0], name_splited[2]  # internal input
             if name_splited[1] == "output":
-                return name_splited[0], name_splited[2] # internal output
+                return name_splited[0], name_splited[2]  # internal output
             raise ValueError(f"Invalid port name: {port_name}")
         else:
             raise ValueError(f"Invalid port name: {port_name}")
-    
+
 
 class ConnectionGraph:
     def __init__(self, connection_list: List[dict]):
@@ -388,7 +388,3 @@ class ConnectionGraph:
     def fill_list(self, connection_list: List[dict]):
         for connection in connection_list:
             self.connection_list.append(Connection(connection))
-    
-
-            
-            
