@@ -185,123 +185,85 @@ class Instance:
 
         # establish links
         link_list: List[Link] = []
-        # 1. to internal input from external input
-        for child in self.children:
-            instance_name = child.name
-            print(f"Child instance: {instance_name}")
-            # extract connections to the child
-            connection_list_to_child = [
-                connection
-                for connection in connection_list
-                if connection.to_instance == instance_name
-            ]
-            if len(connection_list_to_child) == 0:
-                # go to the next child
-                continue
 
-            for in_port in child.in_ports:
-                # find the connection to the in_port
-                # if the connection port_name is regex, find the connection by regex
-                connection_list_to_port = [
-                    connection
-                    for connection in connection_list_to_child
-                    if re.match(connection.to_port_name, in_port.name)
-                ]
-                if len(connection_list_to_port) == 0 and in_port.is_required:
-                    raise ValueError(
-                        f"Required connection not found: {instance_name}/{in_port.name}"
-                    )
-                if len(connection_list_to_port) > 1:
-                    raise ValueError(f"Multiple connections found: {instance_name}/{in_port.name}")
-                port_name = connection_list_to_port[0].from_port_name
-
+        for connection in connection_list:
+            # case 1. from external input to internal input
+            if connection.type == 1:
+                print(
+                    f"Connection: external/{connection.from_port_name}-> {connection.to_instance}/{connection.to_port_name}"
+                )
+                # find the to_instance from children
+                for child in self.children:
+                    if child.name == connection.to_instance:
+                        to_instance = child
+                        break
+                # match the port name
+                for in_port in to_instance.in_ports:
+                    if in_port.name == connection.to_port_name:
+                        to_port = in_port
+                        break
                 # create link
-                from_port = InPort(port_name, in_port.msg_type, self.namespace)
-                link_list.append(Link(in_port.msg_type, from_port, in_port))
+                from_port = InPort(connection.from_port_name, to_port.msg_type, self.namespace)
+                link_list.append(Link(to_port.msg_type, from_port, to_port))
 
-        # 2. to internal input from internal output
-        for child_from in self.children:
-            from_instance_name = child_from.name
-            for child_to in self.children:
-                if child_from == child_to:
-                    continue
-                to_instance_name = child_to.name
-
-                # extract connections from the child
-                for connection in connection_list:
-                    if (
-                        connection.from_instance == from_instance_name
-                        and connection.to_instance == to_instance_name
-                    ):
-                        from_port_name = connection.from_port_name
-                        to_port_name = connection.to_port_name
-
-                        # find the from_port and to_port
-                        from_port = None
-                        to_port = None
-                        for out_port in child_from.out_ports:
-                            if out_port.name == from_port_name:
-                                from_port = out_port
-                                break
-                        for in_port in child_to.in_ports:
-                            if in_port.name == to_port_name:
-                                to_port = in_port
-                                break
-
-                        if not from_port:
-                            raise ValueError(
-                                f"Out port not found: {from_instance_name}/{from_port_name}"
-                            )
-                        if not to_port:
-                            raise ValueError(
-                                f"In port not found: {to_instance_name}/{to_port_name}"
-                            )
-
-                        # create link
-                        link_list.append(Link(from_port.msg_type, from_port, to_port))
-
-        # 3. to external output from internal output
-        for child in self.children:
-            instance_name = child.name
-            # extract connections from the child
-            connection_list_from_child = [
-                connection
-                for connection in connection_list
-                if connection.from_instance == instance_name
-            ]
-            if len(connection_list_from_child) == 0:
-                # go to the next child
-                continue
-
-            for out_port in child.out_ports:
-                # find the connection from the out_port
-                connection_list_from_port = [
-                    connection
-                    for connection in connection_list_from_child
-                    if re.match(connection.from_port_name, out_port.name)
-                ]
-                if len(connection_list_from_port) == 0:
-                    raise ValueError(
-                        f"Required connection not found: {instance_name}/{out_port.name}"
-                    )
-                if len(connection_list_from_port) > 1:
-                    raise ValueError(f"Multiple connections found: {instance_name}/{out_port.name}")
-                port_name = connection_list_from_port[0].to_port_name
-
+            # case 2. from internal output to internal input
+            if connection.type == 2:
+                print(
+                    f"Connection: {connection.from_instance}/{connection.from_port_name}-> {connection.to_instance}/{connection.to_port_name}"
+                )
+                # find the from_instance and to_instance from children
+                from_instance = None
+                to_instance = None
+                for child in self.children:
+                    if child.name == connection.from_instance:
+                        from_instance = child
+                    if child.name == connection.to_instance:
+                        to_instance = child
+                    if from_instance and to_instance:
+                        break
+                # find the from_port and to_port
+                from_port = None
+                to_port = None
+                for out_port in from_instance.out_ports:
+                    if out_port.name == connection.from_port_name:
+                        from_port = out_port
+                        break
+                for in_port in to_instance.in_ports:
+                    if in_port.name == connection.to_port_name:
+                        to_port = in_port
+                        break
                 # create link
-                to_port = OutPort(port_name, out_port.msg_type, self.namespace)
-                link_list.append(Link(out_port.msg_type, out_port, to_port))
+                link_list.append(Link(from_port.msg_type, from_port, to_port))
+
+            # case 3. from internal output to external output
+            if connection.type == 3:
+                print(
+                    f"Connection: {connection.from_instance}/{connection.from_port_name}-> external/{connection.to_port_name}"
+                )
+                # find the from_instance from children
+                for child in self.children:
+                    if child.name == connection.from_instance:
+                        from_instance = child
+                        break
+                # match the port name
+                for out_port in from_instance.out_ports:
+                    if out_port.name == connection.from_port_name:
+                        from_port = out_port
+                        break
+                # create link
+                to_port = OutPort(connection.to_port_name, from_port.msg_type, self.namespace)
+                link_list.append(Link(from_port.msg_type, from_port, to_port))
 
         # create in ports based on the link_list
         for link in link_list:
             # create port only if the namespace is the same as the instance
             if link.from_port.namespace == self.namespace:
                 # check if the out_port is already in the list
-                if link.from_port not in self.out_ports:
+                if link.from_port not in self.in_ports:
                     self.in_ports.append(link.from_port)
             if link.to_port.namespace == self.namespace:
                 # check if the in_port is already in the list
-                if link.to_port not in self.in_ports:
+                if link.to_port not in self.out_ports:
                     self.out_ports.append(link.to_port)
         if debug_mode:
             print(f"Instance run_pipeline_configuration: {len(link_list)} links are established")
@@ -309,6 +271,11 @@ class Instance:
                 print(
                     f"Link: {link.from_port.namespace}/{link.from_port.name} -> {link.to_port.namespace}/{link.to_port.name}"
                 )
+            # new ports
+            for in_port in self.in_ports:
+                print(f"New in port: {in_port.namespace}/{in_port.name}")
+            for out_port in self.out_ports:
+                print(f"New out port: {out_port.namespace}/{out_port.name}")
 
 
 class Deployment:
