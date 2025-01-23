@@ -1,0 +1,28 @@
+
+# module information
+name: PlanningDummy.module
+
+launch:
+  package: autoware_perception_dummy_nodes
+  plugin: autoware::perception_dummy_nodes::Planning
+
+# interface
+inputs: 
+  - name: tracked_objects
+    message_type: autoware_perception_msgs/msg/TrackedObjects
+  - name: predicted_objects
+    message_type: autoware_perception_msgs/msg/PredictedObjects
+outputs: []
+parameters: []
+
+# configurations
+configurations: []
+
+# processes
+processes:
+  - name: drive
+    trigger_conditions:
+      - or:
+          - on_input: detected_objects
+          - on_input: predicted_objects
+    outcome: []

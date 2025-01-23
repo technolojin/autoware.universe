@@ -1,10 +1,10 @@
 
 # module information
-name: Map.module
+name: MapDummy.module
 
 launch:
   package: autoware_perception_dummy_nodes
-  plugin: autoware::perception_dummy_nodes::Map
+  plugin: autoware::perception_dummy_nodes::Mapping
 
 # interface
 inputs: []

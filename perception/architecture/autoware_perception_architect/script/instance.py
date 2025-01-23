@@ -202,19 +202,19 @@ class Instance:
         for child in self.children:
             if child.name == name:
                 return child
-        raise ValueError(f"Child not found: instance {self.name}, child name {name}")
+        raise ValueError(f"Child not found: child name {name}, instance of {self.name}")
 
     def get_in_port(self, name: str):
         for in_port in self.in_ports:
             if in_port.name == name:
                 return in_port
-        raise ValueError(f"In port not found: instance {self.name}, in port name {name}")
+        raise ValueError(f"In port not found: in-port name {name}, instance of {self.name}")
 
     def get_out_port(self, name: str):
         for out_port in self.out_ports:
             if out_port.name == name:
                 return out_port
-        raise ValueError(f"Out port not found: instance {self.name}, out port name {name}")
+        raise ValueError(f"Out port not found: out-port name {name}, instance of {self.name}")
 
     def set_in_port(self, in_port: InPort):
         # check the external input is defined

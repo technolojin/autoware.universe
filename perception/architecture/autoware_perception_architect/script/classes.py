@@ -376,7 +376,7 @@ class Link:
                     raise ValueError(f"Invalid connection: {from_port.name} -> {self.to_port.name}")
             for to_port in to_port_list:
                 if to_port.msg_type != self.msg_type:
-                    raise ValueError(f"Invalid connection: {self.from_port.name} -> {to_port.name}")
+                    raise ValueError(f"Type mismatch: {self.msg_type}({self.from_port.name}) -> {to_port.msg_type}({to_port.name})")
 
             # link the ports
             to_port.set_references(from_port_list)
