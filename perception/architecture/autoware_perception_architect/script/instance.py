@@ -118,11 +118,19 @@ class Instance:
                 print(
                     f"Connection: {link.from_port.full_name}-> {link.to_port.full_name}"
                 )
+        if debug_mode:
+            print(f"Instance {self.name} set_architecture: {len(self.links)} links are established")
+            for link in self.links:
+                print(
+                    f"  Link: {link.from_port.full_name} -> {link.to_port.full_name}"
+                )
 
         # all children are initialized
         self.is_initialized = True
 
         # check ports
+        if debug_mode:
+            print(f"Instance {self.name}: checking ports")
         self.check_ports()
 
     def set_element(self, element_id, module_list, pipeline_list):
@@ -160,10 +168,10 @@ class Instance:
         elif element_type == "module":
             if debug_mode:
                 print(f"Instance set_element: Setting {element_id} instance {self.namespace_str}")
-            if self.layer == 0:
-                raise ValueError(
-                    "Module is not supported in the top level of the deployment, {element_id}"
-                )
+            # if self.layer == 0:
+            #     raise ValueError(
+            #         "Module is not supported in the top level of the deployment, {element_id}"
+            #     )
             self.element = module_list.get(element_name)
             self.element_type = element_type
 
@@ -370,7 +378,7 @@ class Instance:
         self.create_external_ports(self.links)
 
         if debug_mode:
-            print(f"Instance run_pipeline_configuration: {len(self.links)} links are established")
+            print(f"Instance {self.name} run_pipeline_configuration: {len(self.links)} links are established")
             for link in self.links:
                 print(
                     f"  Link: {link.from_port.full_name} -> {link.to_port.full_name}"

@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="3">
-  <name>autoware_perception_deployment</name>
+  <name>autoware_perception_dummy_modules</name>
   <version>0.40.0</version>
-  <description>The autoware_perception_deployment package</description>
+  <description>The autoware_perception_dummy_modules package</description>
 
   <maintainer email="taekjin.lee@tier4.jp">Taekjin Lee</maintainer>
   <license>Apache License 2.0</license>
@@ -12,10 +12,6 @@
   <buildtool_depend>autoware_cmake</buildtool_depend>
 
   <depend>autoware_perception_architect</depend>
-  <depend>autoware_perception_dummy_modules</depend>
-  <depend>autoware_perception_dummy_modules_a</depend>
-  <depend>autoware_perception_dummy_modules_b</depend>
-  <depend>autoware_perception_pipelines</depend>
 
   <export>
     <build_type>ament_cmake</build_type>

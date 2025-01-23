@@ -3,6 +3,7 @@ name: TypeAlpha.architecture
 depends:
   - SensingA.pipeline
   - PerceptionA.pipeline
+  - Map.module
   - PerceptionPipelineA.parameter_set
 
 components:
@@ -14,10 +15,16 @@ components:
     element: PerceptionA.pipeline
     namespace: perception
     compute_unit: main_ecu
+  - component: map_loader
+    element: Map.module
+    namespace: map
+    compute_unit: main_ecu
 
 connections:
   - from: sensor_pipeline_a.output.pointcloud
     to: perception_pipeline_a.input.pointcloud
+  - from: map_loader.output.vector_map
+    to: perception_pipeline_a.input.vector_map
 
 parameter_sets:
   - name: perception_parameter_set_pipeline_a

@@ -451,11 +451,11 @@ class Connection:
             raise ValueError(f"Invalid port name: {port_name}")
 
 
-class ConnectionGraph:
-    def __init__(self, connection_list: List[dict]):
-        self.connection_list: List[Connection] = []
-        self.fill_list(connection_list)
+# class ConnectionGraph:
+#     def __init__(self, connection_list: List[dict]):
+#         self.connection_list: List[Connection] = []
+#         self.fill_list(connection_list)
 
-    def fill_list(self, connection_list: List[dict]):
-        for connection in connection_list:
-            self.connection_list.append(Connection(connection))
+#     def fill_list(self, connection_list: List[dict]):
+#         for connection in connection_list:
+#             self.connection_list.append(Connection(connection))
