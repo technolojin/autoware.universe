@@ -115,15 +115,11 @@ class Instance:
         for link in link_list:
             self.links.append(link)
             if debug_mode:
-                print(
-                    f"Connection: {link.from_port.full_name}-> {link.to_port.full_name}"
-                )
+                print(f"Connection: {link.from_port.full_name}-> {link.to_port.full_name}")
         if debug_mode:
             print(f"Instance {self.name} set_architecture: {len(self.links)} links are established")
             for link in self.links:
-                print(
-                    f"  Link: {link.from_port.full_name} -> {link.to_port.full_name}"
-                )
+                print(f"  Link: {link.from_port.full_name} -> {link.to_port.full_name}")
 
         # all children are initialized
         self.is_initialized = True
@@ -206,22 +202,19 @@ class Instance:
         for child in self.children:
             if child.name == name:
                 return child
-        ValueError(f"Child not found: instance {self.name}, child name {name}")
-        return None
+        raise ValueError(f"Child not found: instance {self.name}, child name {name}")
 
     def get_in_port(self, name: str):
         for in_port in self.in_ports:
             if in_port.name == name:
                 return in_port
-        ValueError(f"In port not found: instance {self.name}, in port name {name}")
-        return None
+        raise ValueError(f"In port not found: instance {self.name}, in port name {name}")
 
     def get_out_port(self, name: str):
         for out_port in self.out_ports:
             if out_port.name == name:
                 return out_port
-        ValueError(f"Out port not found: instance {self.name}, out port name {name}")
-        return None
+        raise ValueError(f"Out port not found: instance {self.name}, out port name {name}")
 
     def set_in_port(self, in_port: InPort):
         # check the external input is defined
@@ -319,9 +312,7 @@ class Instance:
                 for link in link_list:
                     self.links.append(link)
                     if debug_mode:
-                        print(
-                            f"Connection: {link.from_port.full_name}-> {link.to_port.full_name}"
-                        )
+                        print(f"Connection: {link.from_port.full_name}-> {link.to_port.full_name}")
 
             # case 2. from internal output to internal input
             if connection.type == 2:
@@ -339,9 +330,7 @@ class Instance:
                 for link in link_list:
                     self.links.append(link)
                     if debug_mode:
-                        print(
-                            f"Connection: {link.from_port.full_name}-> {link.to_port.full_name}"
-                        )
+                        print(f"Connection: {link.from_port.full_name}-> {link.to_port.full_name}")
 
             # case 3. from internal output to external output
             if connection.type == 3:
@@ -370,19 +359,17 @@ class Instance:
                 for link in link_list:
                     self.links.append(link)
                     if debug_mode:
-                        print(
-                            f"Connection: {link.from_port.full_name}-> {link.to_port.full_name}"
-                        )
+                        print(f"Connection: {link.from_port.full_name}-> {link.to_port.full_name}")
 
         # create external ports
         self.create_external_ports(self.links)
 
         if debug_mode:
-            print(f"Instance {self.name} run_pipeline_configuration: {len(self.links)} links are established")
+            print(
+                f"Instance {self.name} run_pipeline_configuration: {len(self.links)} links are established"
+            )
             for link in self.links:
-                print(
-                    f"  Link: {link.from_port.full_name} -> {link.to_port.full_name}"
-                )
+                print(f"  Link: {link.from_port.full_name} -> {link.to_port.full_name}")
             # new ports
             for in_port in self.in_ports:
                 print(f"  New in port: {in_port.full_name}")
