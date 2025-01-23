@@ -315,10 +315,13 @@ class InPort(Port):
         # to enable/disable connection checker
         self.is_required = True
         # reference port
-        self.reference: Port = None
+        self.reference: List[Port] = []
 
-    def set_reference(self, port: Port):
-        self.reference = port
+    def set_references(self, port_list: List[Port]):
+        # check if the port is already in the reference list
+        for port in port_list:
+            if port not in self.reference:
+                self.reference.append(port)
 
 
 class OutPort(Port):
@@ -328,10 +331,13 @@ class OutPort(Port):
         self.period = 0.0
         self.is_monitored = False
         # reference port
-        self.reference: Port = None
+        self.reference: List[Port] = []
 
-    def set_reference(self, port: Port):
-        self.reference = port
+    def set_references(self, port_list: List[Port]):
+        # check if the port is already in the reference list
+        for port in port_list:
+            if port not in self.reference:
+                self.reference.append(port)
 
 
 class Link:
@@ -355,45 +361,49 @@ class Link:
         #   connection is from internal output to internal input
         if is_from_port_internal and is_to_port_internal:
             # propagate and finish the connection
-            from_port = self.from_port.reference
-            if from_port is None:
-                from_port = self.from_port
-            to_port = self.to_port.reference
-            if to_port is None:
-                to_port = self.to_port
+            from_port_list = self.from_port.reference
+            if not from_port_list:
+                from_port_list = [self.from_port]
+            to_port_list = self.to_port.reference
+            if not to_port_list:
+                to_port_list = [self.to_port]
 
-            print(
-                f"Link connection: {'/'.join(from_port.namespace)}/{from_port.name} -> {'/'.join(to_port.namespace)}/{to_port.name}"
-            )
+            # print(
+            #     f"Link connection: {'/'.join(from_port.namespace)}/{from_port.name} -> {'/'.join(to_port.namespace)}/{to_port.name}"
+            # )
 
             # check the message type is the same
-            if from_port.msg_type != to_port.msg_type:
-                raise ValueError(f"Invalid connection: {from_port.name} -> {to_port.name}")
+            for from_port in from_port_list:
+                if from_port.msg_type != self.msg_type:
+                    raise ValueError(f"Invalid connection: {from_port.name} -> {self.to_port.name}")
+            for to_port in to_port_list:
+                if to_port.msg_type != self.msg_type:
+                    raise ValueError(f"Invalid connection: {self.from_port.name} -> {to_port.name}")
 
             # link the ports
-            to_port.reference = from_port
-            from_port.reference = to_port
+            to_port.set_references(from_port_list)
+            from_port.set_references(to_port_list)
 
         # case 2: from-port is OutPort and to-port is OutPort
         #   connection is from internal output to external output
         elif is_from_port_internal and not is_to_port_internal:
             # set the reference port of the to-port
-            reference_port = self.from_port.reference
-            if reference_port is None:
+            reference_port_list = self.from_port.reference
+            if not reference_port_list:
                 # from_port is an original port
-                reference_port = self.from_port
+                reference_port_list = [self.from_port]
             # reference_port.namespace.pop()
-            self.to_port.set_reference(reference_port)
+            self.to_port.set_references(reference_port_list)
 
         # case 3: from-port is InPort and to-port is InPort
         #   connection is from external input to internal input
         elif not is_from_port_internal and is_to_port_internal:
             # set the reference port of the from-port
-            reference_port = self.to_port.reference
-            if reference_port is None:
+            reference_port_list = self.to_port.reference
+            if not reference_port_list:
                 # to_port is an original port
-                reference_port = self.to_port
-            self.from_port.set_reference(reference_port)
+                reference_port_list = [self.to_port]
+            self.from_port.set_references(reference_port_list)
 
         # case 4: from-port is InPort and to-port is OutPort
         #   bypass connection, which is invalid

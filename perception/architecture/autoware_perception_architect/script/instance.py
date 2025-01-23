@@ -387,24 +387,26 @@ class Instance:
             if not isinstance(in_port, InPort):
                 continue
 
-            print(f"  In port: {'/'.join(in_port.namespace)}/{in_port.name}")
-            ref_port = in_port.reference
-            if ref_port is None:
+            print(f"  In port: {'/'.join(in_port.namespace)}/input/{in_port.name}")
+            ref_port_list = in_port.reference
+            if not ref_port_list:
                 print("    Reference port not found")
                 continue
-            print(f"    message from: {'/'.join(ref_port.namespace)}/{ref_port.name}")
+            for ref_port in ref_port_list:
+                print(f"    message from: {'/'.join(ref_port.namespace)}/output/{ref_port.name}")
 
         for out_port in self.out_ports:
             # check if the port is OutPort
             if not isinstance(out_port, OutPort):
                 continue
 
-            print(f"  Out port: {'/'.join(out_port.namespace)}/{out_port.name}")
-            ref_port = out_port.reference
-            if ref_port is None:
+            print(f"  Out port: {'/'.join(out_port.namespace)}/output/{out_port.name}")
+            ref_port_list = out_port.reference
+            if not ref_port_list:
                 print("    Reference port not found")
                 continue
-            print(f"    subscribed by: {'/'.join(ref_port.namespace)}/{ref_port.name}")
+            for ref_port in ref_port_list:
+                print(f"    subscribed by: {'/'.join(ref_port.namespace)}/input/{ref_port.name}")
 
 
 class Deployment:
