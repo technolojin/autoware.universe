@@ -83,8 +83,47 @@ class Instance:
             instance.set_element(element_id, module_list, pipeline_list)
 
             self.children.append(instance)
+
+        # set connections
+        connection_list_yaml = architecture.config_yaml.get("connections")
+        if len(connection_list_yaml) == 0:
+            raise ValueError("No connections found in the pipeline configuration")
+
+        connection_list: List[Connection] = []
+        for connection in connection_list_yaml:
+            connection_instance = Connection(connection)
+            connection_list.append(connection_instance)
+
+        # establish links
+        link_list: List[Link] = []
+        for connection in connection_list:
+            # find the from_instance and to_instance from children
+            from_instance = self.get_child(connection.from_instance)
+            to_instance = self.get_child(connection.to_instance)
+            # find the from_port and to_port
+            from_port = from_instance.get_out_port(connection.from_port_name)
+            to_port = to_instance.get_in_port(connection.to_port_name)
+            # check if the port type
+            if not isinstance(from_port, OutPort):
+                raise ValueError(f"Invalid port type: {from_port.namespace}/{from_port.name}")
+            if not isinstance(to_port, InPort):
+                raise ValueError(f"Invalid port type: {to_port.namespace}/{to_port.name}")
+            # create link
+            link = Link(from_port.msg_type, from_port, to_port, self.namespace)
+            link_list.append(link)
+
+        for link in link_list:
+            self.links.append(link)
+            if debug_mode:
+                print(
+                    f"Connection: {link.from_port.namespace}/{link.from_port.name}-> {link.to_port.namespace}/{link.to_port.name}"
+                )
+
         # all children are initialized
         self.is_initialized = True
+
+        # check ports
+        self.check_ports()
 
     def set_element(self, element_id, module_list, pipeline_list):
         element_name, element_type = element_name_decode(element_id)
@@ -255,14 +294,14 @@ class Instance:
                 if connection.to_port_name == "*":
                     for port in port_list:
                         from_port = InPort(port.name, port.msg_type, self.namespace)
-                        link = Link(port.msg_type, from_port, port)
+                        link = Link(port.msg_type, from_port, port, self.namespace)
                         link_list.append(link)
                 else:
                     # match the port name
                     to_port = to_instance.get_in_port(connection.to_port_name)
                     # create a link
                     from_port = InPort(connection.from_port_name, to_port.msg_type, self.namespace)
-                    link = Link(to_port.msg_type, from_port, to_port)
+                    link = Link(to_port.msg_type, from_port, to_port, self.namespace)
                     link_list.append(link)
 
                 for link in link_list:
@@ -281,13 +320,8 @@ class Instance:
                 # find the from_port and to_port
                 from_port = from_instance.get_out_port(connection.from_port_name)
                 to_port = to_instance.get_in_port(connection.to_port_name)
-                # check if the message type is matched
-                if from_port.msg_type != to_port.msg_type:
-                    raise ValueError(
-                        f"Message type mismatch: {from_port.namespace}/{from_port.name} -> {to_port.namespace}/{to_port.name}   {from_port.msg_type} != {to_port.msg_type}"
-                    )
                 # create link
-                link_list.append(Link(from_port.msg_type, from_port, to_port))
+                link_list.append(Link(from_port.msg_type, from_port, to_port, self.namespace))
 
                 for link in link_list:
                     self.links.append(link)
@@ -310,14 +344,14 @@ class Instance:
                 if connection.from_port_name == "*":
                     for port in port_list:
                         to_port = OutPort(port.name, port.msg_type, self.namespace)
-                        link = Link(port.msg_type, port, to_port)
+                        link = Link(port.msg_type, port, to_port, self.namespace)
                         link_list.append(link)
                 else:
                     # match the port name
                     from_port = from_instance.get_out_port(connection.from_port_name)
                     # create link
                     to_port = OutPort(connection.to_port_name, from_port.msg_type, self.namespace)
-                    link = Link(from_port.msg_type, from_port, to_port)
+                    link = Link(from_port.msg_type, from_port, to_port, self.namespace)
                     link_list.append(link)
 
                 for link in link_list:
@@ -341,6 +375,36 @@ class Instance:
                 print(f"  New in port: {'/'.join(in_port.namespace)}/{in_port.name}")
             for out_port in self.out_ports:
                 print(f"  New out port: {'/'.join(out_port.namespace)}/{out_port.name}")
+
+    def check_ports(self):
+        # recursive call for children
+        for child in self.children:
+            child.check_ports()
+
+        # check ports
+        for in_port in self.in_ports:
+            # check if the port is InPort
+            if not isinstance(in_port, InPort):
+                continue
+
+            print(f"  In port: {'/'.join(in_port.namespace)}/{in_port.name}")
+            ref_port = in_port.reference
+            if ref_port is None:
+                print("    Reference port not found")
+                continue
+            print(f"    message from: {'/'.join(ref_port.namespace)}/{ref_port.name}")
+
+        for out_port in self.out_ports:
+            # check if the port is OutPort
+            if not isinstance(out_port, OutPort):
+                continue
+
+            print(f"  Out port: {'/'.join(out_port.namespace)}/{out_port.name}")
+            ref_port = out_port.reference
+            if ref_port is None:
+                print("    Reference port not found")
+                continue
+            print(f"    subscribed by: {'/'.join(ref_port.namespace)}/{ref_port.name}")
 
 
 class Deployment:

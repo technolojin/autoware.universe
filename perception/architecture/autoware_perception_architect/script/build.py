@@ -41,8 +41,6 @@ def build(deployment_file: str, architecture_yaml_list_file: str):
     # load the deployment yaml file
     deployment = Deployment(deployment_file, element_list)
 
-    # search and connect the connections between the modules
-
 
 if __name__ == "__main__":
     build(sys.argv[1], sys.argv[2])

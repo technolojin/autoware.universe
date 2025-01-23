@@ -335,11 +335,13 @@ class OutPort(Port):
 
 
 class Link:
-    def __init__(self, msg_type, from_port, to_port):
+    def __init__(self, msg_type: str, from_port: Port, to_port: Port, namespace: List[str] = []):
         self.msg_type: str = msg_type
         # from-port and to-port connection
         self.from_port: Port = from_port
         self.to_port: Port = to_port
+        # namespace
+        self.namespace: List[str] = namespace
 
         self.check_connection()
 
@@ -371,12 +373,6 @@ class Link:
             # link the ports
             to_port.reference = from_port
             from_port.reference = to_port
-
-            # determine the namespace
-
-            # determine the from topic name
-
-            # set the to topic name
 
         # case 2: from-port is OutPort and to-port is OutPort
         #   connection is from internal output to external output
