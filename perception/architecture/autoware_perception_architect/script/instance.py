@@ -256,7 +256,6 @@ class Instance:
                     for port in port_list:
                         from_port = InPort(port.name, port.msg_type, self.namespace)
                         link = Link(port.msg_type, from_port, port)
-                        port.set_link(link)
                         link_list.append(link)
                 else:
                     # match the port name
@@ -264,7 +263,6 @@ class Instance:
                     # create a link
                     from_port = InPort(connection.from_port_name, to_port.msg_type, self.namespace)
                     link = Link(to_port.msg_type, from_port, to_port)
-                    to_port.set_link(link)
                     link_list.append(link)
 
                 for link in link_list:
@@ -277,9 +275,6 @@ class Instance:
             # case 2. from internal output to internal input
             if connection.type == 2:
                 link_list: List[Link] = []
-                print(
-                    f"Connection: {connection.from_instance}/{connection.from_port_name}-> {connection.to_instance}/{connection.to_port_name}"
-                )
                 # find the from_instance and to_instance from children
                 from_instance = self.get_child(connection.from_instance)
                 to_instance = self.get_child(connection.to_instance)
@@ -294,8 +289,6 @@ class Instance:
                 # create link
                 link_list.append(Link(from_port.msg_type, from_port, to_port))
 
-                # determine topic, based on the namespace
-
                 for link in link_list:
                     self.links.append(link)
                     if debug_mode:
@@ -306,9 +299,7 @@ class Instance:
             # case 3. from internal output to external output
             if connection.type == 3:
                 link_list: List[Link] = []
-                print(
-                    f"Connection: {connection.from_instance}/{connection.from_port_name} -> external/{connection.to_port_name}"
-                )
+
                 # find the from_instance from children
                 from_instance = self.get_child(connection.from_instance)
                 port_list = list(from_instance.out_ports)
@@ -320,7 +311,6 @@ class Instance:
                     for port in port_list:
                         to_port = OutPort(port.name, port.msg_type, self.namespace)
                         link = Link(port.msg_type, port, to_port)
-                        port.set_link(link)
                         link_list.append(link)
                 else:
                     # match the port name
@@ -328,7 +318,6 @@ class Instance:
                     # create link
                     to_port = OutPort(connection.to_port_name, from_port.msg_type, self.namespace)
                     link = Link(from_port.msg_type, from_port, to_port)
-                    from_port.set_link(link)
                     link_list.append(link)
 
                 for link in link_list:
@@ -342,16 +331,16 @@ class Instance:
         self.create_external_ports(self.links)
 
         if debug_mode:
-            print(f"Instance run_pipeline_configuration: {len(link_list)} links are established")
-            for link in link_list:
+            print(f"Instance run_pipeline_configuration: {len(self.links)} links are established")
+            for link in self.links:
                 print(
-                    f"Link: {link.from_port.namespace}/{link.from_port.name} -> {link.to_port.namespace}/{link.to_port.name}"
+                    f"  Link: {'/'.join(link.from_port.namespace)}/{link.from_port.name} -> {'/'.join(link.to_port.namespace)}/{link.to_port.name}"
                 )
             # new ports
             for in_port in self.in_ports:
-                print(f"New in port: {in_port.namespace}/{in_port.name}")
+                print(f"  New in port: {'/'.join(in_port.namespace)}/{in_port.name}")
             for out_port in self.out_ports:
-                print(f"New out port: {out_port.namespace}/{out_port.name}")
+                print(f"  New out port: {'/'.join(out_port.namespace)}/{out_port.name}")
 
 
 class Deployment:

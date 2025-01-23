@@ -309,24 +309,16 @@ class Port:
         self.topic: List[str] = []
 
 
-class Link:
-    def __init__(self, msg_type, from_port, to_port):
-        self.msg_type: str = msg_type
-        # from-port and to-port connection
-        self.from_port: Port = from_port
-        self.to_port: Port = to_port
-
-
 class InPort(Port):
     def __init__(self, name, msg_type, namespace: List[str] = []):
         super().__init__(name, msg_type, namespace)
         # to enable/disable connection checker
         self.is_required = True
-        # link
-        self.link: Link = None
+        # reference port
+        self.reference: Port = None
 
-    def set_link(self, link: Link):
-        self.link = link
+    def set_reference(self, port: Port):
+        self.reference = port
 
 
 class OutPort(Port):
@@ -335,11 +327,82 @@ class OutPort(Port):
         # for topic monitor
         self.period = 0.0
         self.is_monitored = False
-        # link
-        self.link: Link = None
+        # reference port
+        self.reference: Port = None
 
-    def set_link(self, link: Link):
-        self.link = link
+    def set_reference(self, port: Port):
+        self.reference = port
+
+
+class Link:
+    def __init__(self, msg_type, from_port, to_port):
+        self.msg_type: str = msg_type
+        # from-port and to-port connection
+        self.from_port: Port = from_port
+        self.to_port: Port = to_port
+
+        self.check_connection()
+
+    def check_connection(self):
+        # if the from port is OutPort, it is internal port
+        is_from_port_internal = isinstance(self.from_port, OutPort)
+        # if the to port is InPort, it is internal port
+        is_to_port_internal = isinstance(self.to_port, InPort)
+
+        # case 1: from-port is OutPort and to-port is InPort
+        #   connection is from internal output to internal input
+        if is_from_port_internal and is_to_port_internal:
+            # propagate and finish the connection
+            from_port = self.from_port.reference
+            if from_port is None:
+                from_port = self.from_port
+            to_port = self.to_port.reference
+            if to_port is None:
+                to_port = self.to_port
+
+            print(
+                f"Link connection: {'/'.join(from_port.namespace)}/{from_port.name} -> {'/'.join(to_port.namespace)}/{to_port.name}"
+            )
+
+            # check the message type is the same
+            if from_port.msg_type != to_port.msg_type:
+                raise ValueError(f"Invalid connection: {from_port.name} -> {to_port.name}")
+
+            # link the ports
+            to_port.reference = from_port
+            from_port.reference = to_port
+
+            # determine the namespace
+
+            # determine the from topic name
+
+            # set the to topic name
+
+        # case 2: from-port is OutPort and to-port is OutPort
+        #   connection is from internal output to external output
+        elif is_from_port_internal and not is_to_port_internal:
+            # set the reference port of the to-port
+            reference_port = self.from_port.reference
+            if reference_port is None:
+                # from_port is an original port
+                reference_port = self.from_port
+            # reference_port.namespace.pop()
+            self.to_port.set_reference(reference_port)
+
+        # case 3: from-port is InPort and to-port is InPort
+        #   connection is from external input to internal input
+        elif not is_from_port_internal and is_to_port_internal:
+            # set the reference port of the from-port
+            reference_port = self.to_port.reference
+            if reference_port is None:
+                # to_port is an original port
+                reference_port = self.to_port
+            self.from_port.set_reference(reference_port)
+
+        # case 4: from-port is InPort and to-port is OutPort
+        #   bypass connection, which is invalid
+        else:
+            raise ValueError(f"Invalid connection: {self.from_port.name} -> {self.to_port.name}")
 
 
 class Connection:
