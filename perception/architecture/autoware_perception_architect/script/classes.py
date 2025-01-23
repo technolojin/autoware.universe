@@ -307,7 +307,7 @@ class Port:
         self.msg_type = msg_type
         self.namespace = namespace
         self.topic: List[str] = []
-
+        self.full_name = "/".join(namespace) + "/" + name
 
 class InPort(Port):
     def __init__(self, name, msg_type, namespace: List[str] = []):
@@ -319,8 +319,9 @@ class InPort(Port):
 
     def set_references(self, port_list: List[Port]):
         # check if the port is already in the reference list
+        reference_name_list = [p.full_name for p in self.reference]
         for port in port_list:
-            if port not in self.reference:
+            if port.full_name not in reference_name_list:
                 self.reference.append(port)
 
 
@@ -335,8 +336,9 @@ class OutPort(Port):
 
     def set_references(self, port_list: List[Port]):
         # check if the port is already in the reference list
+        reference_name_list = [p.full_name for p in self.reference]
         for port in port_list:
-            if port not in self.reference:
+            if port.full_name not in reference_name_list:
                 self.reference.append(port)
 
 
@@ -357,20 +359,15 @@ class Link:
         # if the to port is InPort, it is internal port
         is_to_port_internal = isinstance(self.to_port, InPort)
 
-        # case 1: from-port is OutPort and to-port is InPort
-        #   connection is from internal output to internal input
+        # case 1: from internal output to internal input
         if is_from_port_internal and is_to_port_internal:
             # propagate and finish the connection
             from_port_list = self.from_port.reference
-            if not from_port_list:
+            if from_port_list == []:
                 from_port_list = [self.from_port]
             to_port_list = self.to_port.reference
-            if not to_port_list:
+            if to_port_list == []:
                 to_port_list = [self.to_port]
-
-            # print(
-            #     f"Link connection: {'/'.join(from_port.namespace)}/{from_port.name} -> {'/'.join(to_port.namespace)}/{to_port.name}"
-            # )
 
             # check the message type is the same
             for from_port in from_port_list:
@@ -384,23 +381,21 @@ class Link:
             to_port.set_references(from_port_list)
             from_port.set_references(to_port_list)
 
-        # case 2: from-port is OutPort and to-port is OutPort
-        #   connection is from internal output to external output
+        # case 2: from internal output to external output
         elif is_from_port_internal and not is_to_port_internal:
             # set the reference port of the to-port
             reference_port_list = self.from_port.reference
-            if not reference_port_list:
+            if reference_port_list == []:
                 # from_port is an original port
                 reference_port_list = [self.from_port]
             # reference_port.namespace.pop()
             self.to_port.set_references(reference_port_list)
 
-        # case 3: from-port is InPort and to-port is InPort
-        #   connection is from external input to internal input
+        # case 3: from external input to internal input
         elif not is_from_port_internal and is_to_port_internal:
             # set the reference port of the from-port
             reference_port_list = self.to_port.reference
-            if not reference_port_list:
+            if reference_port_list == []:
                 # to_port is an original port
                 reference_port_list = [self.to_port]
             self.from_port.set_references(reference_port_list)

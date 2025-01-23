@@ -105,9 +105,9 @@ class Instance:
             to_port = to_instance.get_in_port(connection.to_port_name)
             # check if the port type
             if not isinstance(from_port, OutPort):
-                raise ValueError(f"Invalid port type: {from_port.namespace}/{from_port.name}")
+                raise ValueError(f"Invalid port type: {from_port.full_name}")
             if not isinstance(to_port, InPort):
-                raise ValueError(f"Invalid port type: {to_port.namespace}/{to_port.name}")
+                raise ValueError(f"Invalid port type: {to_port.full_name}")
             # create link
             link = Link(from_port.msg_type, from_port, to_port, self.namespace)
             link_list.append(link)
@@ -116,7 +116,7 @@ class Instance:
             self.links.append(link)
             if debug_mode:
                 print(
-                    f"Connection: {link.from_port.namespace}/{link.from_port.name}-> {link.to_port.namespace}/{link.to_port.name}"
+                    f"Connection: {link.from_port.full_name}-> {link.to_port.full_name}"
                 )
 
         # all children are initialized
@@ -230,6 +230,8 @@ class Instance:
                     raise ValueError(
                         f"Message type mismatch: {port.namespace}/{port.name} {port.msg_type} != {in_port.msg_type}"
                     )
+                # same port name is found, update reference
+                port.set_references(in_port.reference)
                 return
         # same port name is not found, add the port
         self.in_ports.append(in_port)
@@ -251,6 +253,8 @@ class Instance:
                     raise ValueError(
                         f"Message type mismatch: {port.namespace}/{port.name} {port.msg_type} != {out_port.msg_type}"
                     )
+                # same port name is found, update reference
+                port.set_references(out_port.reference)
                 return
         # same port name is not found, add the port
         self.out_ports.append(out_port)
@@ -308,7 +312,7 @@ class Instance:
                     self.links.append(link)
                     if debug_mode:
                         print(
-                            f"Connection: {link.from_port.namespace}/{link.from_port.name}-> {link.to_port.namespace}/{link.to_port.name}"
+                            f"Connection: {link.from_port.full_name}-> {link.to_port.full_name}"
                         )
 
             # case 2. from internal output to internal input
@@ -321,13 +325,14 @@ class Instance:
                 from_port = from_instance.get_out_port(connection.from_port_name)
                 to_port = to_instance.get_in_port(connection.to_port_name)
                 # create link
-                link_list.append(Link(from_port.msg_type, from_port, to_port, self.namespace))
+                link = Link(from_port.msg_type, from_port, to_port, self.namespace)
+                link_list.append(link)
 
                 for link in link_list:
                     self.links.append(link)
                     if debug_mode:
                         print(
-                            f"Connection: {link.from_port.namespace}/{link.from_port.name}-> {link.to_port.namespace}/{link.to_port.name}"
+                            f"Connection: {link.from_port.full_name}-> {link.to_port.full_name}"
                         )
 
             # case 3. from internal output to external output
@@ -358,7 +363,7 @@ class Instance:
                     self.links.append(link)
                     if debug_mode:
                         print(
-                            f"Connection: {link.from_port.namespace}/{link.from_port.name}-> {link.to_port.namespace}/{link.to_port.name}"
+                            f"Connection: {link.from_port.full_name}-> {link.to_port.full_name}"
                         )
 
         # create external ports
@@ -368,13 +373,13 @@ class Instance:
             print(f"Instance run_pipeline_configuration: {len(self.links)} links are established")
             for link in self.links:
                 print(
-                    f"  Link: {'/'.join(link.from_port.namespace)}/{link.from_port.name} -> {'/'.join(link.to_port.namespace)}/{link.to_port.name}"
+                    f"  Link: {link.from_port.full_name} -> {link.to_port.full_name}"
                 )
             # new ports
             for in_port in self.in_ports:
-                print(f"  New in port: {'/'.join(in_port.namespace)}/{in_port.name}")
+                print(f"  New in port: {in_port.full_name}")
             for out_port in self.out_ports:
-                print(f"  New out port: {'/'.join(out_port.namespace)}/{out_port.name}")
+                print(f"  New out port: {out_port.full_name}")
 
     def check_ports(self):
         # recursive call for children
@@ -389,7 +394,7 @@ class Instance:
 
             print(f"  In port: {'/'.join(in_port.namespace)}/input/{in_port.name}")
             ref_port_list = in_port.reference
-            if not ref_port_list:
+            if ref_port_list == []:
                 print("    Reference port not found")
                 continue
             for ref_port in ref_port_list:
@@ -402,7 +407,7 @@ class Instance:
 
             print(f"  Out port: {'/'.join(out_port.namespace)}/output/{out_port.name}")
             ref_port_list = out_port.reference
-            if not ref_port_list:
+            if ref_port_list == []:
                 print("    Reference port not found")
                 continue
             for ref_port in ref_port_list:
