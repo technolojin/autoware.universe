@@ -27,8 +27,8 @@ connections:
     to: node_filter.input.objects
   - from: input.vector_map
     to: node_filter.input.vector_map
-  - from: node_filter.output.objects
-    to: output.objects
+  - from: node_filter.output.*
+    to: output.*
 
 parameters:
   - name: parameter.detector.*

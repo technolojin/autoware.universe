@@ -13,7 +13,6 @@
 # limitations under the License.
 
 
-import re
 from typing import List
 
 from classes import ArchitectureElement
@@ -156,22 +155,81 @@ class Instance:
             out_port_instance = OutPort(out_port_name, out_port_msg_type, self.namespace)
             self.out_ports.append(out_port_instance)
 
+    def get_child(self, name: str):
+        for child in self.children:
+            if child.name == name:
+                return child
+        ValueError(f"Child not found: instance {self.name}, child name {name}")
+        return None
+
+    def get_in_port(self, name: str):
+        for in_port in self.in_ports:
+            if in_port.name == name:
+                return in_port
+        ValueError(f"In port not found: instance {self.name}, in port name {name}")
+        return None
+
+    def get_out_port(self, name: str):
+        for out_port in self.out_ports:
+            if out_port.name == name:
+                return out_port
+        ValueError(f"Out port not found: instance {self.name}, out port name {name}")
+        return None
+
+    def set_in_port(self, in_port: InPort):
+        # check the external input is defined
+        external_input_list = self.element.config_yaml.get("external_interfaces").get("input")
+        external_input_list = [ext_input.get("name") for ext_input in external_input_list]
+        if in_port.name not in external_input_list:
+            raise ValueError(f"External input not found: {in_port.name} in {external_input_list}")
+
+        # check if there is a port with the same name
+        for port in self.in_ports:
+            if port.name == in_port.name:
+                # check if the message type is the same
+                if port.msg_type != in_port.msg_type:
+                    raise ValueError(
+                        f"Message type mismatch: {port.namespace}/{port.name} {port.msg_type} != {in_port.msg_type}"
+                    )
+                return
+        # same port name is not found, add the port
+        self.in_ports.append(in_port)
+
+    def set_out_port(self, out_port: OutPort):
+        # check the external output is defined
+        external_output_list = self.element.config_yaml.get("external_interfaces").get("output")
+        external_output_list = [ext_output.get("name") for ext_output in external_output_list]
+        if out_port.name not in external_output_list:
+            raise ValueError(
+                f"External output not found: {out_port.name} in {external_output_list}"
+            )
+
+        # check if there is a port with the same name
+        for port in self.out_ports:
+            if port.name == out_port.name:
+                # check if the message type is the same
+                if port.msg_type != out_port.msg_type:
+                    raise ValueError(
+                        f"Message type mismatch: {port.namespace}/{port.name} {port.msg_type} != {out_port.msg_type}"
+                    )
+                return
+        # same port name is not found, add the port
+        self.out_ports.append(out_port)
+
+    def create_external_ports(self, link_list):
+        # create in ports based on the link_list
+        for link in link_list:
+            # create port only if the namespace is the same as the instance
+            if link.from_port.namespace == self.namespace:
+                # set the in_port
+                self.set_in_port(link.from_port)
+            if link.to_port.namespace == self.namespace:
+                # set the out_port
+                self.set_out_port(link.to_port)
+
     def run_pipeline_configuration(self):
         if self.element_type != "pipeline":
             raise ValueError("run_pipeline_configuration is only supported for pipeline")
-
-        # # collect internal in/out ports from children
-        # internal_in_ports: List[InPort] = []
-        # internal_out_ports: List[OutPort] = []
-        # for child in self.children:
-        #     if not child.is_initialized:
-        #         raise ValueError("Child instance is not initialized")
-        #     internal_in_ports += child.in_ports
-        #     internal_out_ports += child.out_ports
-
-        # set external interfaces
-        external_input_list = self.element.config_yaml.get("external_interfaces").get("input")
-        external_output_list = self.element.config_yaml.get("external_interfaces").get("output")
 
         # set connections
         connection_list_yaml = self.element.config_yaml.get("connections")
@@ -184,87 +242,105 @@ class Instance:
             connection_list.append(connection_instance)
 
         # establish links
-        link_list: List[Link] = []
-
         for connection in connection_list:
             # case 1. from external input to internal input
             if connection.type == 1:
-                print(
-                    f"Connection: external/{connection.from_port_name}-> {connection.to_instance}/{connection.to_port_name}"
-                )
+                link_list: List[Link] = []
                 # find the to_instance from children
-                for child in self.children:
-                    if child.name == connection.to_instance:
-                        to_instance = child
-                        break
-                # match the port name
-                for in_port in to_instance.in_ports:
-                    if in_port.name == connection.to_port_name:
-                        to_port = in_port
-                        break
-                # create link
-                from_port = InPort(connection.from_port_name, to_port.msg_type, self.namespace)
-                link_list.append(Link(to_port.msg_type, from_port, to_port))
+                to_instance = self.get_child(connection.to_instance)
+                port_list = list(to_instance.in_ports)
+                if len(port_list) == 0:
+                    raise ValueError(f"No available port found in {to_instance.name}")
+                # if the port name is wildcard, find available port from the to_instance
+                if connection.to_port_name == "*":
+                    for port in port_list:
+                        from_port = InPort(port.name, port.msg_type, self.namespace)
+                        link = Link(port.msg_type, from_port, port)
+                        port.set_link(link)
+                        link_list.append(link)
+                else:
+                    # match the port name
+                    to_port = to_instance.get_in_port(connection.to_port_name)
+                    # create a link
+                    from_port = InPort(connection.from_port_name, to_port.msg_type, self.namespace)
+                    link = Link(to_port.msg_type, from_port, to_port)
+                    to_port.set_link(link)
+                    link_list.append(link)
+
+                for link in link_list:
+                    self.links.append(link)
+                    if debug_mode:
+                        print(
+                            f"Connection: {link.from_port.namespace}/{link.from_port.name}-> {link.to_port.namespace}/{link.to_port.name}"
+                        )
 
             # case 2. from internal output to internal input
             if connection.type == 2:
+                link_list: List[Link] = []
                 print(
                     f"Connection: {connection.from_instance}/{connection.from_port_name}-> {connection.to_instance}/{connection.to_port_name}"
                 )
                 # find the from_instance and to_instance from children
-                from_instance = None
-                to_instance = None
-                for child in self.children:
-                    if child.name == connection.from_instance:
-                        from_instance = child
-                    if child.name == connection.to_instance:
-                        to_instance = child
-                    if from_instance and to_instance:
-                        break
+                from_instance = self.get_child(connection.from_instance)
+                to_instance = self.get_child(connection.to_instance)
                 # find the from_port and to_port
-                from_port = None
-                to_port = None
-                for out_port in from_instance.out_ports:
-                    if out_port.name == connection.from_port_name:
-                        from_port = out_port
-                        break
-                for in_port in to_instance.in_ports:
-                    if in_port.name == connection.to_port_name:
-                        to_port = in_port
-                        break
+                from_port = from_instance.get_out_port(connection.from_port_name)
+                to_port = to_instance.get_in_port(connection.to_port_name)
+                # check if the message type is matched
+                if from_port.msg_type != to_port.msg_type:
+                    raise ValueError(
+                        f"Message type mismatch: {from_port.namespace}/{from_port.name} -> {to_port.namespace}/{to_port.name}   {from_port.msg_type} != {to_port.msg_type}"
+                    )
                 # create link
                 link_list.append(Link(from_port.msg_type, from_port, to_port))
+
+                # determine topic, based on the namespace
+
+                for link in link_list:
+                    self.links.append(link)
+                    if debug_mode:
+                        print(
+                            f"Connection: {link.from_port.namespace}/{link.from_port.name}-> {link.to_port.namespace}/{link.to_port.name}"
+                        )
 
             # case 3. from internal output to external output
             if connection.type == 3:
+                link_list: List[Link] = []
                 print(
-                    f"Connection: {connection.from_instance}/{connection.from_port_name}-> external/{connection.to_port_name}"
+                    f"Connection: {connection.from_instance}/{connection.from_port_name} -> external/{connection.to_port_name}"
                 )
                 # find the from_instance from children
-                for child in self.children:
-                    if child.name == connection.from_instance:
-                        from_instance = child
-                        break
-                # match the port name
-                for out_port in from_instance.out_ports:
-                    if out_port.name == connection.from_port_name:
-                        from_port = out_port
-                        break
-                # create link
-                to_port = OutPort(connection.to_port_name, from_port.msg_type, self.namespace)
-                link_list.append(Link(from_port.msg_type, from_port, to_port))
+                from_instance = self.get_child(connection.from_instance)
+                port_list = list(from_instance.out_ports)
+                if len(port_list) == 0:
+                    raise ValueError(f"No available port found in {from_instance.name}")
 
-        # create in ports based on the link_list
-        for link in link_list:
-            # create port only if the namespace is the same as the instance
-            if link.from_port.namespace == self.namespace:
-                # check if the out_port is already in the list
-                if link.from_port not in self.in_ports:
-                    self.in_ports.append(link.from_port)
-            if link.to_port.namespace == self.namespace:
-                # check if the in_port is already in the list
-                if link.to_port not in self.out_ports:
-                    self.out_ports.append(link.to_port)
+                # if the port name is wildcard, find available port from the from_instance
+                if connection.from_port_name == "*":
+                    for port in port_list:
+                        to_port = OutPort(port.name, port.msg_type, self.namespace)
+                        link = Link(port.msg_type, port, to_port)
+                        port.set_link(link)
+                        link_list.append(link)
+                else:
+                    # match the port name
+                    from_port = from_instance.get_out_port(connection.from_port_name)
+                    # create link
+                    to_port = OutPort(connection.to_port_name, from_port.msg_type, self.namespace)
+                    link = Link(from_port.msg_type, from_port, to_port)
+                    from_port.set_link(link)
+                    link_list.append(link)
+
+                for link in link_list:
+                    self.links.append(link)
+                    if debug_mode:
+                        print(
+                            f"Connection: {link.from_port.namespace}/{link.from_port.name}-> {link.to_port.namespace}/{link.to_port.name}"
+                        )
+
+        # create external ports
+        self.create_external_ports(self.links)
+
         if debug_mode:
             print(f"Instance run_pipeline_configuration: {len(link_list)} links are established")
             for link in link_list:

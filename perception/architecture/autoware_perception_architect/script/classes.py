@@ -301,38 +301,45 @@ class ArchitectureList:
 
 
 # classes for deployment
-class InPort:
-    def __init__(self, name, msg_type, namespace: List[str] = []):
+class Port:
+    def __init__(self, name: str, msg_type: str, namespace: List[str] = []):
         self.name = name
         self.msg_type = msg_type
-        self.namespace: List[str] = namespace
-        self.topic = None
-        # to enable/disable connection checker
-        self.is_required = True
-
-
-class OutPort:
-    def __init__(self, name, msg_type, namespace: List[str] = []):
-        self.name = name
-        self.msg_type = msg_type
-        self.namespace: List[str] = namespace
-        self.topic = None
-
-        # for topic monitor
-        self.period = 0.0
-        self.is_monitored = False
+        self.namespace = namespace
+        self.topic: List[str] = []
 
 
 class Link:
     def __init__(self, msg_type, from_port, to_port):
         self.msg_type: str = msg_type
         # from-port and to-port connection
-        self.from_port: [InPort, OutPort] = from_port
-        #   from-port type is InPort: from an pipeline external input interface
-        #   from-port type is OutPort: from an module output
-        self.to_port: [InPort, OutPort] = to_port
-        #   to-port type is OutPort: to an pipeline external output interface
-        #   to-port type is InPort: to an module input
+        self.from_port: Port = from_port
+        self.to_port: Port = to_port
+
+
+class InPort(Port):
+    def __init__(self, name, msg_type, namespace: List[str] = []):
+        super().__init__(name, msg_type, namespace)
+        # to enable/disable connection checker
+        self.is_required = True
+        # link
+        self.link: Link = None
+
+    def set_link(self, link: Link):
+        self.link = link
+
+
+class OutPort(Port):
+    def __init__(self, name, msg_type, namespace: List[str] = []):
+        super().__init__(name, msg_type, namespace)
+        # for topic monitor
+        self.period = 0.0
+        self.is_monitored = False
+        # link
+        self.link: Link = None
+
+    def set_link(self, link: Link):
+        self.link = link
 
 
 class Connection:
