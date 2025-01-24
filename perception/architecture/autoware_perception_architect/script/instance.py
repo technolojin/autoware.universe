@@ -15,18 +15,7 @@
 
 from typing import List
 
-from classes import ArchitectureElement
-from classes import ArchitectureList
-from classes import Connection
-from classes import ElementList
-from classes import InPort
-from classes import Link
-from classes import ModuleElement
-from classes import ModuleList
-from classes import OutPort
-from classes import ParameterSetList
-from classes import PipelineElement
-from classes import PipelineList
+import classes as awa_cls
 from classes import element_name_decode
 from classes import load_config_yaml
 
@@ -42,6 +31,7 @@ class Instance:
         self.namespace: List[str] = namespace.copy()
         # add the instance name to the namespace
         self.namespace.append(name)
+        # create namespace string, FOR ERROR MESSAGE ONLY
         self.namespace_str: str = "/" + "/".join(self.namespace)
 
         self.compute_unit: str = compute_unit
@@ -51,21 +41,21 @@ class Instance:
             raise ValueError("Instance layer is too deep")
 
         # element
-        self.element: [ModuleElement, PipelineElement, ArchitectureElement] = None
+        self.element: [awa_cls.ModuleElement, awa_cls.PipelineElement, awa_cls.ArchitectureElement] = None
         self.element_type: str = None
         self.parent: Instance = None
         self.children: List[Instance] = []
         self.parent_pipeline_list: List[str] = []
 
         # interface
-        self.in_ports: List[InPort] = []
-        self.out_ports: List[OutPort] = []
-        self.links: List[Link] = []
+        self.in_ports: List[awa_cls.InPort] = []
+        self.out_ports: List[awa_cls.OutPort] = []
+        self.links: List[awa_cls.Link] = []
 
         # status
         self.is_initialized = False
 
-    def set_architecture(self, architecture: ArchitectureElement, module_list, pipeline_list):
+    def set_architecture(self, architecture: awa_cls.ArchitectureElement, module_list, pipeline_list):
         if debug_mode:
             print(
                 f"Instance set_architecture: Setting {architecture.full_name} instance {self.name}"
@@ -73,8 +63,16 @@ class Instance:
         self.element = architecture
         self.element_type = "architecture"
 
-        # set component instances
-        for component in architecture.config_yaml.get("components"):
+        # 1. set component instances
+        self.set_component_instances(module_list, pipeline_list)
+
+        # 2. build the connection tree
+        #      set message topics
+        self.set_connections()
+
+    def set_component_instances(self, module_list, pipeline_list):
+        # 1. set component instances
+        for component in self.element.config_yaml.get("components"):
             compute_unit_name = component.get("unit")
 
             instance_name = component.get("component")
@@ -86,51 +84,8 @@ class Instance:
             instance.set_element(element_id, module_list, pipeline_list)
 
             self.children.append(instance)
-
-        # set connections
-        connection_list_yaml = architecture.config_yaml.get("connections")
-        if len(connection_list_yaml) == 0:
-            raise ValueError("No connections found in the pipeline configuration")
-
-        connection_list: List[Connection] = []
-        for connection in connection_list_yaml:
-            connection_instance = Connection(connection)
-            connection_list.append(connection_instance)
-
-        # establish links
-        link_list: List[Link] = []
-        for connection in connection_list:
-            # find the from_instance and to_instance from children
-            from_instance = self.get_child(connection.from_instance)
-            to_instance = self.get_child(connection.to_instance)
-            # find the from_port and to_port
-            from_port = from_instance.get_out_port(connection.from_port_name)
-            to_port = to_instance.get_in_port(connection.to_port_name)
-            # check if the port type
-            if not isinstance(from_port, OutPort):
-                raise ValueError(f"Invalid port type: {from_port.full_name}")
-            if not isinstance(to_port, InPort):
-                raise ValueError(f"Invalid port type: {to_port.full_name}")
-            # create link
-            link = Link(from_port.msg_type, from_port, to_port, self.namespace)
-            link_list.append(link)
-
-        for link in link_list:
-            self.links.append(link)
-            if debug_mode:
-                print(f"Connection: {link.from_port.full_name}-> {link.to_port.full_name}")
-        if debug_mode:
-            print(f"Instance {self.name} set_architecture: {len(self.links)} links are established")
-            for link in self.links:
-                print(f"  Link: {link.from_port.full_name} -> {link.to_port.full_name}")
-
         # all children are initialized
         self.is_initialized = True
-
-        # check ports
-        if debug_mode:
-            print(f"Instance {self.name}: checking ports")
-        self.check_ports()
 
     def set_element(self, element_id, module_list, pipeline_list):
         element_name, element_type = element_name_decode(element_id)
@@ -179,6 +134,111 @@ class Instance:
         else:
             raise ValueError(f"Invalid element type: {element_type}")
 
+    def run_pipeline_configuration(self):
+        if self.element_type != "pipeline":
+            raise ValueError("run_pipeline_configuration is only supported for pipeline")
+
+        # set connections
+        connection_list_yaml = self.element.config_yaml.get("connections")
+        if len(connection_list_yaml) == 0:
+            raise ValueError("No connections found in the pipeline configuration")
+
+        connection_list: List[awa_cls.Connection] = []
+        for connection in connection_list_yaml:
+            connection_instance = awa_cls.Connection(connection)
+            connection_list.append(connection_instance)
+
+        # establish links
+        for connection in connection_list:
+            # case 1. from external input to internal input
+            if connection.type == 1:
+                link_list: List[awa_cls.Link] = []
+                # find the to_instance from children
+                to_instance = self.get_child(connection.to_instance)
+                port_list = list(to_instance.in_ports)
+                if len(port_list) == 0:
+                    raise ValueError(f"No available port found in {to_instance.name}")
+                # if the port name is wildcard, find available port from the to_instance
+                if connection.to_port_name == "*":
+                    for port in port_list:
+                        from_port = awa_cls.InPort(port.name, port.msg_type, self.namespace)
+                        link = awa_cls.Link(port.msg_type, from_port, port, self.namespace)
+                        link_list.append(link)
+                else:
+                    # match the port name
+                    to_port = to_instance.get_in_port(connection.to_port_name)
+                    # create a link
+                    from_port = awa_cls.InPort(connection.from_port_name, to_port.msg_type, self.namespace)
+                    link = awa_cls.Link(to_port.msg_type, from_port, to_port, self.namespace)
+                    link_list.append(link)
+
+                for link in link_list:
+                    self.links.append(link)
+                    if debug_mode:
+                        print(f"Connection: {link.from_port.full_name}-> {link.to_port.full_name}")
+
+            # case 2. from internal output to internal input
+            if connection.type == 2:
+                link_list: List[awa_cls.Link] = []
+                # find the from_instance and to_instance from children
+                from_instance = self.get_child(connection.from_instance)
+                to_instance = self.get_child(connection.to_instance)
+                # find the from_port and to_port
+                from_port = from_instance.get_out_port(connection.from_port_name)
+                to_port = to_instance.get_in_port(connection.to_port_name)
+                # create link
+                link = awa_cls.Link(from_port.msg_type, from_port, to_port, self.namespace)
+                link_list.append(link)
+
+                for link in link_list:
+                    self.links.append(link)
+                    if debug_mode:
+                        print(f"Connection: {link.from_port.full_name}-> {link.to_port.full_name}")
+
+            # case 3. from internal output to external output
+            if connection.type == 3:
+                link_list: List[awa_cls.Link] = []
+
+                # find the from_instance from children
+                from_instance = self.get_child(connection.from_instance)
+                port_list = list(from_instance.out_ports)
+                if len(port_list) == 0:
+                    raise ValueError(f"No available port found in {from_instance.name}")
+
+                # if the port name is wildcard, find available port from the from_instance
+                if connection.from_port_name == "*":
+                    for port in port_list:
+                        to_port = awa_cls.OutPort(port.name, port.msg_type, self.namespace)
+                        link = awa_cls.Link(port.msg_type, port, to_port, self.namespace)
+                        link_list.append(link)
+                else:
+                    # match the port name
+                    from_port = from_instance.get_out_port(connection.from_port_name)
+                    # create link
+                    to_port = awa_cls.OutPort(connection.to_port_name, from_port.msg_type, self.namespace)
+                    link = awa_cls.Link(from_port.msg_type, from_port, to_port, self.namespace)
+                    link_list.append(link)
+
+                for link in link_list:
+                    self.links.append(link)
+                    if debug_mode:
+                        print(f"Connection: {link.from_port.full_name}-> {link.to_port.full_name}")
+
+        # create external ports
+        self.create_external_ports(self.links)
+
+        if debug_mode:
+            print(
+                f"Instance {self.name} run_pipeline_configuration: {len(self.links)} links are established"
+            )
+            for link in self.links:
+                print(f"  Link: {link.from_port.full_name} -> {link.to_port.full_name}")
+            # new ports
+            for in_port in self.in_ports:
+                print(f"  New in port: {in_port.full_name}")
+            for out_port in self.out_ports:
+                print(f"  New out port: {out_port.full_name}")
+
     def run_module_configuration(self):
         if self.element_type != "module":
             raise ValueError("run_module_configuration is only supported for module")
@@ -187,14 +247,14 @@ class Instance:
         for in_port in self.element.config_yaml.get("inputs"):
             in_port_name = in_port.get("name")
             in_port_msg_type = in_port.get("message_type")
-            in_port_instance = InPort(in_port_name, in_port_msg_type, self.namespace)
+            in_port_instance = awa_cls.InPort(in_port_name, in_port_msg_type, self.namespace)
             self.in_ports.append(in_port_instance)
 
         # set out_ports
         for out_port in self.element.config_yaml.get("outputs"):
             out_port_name = out_port.get("name")
             out_port_msg_type = out_port.get("message_type")
-            out_port_instance = OutPort(out_port_name, out_port_msg_type, self.namespace)
+            out_port_instance = awa_cls.OutPort(out_port_name, out_port_msg_type, self.namespace)
             self.out_ports.append(out_port_instance)
 
     def get_child(self, name: str):
@@ -202,6 +262,50 @@ class Instance:
             if child.name == name:
                 return child
         raise ValueError(f"Child not found: child name {name}, instance of {self.name}")
+
+    def set_connections(self):
+        # 2. connect instances
+        # set connections
+        connection_list_yaml = self.element.config_yaml.get("connections")
+        if len(connection_list_yaml) == 0:
+            raise ValueError("No connections found in the pipeline configuration")
+
+        connection_list: List[awa_cls.Connection] = []
+        for connection in connection_list_yaml:
+            connection_instance = awa_cls.Connection(connection)
+            connection_list.append(connection_instance)
+
+        # establish links. topics will be defined in this step
+        link_list: List[awa_cls.Link] = []
+        for connection in connection_list:
+            # find the from_instance and to_instance from children
+            from_instance = self.get_child(connection.from_instance)
+            to_instance = self.get_child(connection.to_instance)
+            # find the from_port and to_port
+            from_port = from_instance.get_out_port(connection.from_port_name)
+            to_port = to_instance.get_in_port(connection.to_port_name)
+            # check if the port type
+            if not isinstance(from_port, awa_cls.OutPort):
+                raise ValueError(f"Invalid port type: {from_port.full_name}")
+            if not isinstance(to_port, awa_cls.InPort):
+                raise ValueError(f"Invalid port type: {to_port.full_name}")
+            # create link
+            link = awa_cls.Link(from_port.msg_type, from_port, to_port, self.namespace)
+            link_list.append(link)
+
+        for link in link_list:
+            self.links.append(link)
+            if debug_mode:
+                print(f"Connection: {link.from_port.full_name}-> {link.to_port.full_name}")
+        if debug_mode:
+            print(f"Instance {self.name} set_architecture: {len(self.links)} links are established")
+            for link in self.links:
+                print(f"  Link: {link.from_port.full_name} -> {link.to_port.full_name}")
+
+        # check ports
+        if debug_mode:
+            print(f"Instance {self.name}: checking ports")
+        self.check_ports()
 
     def get_in_port(self, name: str):
         for in_port in self.in_ports:
@@ -215,7 +319,7 @@ class Instance:
                 return out_port
         raise ValueError(f"Out port not found: out-port name {name}, instance of {self.name}")
 
-    def set_in_port(self, in_port: InPort):
+    def set_in_port(self, in_port: awa_cls.InPort):
         # check the external input is defined
         external_input_list = self.element.config_yaml.get("external_interfaces").get("input")
         external_input_list = [ext_input.get("name") for ext_input in external_input_list]
@@ -236,7 +340,7 @@ class Instance:
         # same port name is not found, add the port
         self.in_ports.append(in_port)
 
-    def set_out_port(self, out_port: OutPort):
+    def set_out_port(self, out_port: awa_cls.OutPort):
         # check the external output is defined
         external_output_list = self.element.config_yaml.get("external_interfaces").get("output")
         external_output_list = [ext_output.get("name") for ext_output in external_output_list]
@@ -270,118 +374,15 @@ class Instance:
                 # set the out_port
                 self.set_out_port(link.to_port)
 
-    def run_pipeline_configuration(self):
-        if self.element_type != "pipeline":
-            raise ValueError("run_pipeline_configuration is only supported for pipeline")
-
-        # set connections
-        connection_list_yaml = self.element.config_yaml.get("connections")
-        if len(connection_list_yaml) == 0:
-            raise ValueError("No connections found in the pipeline configuration")
-
-        connection_list: List[Connection] = []
-        for connection in connection_list_yaml:
-            connection_instance = Connection(connection)
-            connection_list.append(connection_instance)
-
-        # establish links
-        for connection in connection_list:
-            # case 1. from external input to internal input
-            if connection.type == 1:
-                link_list: List[Link] = []
-                # find the to_instance from children
-                to_instance = self.get_child(connection.to_instance)
-                port_list = list(to_instance.in_ports)
-                if len(port_list) == 0:
-                    raise ValueError(f"No available port found in {to_instance.name}")
-                # if the port name is wildcard, find available port from the to_instance
-                if connection.to_port_name == "*":
-                    for port in port_list:
-                        from_port = InPort(port.name, port.msg_type, self.namespace)
-                        link = Link(port.msg_type, from_port, port, self.namespace)
-                        link_list.append(link)
-                else:
-                    # match the port name
-                    to_port = to_instance.get_in_port(connection.to_port_name)
-                    # create a link
-                    from_port = InPort(connection.from_port_name, to_port.msg_type, self.namespace)
-                    link = Link(to_port.msg_type, from_port, to_port, self.namespace)
-                    link_list.append(link)
-
-                for link in link_list:
-                    self.links.append(link)
-                    if debug_mode:
-                        print(f"Connection: {link.from_port.full_name}-> {link.to_port.full_name}")
-
-            # case 2. from internal output to internal input
-            if connection.type == 2:
-                link_list: List[Link] = []
-                # find the from_instance and to_instance from children
-                from_instance = self.get_child(connection.from_instance)
-                to_instance = self.get_child(connection.to_instance)
-                # find the from_port and to_port
-                from_port = from_instance.get_out_port(connection.from_port_name)
-                to_port = to_instance.get_in_port(connection.to_port_name)
-                # create link
-                link = Link(from_port.msg_type, from_port, to_port, self.namespace)
-                link_list.append(link)
-
-                for link in link_list:
-                    self.links.append(link)
-                    if debug_mode:
-                        print(f"Connection: {link.from_port.full_name}-> {link.to_port.full_name}")
-
-            # case 3. from internal output to external output
-            if connection.type == 3:
-                link_list: List[Link] = []
-
-                # find the from_instance from children
-                from_instance = self.get_child(connection.from_instance)
-                port_list = list(from_instance.out_ports)
-                if len(port_list) == 0:
-                    raise ValueError(f"No available port found in {from_instance.name}")
-
-                # if the port name is wildcard, find available port from the from_instance
-                if connection.from_port_name == "*":
-                    for port in port_list:
-                        to_port = OutPort(port.name, port.msg_type, self.namespace)
-                        link = Link(port.msg_type, port, to_port, self.namespace)
-                        link_list.append(link)
-                else:
-                    # match the port name
-                    from_port = from_instance.get_out_port(connection.from_port_name)
-                    # create link
-                    to_port = OutPort(connection.to_port_name, from_port.msg_type, self.namespace)
-                    link = Link(from_port.msg_type, from_port, to_port, self.namespace)
-                    link_list.append(link)
-
-                for link in link_list:
-                    self.links.append(link)
-                    if debug_mode:
-                        print(f"Connection: {link.from_port.full_name}-> {link.to_port.full_name}")
-
-        # create external ports
-        self.create_external_ports(self.links)
-
-        if debug_mode:
-            print(
-                f"Instance {self.name} run_pipeline_configuration: {len(self.links)} links are established"
-            )
-            for link in self.links:
-                print(f"  Link: {link.from_port.full_name} -> {link.to_port.full_name}")
-            # new ports
-            for in_port in self.in_ports:
-                print(f"  New in port: {in_port.full_name}")
-            for out_port in self.out_ports:
-                print(f"  New out port: {out_port.full_name}")
-
     def check_ports(self):
         # recursive call for children
         for child in self.children:
             child.check_ports()
 
+        # check ports only for module. others are only for connection
         if self.element_type != "module":
             return
+
         # check ports
         for in_port in self.in_ports:
             print(f"  In port: {in_port.full_name}")
@@ -390,8 +391,9 @@ class Instance:
             if server_port_list == []:
                 print("    Server port not found")
                 continue
-            for server_port in server_port_list:
-                print(f"    server: {server_port.full_name}, topic: {server_port.topic}")
+            if debug_mode:
+                for server_port in server_port_list:
+                    print(f"    server: {server_port.full_name}, topic: {server_port.topic}")
 
         for out_port in self.out_ports:
             print(f"  Out port: {out_port.full_name}")
@@ -399,23 +401,29 @@ class Instance:
             if user_port_list == []:
                 print("    User port not found")
                 continue
-            for user_port in user_port_list:
-                print(f"    user: {user_port.full_name}")
+            if debug_mode:
+                for user_port in user_port_list:
+                    print(f"    user: {user_port.full_name}")
+
+    def set_parameters(self, parameter_set_list: awa_cls.ParameterSetList):
+        # 3. set parameters
+        connection_list_yaml = self.element.config_yaml.get("parameter_sets")
+
 
 
 class Deployment:
-    def __init__(self, config_yaml_dir: str, element_list: ElementList):
+    def __init__(self, config_yaml_dir: str, element_list: awa_cls.ElementList):
         # load yaml file
         self.config_yaml_dir = config_yaml_dir
         self.config_yaml = load_config_yaml(config_yaml_dir)
         self.name = self.config_yaml.get("name")
 
-        self.module_list: ModuleList = ModuleList(element_list.get_module_list())
-        self.pipeline_list: PipelineList = PipelineList(element_list.get_pipeline_list())
-        self.parameter_set_list: ParameterSetList = ParameterSetList(
+        self.module_list: awa_cls.ModuleList = awa_cls.ModuleList(element_list.get_module_list())
+        self.pipeline_list: awa_cls.PipelineList = awa_cls.PipelineList(element_list.get_pipeline_list())
+        self.parameter_set_list: awa_cls.ParameterSetList = awa_cls.ParameterSetList(
             element_list.get_parameter_set_list()
         )
-        self.architecture_list: ArchitectureList = ArchitectureList(
+        self.architecture_list: awa_cls.ArchitectureList = awa_cls.ArchitectureList(
             element_list.get_architecture_list()
         )
 
@@ -424,10 +432,12 @@ class Deployment:
 
         # member variables
         self.architecture_instance: Instance = None
-        # self.connections: List[Link] = []
 
         # build the deployment
         self.build()
+
+        # set the vehicle individual parameters
+        #   sensor calibration, vehicle parameters, map, etc.
 
     def check_config(self) -> bool:
         # Check the name field
@@ -462,18 +472,17 @@ class Deployment:
         if not architecture:
             raise ValueError(f"Architecture not found: {self.config_yaml.get('architecture')}")
 
-        # 1. build the node tree, recursive algorithm
-        architecture_instance = Instance(self.name)
-        architecture_instance.set_architecture(architecture, self.module_list, self.pipeline_list)
+        # 1. set architecture instance
+        self.architecture_instance = Instance(self.name)
+        self.architecture_instance.set_architecture(
+            architecture, self.module_list, self.pipeline_list
+        )
 
-        # 2. build the connection tree
+        # 2. set parameter sets
+        self.architecture_instance.set_parameters(self.parameter_set_list)
 
-        # 3. set message topics
+        # 3. generate system monitor configuration
 
-        # 4. build the parameter connections
+        # 4. build the launcher
 
-        # 5. generate system monitor configuration
-
-        # 6. build the launcher
-
-        # 7. visualize the deployment diagram via plantuml
+        # 5. visualize the deployment diagram via plantuml

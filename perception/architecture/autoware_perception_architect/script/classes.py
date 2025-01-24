@@ -309,6 +309,7 @@ class Port:
         self.topic: List[str] = []
         self.full_name = "/" + "/".join(namespace) + "/" + name
         self.reference: List["Port"] = []
+        self.topic: List[str] = []
 
     def set_references(self, port_list: List["Port"]):
         # check if the port is already in the reference list
@@ -322,13 +323,14 @@ class Port:
             return [self]
         return self.reference
 
+    def set_topic(self, topic_namespace: List[str], topic_name: str):
+        self.topic = topic_namespace + [topic_name]
+
 
 class InPort(Port):
     def __init__(self, name, msg_type, namespace: List[str] = []):
         super().__init__(name, msg_type, namespace)
         self.full_name = "/" + "/".join(namespace) + "/input/" + name
-        # topic to subscribe
-        self.topic: List[str] = []
         # to enable/disable connection checker
         self.is_required = True
         # reference port
@@ -346,10 +348,6 @@ class OutPort(Port):
     def __init__(self, name, msg_type, namespace: List[str] = []):
         super().__init__(name, msg_type, namespace)
         self.full_name = "/" + "/".join(namespace) + "/output/" + name
-        # determine export topic namespace
-        self.topic_namespace = []
-        self.topic_name = ""
-        self.topic: List[str] = []
         # for topic monitor
         self.period = 0.0
         self.is_monitored = False
@@ -362,11 +360,6 @@ class OutPort(Port):
         for port in port_list:
             if port.full_name not in user_name_list:
                 self.users.append(port)
-
-    def set_topic(self, namespace: List[str], name: str):
-        self.topic_namespace = namespace
-        self.topic_name = name
-        self.topic = namespace + [name]
 
 
 class Link:
@@ -408,17 +401,18 @@ class Link:
             for to_port_ref in to_port_list:
                 to_port_ref.set_servers(from_port_list)
 
-            # set the topic to the to-port
-            topic = self.from_port.namespace + [self.from_port.name]
+            # determine the topic, set it to the from-ports to publish and to-ports to subscribe
+            for from_port_ref in from_port_list:
+                from_port_ref.set_topic(self.from_port.namespace, self.from_port.name)
             for to_port_ref in to_port_list:
-                to_port_ref.topic = topic
+                to_port_ref.set_topic(self.from_port.namespace, self.from_port.name)
 
         # case 2: from internal output to external output
         elif is_from_port_internal and not is_to_port_internal:
             # bring the from-port reference to the to-port reference
             reference_port_list = self.from_port.get_reference_list()
             self.to_port.set_references(reference_port_list)
-            # set the topic name
+            # set the topic name to the external output, whether it is connected or not
             for reference_port in reference_port_list:
                 reference_port.set_topic(self.to_port.namespace, self.to_port.name)
 

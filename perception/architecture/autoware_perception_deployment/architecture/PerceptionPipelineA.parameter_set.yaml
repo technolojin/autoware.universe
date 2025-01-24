@@ -3,19 +3,19 @@ package: autoware_perception_deployment
 parameters:
   - name: detector_a1
     parameter_paths:
-      - model_param_path: "path/to/model_a.param.yaml"
-      - ml_package_param_path: "path/to/model_a_ml_package.param.yaml"
-      - class_remapper_param_path: "path/to/model_a_class_remapper.param.yaml"
+      - model_param_path: "custom/parameter/model_a.param.yaml"
+      - ml_package_param_path: "custom/parameter/model_a_ml_package.param.yaml"
+      - class_remapper_param_path: "custom/parameter/model_a_class_remapper.param.yaml"
   - name: detector_a2
     parameter_paths:
-      - model_param_path: "path/to/model_b.param.yaml"
-      - ml_package_param_path: "path/to/model_b_ml_package.param.yaml"
-      - class_remapper_param_path: "path/to/model_b_class_remapper.param.yaml"
+      - model_param_path: "custom/parameter/model_b.param.yaml"
+      - ml_package_param_path: "custom/parameter/model_b_ml_package.param.yaml"
+      - class_remapper_param_path: "custom/parameter/model_b_class_remapper.param.yaml"
   - name: filter_a
     parameter_paths:
-      - filtering_range_param: "path/to/filter_a.param.yaml"
+      - filtering_range_param: "custom/parameter/filter_a.param.yaml"
   - name: tracker
     parameter_paths:
-      - tracker_setting_path: "path/to/tracker.param.yaml"
-      - data_association_matrix_path: "path/to/data_association_matrix.param.yaml"
-      - input_channels_path: "path/to/input_channels.param.yaml"
+      - tracker_setting_path: "custom/parameter/tracker.param.yaml"
+      - data_association_matrix_path: "custom/parameter/data_association_matrix.param.yaml"
+      - input_channels_path: "custom/parameter/input_channels.param.yaml"

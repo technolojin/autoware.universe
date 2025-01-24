@@ -1,4 +1,3 @@
-
 # module information
 name: PlanningDummy.module
 
@@ -7,7 +6,7 @@ launch:
   plugin: autoware::perception_dummy_nodes::Planning
 
 # interface
-inputs: 
+inputs:
   - name: tracked_objects
     message_type: autoware_perception_msgs/msg/TrackedObjects
   - name: predicted_objects
