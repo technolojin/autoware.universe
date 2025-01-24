@@ -228,7 +228,7 @@ class Instance:
                 # check if the message type is the same
                 if port.msg_type != in_port.msg_type:
                     raise ValueError(
-                        f"Message type mismatch: {port.namespace}/{port.name} {port.msg_type} != {in_port.msg_type}"
+                        f"Message type mismatch: {port.full_name} {port.msg_type} != {in_port.msg_type}"
                     )
                 # same port name is found, update reference
                 port.set_references(in_port.reference)
@@ -251,7 +251,7 @@ class Instance:
                 # check if the message type is the same
                 if port.msg_type != out_port.msg_type:
                     raise ValueError(
-                        f"Message type mismatch: {port.namespace}/{port.name} {port.msg_type} != {out_port.msg_type}"
+                        f"Message type mismatch: {port.full_name} {port.msg_type} != {out_port.msg_type}"
                     )
                 # same port name is found, update reference
                 port.set_references(out_port.reference)
@@ -385,15 +385,15 @@ class Instance:
         # check ports
         for in_port in self.in_ports:
             print(f"  In port: {in_port.full_name}")
+            print(f"    Subscribing topic: {in_port.topic}")
             server_port_list = in_port.servers
             if server_port_list == []:
                 print("    Server port not found")
                 continue
             for server_port in server_port_list:
-                print(f"    server: {server_port.full_name}")
+                print(f"    server: {server_port.full_name}, topic: {server_port.topic}")
 
         for out_port in self.out_ports:
-
             print(f"  Out port: {out_port.full_name}")
             user_port_list = out_port.users
             if user_port_list == []:
