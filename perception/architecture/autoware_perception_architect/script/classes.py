@@ -307,40 +307,55 @@ class Port:
         self.msg_type = msg_type
         self.namespace = namespace
         self.topic: List[str] = []
-        self.full_name = "/".join(namespace) + "/" + name
+        self.full_name = "/" + "/".join(namespace) + "/" + name
+        self.reference: List["Port"] = []
+
+    def set_references(self, port_list: List["Port"]):
+        # check if the port is already in the reference list
+        reference_name_list = [p.full_name for p in self.reference]
+        for port in port_list:
+            if port.full_name not in reference_name_list:
+                self.reference.append(port)
+
+    def get_reference_list(self):
+        if self.reference == []:
+            return [self]
+        return self.reference
 
 
 class InPort(Port):
     def __init__(self, name, msg_type, namespace: List[str] = []):
         super().__init__(name, msg_type, namespace)
+        self.full_name = "/" + "/".join(namespace) + "/input/" + name
         # to enable/disable connection checker
         self.is_required = True
         # reference port
-        self.reference: List[Port] = []
+        self.servers: List[Port] = []
 
-    def set_references(self, port_list: List[Port]):
+    def set_servers(self, port_list: List[Port]):
         # check if the port is already in the reference list
-        reference_name_list = [p.full_name for p in self.reference]
+        server_name_list = [p.full_name for p in self.servers]
         for port in port_list:
-            if port.full_name not in reference_name_list:
-                self.reference.append(port)
+            if port.full_name not in server_name_list:
+                self.servers.append(port)
 
 
 class OutPort(Port):
     def __init__(self, name, msg_type, namespace: List[str] = []):
         super().__init__(name, msg_type, namespace)
+        self.full_name = "/" + "/".join(namespace) + "/output/" + name
         # for topic monitor
         self.period = 0.0
         self.is_monitored = False
         # reference port
-        self.reference: List[Port] = []
+        self.users: List[Port] = []
 
-    def set_references(self, port_list: List[Port]):
+    def set_users(self, port_list: List[Port]):
         # check if the port is already in the reference list
-        reference_name_list = [p.full_name for p in self.reference]
+        user_name_list = [p.full_name for p in self.users]
         for port in port_list:
-            if port.full_name not in reference_name_list:
-                self.reference.append(port)
+            if port.full_name not in user_name_list:
+                self.users.append(port)
 
 
 class Link:
@@ -363,12 +378,8 @@ class Link:
         # case 1: from internal output to internal input
         if is_from_port_internal and is_to_port_internal:
             # propagate and finish the connection
-            from_port_list = self.from_port.reference
-            if from_port_list == []:
-                from_port_list = [self.from_port]
-            to_port_list = self.to_port.reference
-            if to_port_list == []:
-                to_port_list = [self.to_port]
+            from_port_list = self.from_port.get_reference_list()
+            to_port_list = self.to_port.get_reference_list()
 
             # check the message type is the same
             for from_port in from_port_list:
@@ -376,29 +387,26 @@ class Link:
                     raise ValueError(f"Invalid connection: {from_port.name} -> {self.to_port.name}")
             for to_port in to_port_list:
                 if to_port.msg_type != self.msg_type:
-                    raise ValueError(f"Type mismatch: {self.msg_type}({self.from_port.name}) -> {to_port.msg_type}({to_port.name})")
+                    raise ValueError(
+                        f"Type mismatch: {self.msg_type}({self.from_port.name}) -> {to_port.msg_type}({to_port.name})"
+                    )
 
             # link the ports
-            to_port.set_references(from_port_list)
-            from_port.set_references(to_port_list)
+            for from_port_ref in from_port_list:
+                from_port_ref.set_users(to_port_list)
+            for to_port_ref in to_port_list:
+                to_port_ref.set_servers(from_port_list)
 
         # case 2: from internal output to external output
         elif is_from_port_internal and not is_to_port_internal:
-            # set the reference port of the to-port
-            reference_port_list = self.from_port.reference
-            if reference_port_list == []:
-                # from_port is an original port
-                reference_port_list = [self.from_port]
-            # reference_port.namespace.pop()
+            # bring the from-port reference to the to-port reference
+            reference_port_list = self.from_port.get_reference_list()
             self.to_port.set_references(reference_port_list)
 
         # case 3: from external input to internal input
         elif not is_from_port_internal and is_to_port_internal:
-            # set the reference port of the from-port
-            reference_port_list = self.to_port.reference
-            if reference_port_list == []:
-                # to_port is an original port
-                reference_port_list = [self.to_port]
+            # bring the to-port reference to the from-port reference
+            reference_port_list = self.to_port.get_reference_list()
             self.from_port.set_references(reference_port_list)
 
         # case 4: from-port is InPort and to-port is OutPort

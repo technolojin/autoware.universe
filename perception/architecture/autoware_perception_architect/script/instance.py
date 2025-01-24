@@ -70,6 +70,9 @@ class Instance:
             print(
                 f"Instance set_architecture: Setting {architecture.full_name} instance {self.name}"
             )
+        self.element = architecture
+        self.element_type = "architecture"
+
         # set component instances
         for component in architecture.config_yaml.get("components"):
             compute_unit_name = component.get("unit")
@@ -164,10 +167,6 @@ class Instance:
         elif element_type == "module":
             if debug_mode:
                 print(f"Instance set_element: Setting {element_id} instance {self.namespace_str}")
-            # if self.layer == 0:
-            #     raise ValueError(
-            #         "Module is not supported in the top level of the deployment, {element_id}"
-            #     )
             self.element = module_list.get(element_name)
             self.element_type = element_type
 
@@ -381,32 +380,27 @@ class Instance:
         for child in self.children:
             child.check_ports()
 
+        if self.element_type != "module":
+            return
         # check ports
         for in_port in self.in_ports:
-            # check if the port is InPort
-            if not isinstance(in_port, InPort):
+            print(f"  In port: {in_port.full_name}")
+            server_port_list = in_port.servers
+            if server_port_list == []:
+                print("    Server port not found")
                 continue
-
-            print(f"  In port: {'/'.join(in_port.namespace)}/input/{in_port.name}")
-            ref_port_list = in_port.reference
-            if ref_port_list == []:
-                print("    Reference port not found")
-                continue
-            for ref_port in ref_port_list:
-                print(f"    message from: {'/'.join(ref_port.namespace)}/output/{ref_port.name}")
+            for server_port in server_port_list:
+                print(f"    server: {server_port.full_name}")
 
         for out_port in self.out_ports:
-            # check if the port is OutPort
-            if not isinstance(out_port, OutPort):
-                continue
 
-            print(f"  Out port: {'/'.join(out_port.namespace)}/output/{out_port.name}")
-            ref_port_list = out_port.reference
-            if ref_port_list == []:
-                print("    Reference port not found")
+            print(f"  Out port: {out_port.full_name}")
+            user_port_list = out_port.users
+            if user_port_list == []:
+                print("    User port not found")
                 continue
-            for ref_port in ref_port_list:
-                print(f"    subscribed by: {'/'.join(ref_port.namespace)}/input/{ref_port.name}")
+            for user_port in user_port_list:
+                print(f"    user: {user_port.full_name}")
 
 
 class Deployment:
