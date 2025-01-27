@@ -41,7 +41,11 @@ class Instance:
             raise ValueError("Instance layer is too deep")
 
         # element
-        self.element: [awa_cls.ModuleElement, awa_cls.PipelineElement, awa_cls.ArchitectureElement] = None
+        self.element: [
+            awa_cls.ModuleElement,
+            awa_cls.PipelineElement,
+            awa_cls.ArchitectureElement,
+        ] = None
         self.element_type: str = None
         self.parent: Instance = None
         self.children: List[Instance] = []
@@ -55,37 +59,6 @@ class Instance:
         # status
         self.is_initialized = False
 
-    def set_architecture(self, architecture: awa_cls.ArchitectureElement, module_list, pipeline_list):
-        if debug_mode:
-            print(
-                f"Instance set_architecture: Setting {architecture.full_name} instance {self.name}"
-            )
-        self.element = architecture
-        self.element_type = "architecture"
-
-        # 1. set component instances
-        self.set_component_instances(module_list, pipeline_list)
-
-        # 2. build the connection tree
-        #      set message topics
-        self.set_connections()
-
-    def set_component_instances(self, module_list, pipeline_list):
-        # 1. set component instances
-        for component in self.element.config_yaml.get("components"):
-            compute_unit_name = component.get("unit")
-
-            instance_name = component.get("component")
-            element_id = component.get("element")
-            namespace = component.get("namespace")
-
-            instance = Instance(instance_name, compute_unit_name, [namespace])
-            instance.parent = self
-            instance.set_element(element_id, module_list, pipeline_list)
-
-            self.children.append(instance)
-        # all children are initialized
-        self.is_initialized = True
 
     def set_element(self, element_id, module_list, pipeline_list):
         element_name, element_type = element_name_decode(element_id)
@@ -168,7 +141,9 @@ class Instance:
                     # match the port name
                     to_port = to_instance.get_in_port(connection.to_port_name)
                     # create a link
-                    from_port = awa_cls.InPort(connection.from_port_name, to_port.msg_type, self.namespace)
+                    from_port = awa_cls.InPort(
+                        connection.from_port_name, to_port.msg_type, self.namespace
+                    )
                     link = awa_cls.Link(to_port.msg_type, from_port, to_port, self.namespace)
                     link_list.append(link)
 
@@ -215,7 +190,9 @@ class Instance:
                     # match the port name
                     from_port = from_instance.get_out_port(connection.from_port_name)
                     # create link
-                    to_port = awa_cls.OutPort(connection.to_port_name, from_port.msg_type, self.namespace)
+                    to_port = awa_cls.OutPort(
+                        connection.to_port_name, from_port.msg_type, self.namespace
+                    )
                     link = awa_cls.Link(from_port.msg_type, from_port, to_port, self.namespace)
                     link_list.append(link)
 
@@ -243,6 +220,8 @@ class Instance:
         if self.element_type != "module":
             raise ValueError("run_module_configuration is only supported for module")
 
+        # parse processes and get trigger conditions and output conditions
+
         # set in_ports
         for in_port in self.element.config_yaml.get("inputs"):
             in_port_name = in_port.get("name")
@@ -262,50 +241,6 @@ class Instance:
             if child.name == name:
                 return child
         raise ValueError(f"Child not found: child name {name}, instance of {self.name}")
-
-    def set_connections(self):
-        # 2. connect instances
-        # set connections
-        connection_list_yaml = self.element.config_yaml.get("connections")
-        if len(connection_list_yaml) == 0:
-            raise ValueError("No connections found in the pipeline configuration")
-
-        connection_list: List[awa_cls.Connection] = []
-        for connection in connection_list_yaml:
-            connection_instance = awa_cls.Connection(connection)
-            connection_list.append(connection_instance)
-
-        # establish links. topics will be defined in this step
-        link_list: List[awa_cls.Link] = []
-        for connection in connection_list:
-            # find the from_instance and to_instance from children
-            from_instance = self.get_child(connection.from_instance)
-            to_instance = self.get_child(connection.to_instance)
-            # find the from_port and to_port
-            from_port = from_instance.get_out_port(connection.from_port_name)
-            to_port = to_instance.get_in_port(connection.to_port_name)
-            # check if the port type
-            if not isinstance(from_port, awa_cls.OutPort):
-                raise ValueError(f"Invalid port type: {from_port.full_name}")
-            if not isinstance(to_port, awa_cls.InPort):
-                raise ValueError(f"Invalid port type: {to_port.full_name}")
-            # create link
-            link = awa_cls.Link(from_port.msg_type, from_port, to_port, self.namespace)
-            link_list.append(link)
-
-        for link in link_list:
-            self.links.append(link)
-            if debug_mode:
-                print(f"Connection: {link.from_port.full_name}-> {link.to_port.full_name}")
-        if debug_mode:
-            print(f"Instance {self.name} set_architecture: {len(self.links)} links are established")
-            for link in self.links:
-                print(f"  Link: {link.from_port.full_name} -> {link.to_port.full_name}")
-
-        # check ports
-        if debug_mode:
-            print(f"Instance {self.name}: checking ports")
-        self.check_ports()
 
     def get_in_port(self, name: str):
         for in_port in self.in_ports:
@@ -405,10 +340,103 @@ class Instance:
                 for user_port in user_port_list:
                     print(f"    user: {user_port.full_name}")
 
-    def set_parameters(self, parameter_set_list: awa_cls.ParameterSetList):
-        # 3. set parameters
-        connection_list_yaml = self.element.config_yaml.get("parameter_sets")
 
+class ArchitectureInstance(Instance):
+    def __init__(self, name: str):
+        super().__init__(name)
+
+    def set_component_instances(self, module_list, pipeline_list):
+        # 1. set component instances
+        for component in self.element.config_yaml.get("components"):
+            compute_unit_name = component.get("unit")
+
+            instance_name = component.get("component")
+            element_id = component.get("element")
+            namespace = component.get("namespace")
+
+            instance = Instance(instance_name, compute_unit_name, [namespace])
+            instance.parent = self
+            instance.set_element(element_id, module_list, pipeline_list)
+
+            self.children.append(instance)
+        # all children are initialized
+        self.is_initialized = True
+
+    def set_connections(self):
+        # 2. connect instances
+        # set connections
+        connection_list_yaml = self.element.config_yaml.get("connections")
+        if len(connection_list_yaml) == 0:
+            raise ValueError("No connections found in the pipeline configuration")
+
+        connection_list: List[awa_cls.Connection] = []
+        for connection in connection_list_yaml:
+            connection_instance = awa_cls.Connection(connection)
+            connection_list.append(connection_instance)
+
+        # establish links. topics will be defined in this step
+        link_list: List[awa_cls.Link] = []
+        for connection in connection_list:
+            # find the from_instance and to_instance from children
+            from_instance = self.get_child(connection.from_instance)
+            to_instance = self.get_child(connection.to_instance)
+            # find the from_port and to_port
+            from_port = from_instance.get_out_port(connection.from_port_name)
+            to_port = to_instance.get_in_port(connection.to_port_name)
+            # check if the port type
+            if not isinstance(from_port, awa_cls.OutPort):
+                raise ValueError(f"Invalid port type: {from_port.full_name}")
+            if not isinstance(to_port, awa_cls.InPort):
+                raise ValueError(f"Invalid port type: {to_port.full_name}")
+            # create link
+            link = awa_cls.Link(from_port.msg_type, from_port, to_port, self.namespace)
+            link_list.append(link)
+
+        for link in link_list:
+            self.links.append(link)
+            if debug_mode:
+                print(f"Connection: {link.from_port.full_name}-> {link.to_port.full_name}")
+        if debug_mode:
+            print(f"Instance {self.name} set_architecture: {len(self.links)} links are established")
+            for link in self.links:
+                print(f"  Link: {link.from_port.full_name} -> {link.to_port.full_name}")
+
+        # check ports
+        if debug_mode:
+            print(f"Instance {self.name}: checking ports")
+        self.check_ports()
+
+    def set_architecture(
+        self, architecture: awa_cls.ArchitectureElement, module_list, pipeline_list
+    ):
+        if debug_mode:
+            print(
+                f"Instance set_architecture: Setting {architecture.full_name} instance {self.name}"
+            )
+        self.element = architecture
+        self.element_type = "architecture"
+
+        # 1. set component instances
+        self.set_component_instances(module_list, pipeline_list)
+
+        # 2. build the connection tree
+        #      set message topics
+        self.set_connections()
+
+    def set_parameters(self, parameter_set_list: awa_cls.ParameterSetList):
+        # this method is only for architecture instance
+        if self.element_type != "architecture":
+            raise ValueError("set_parameters is only supported for architecture")
+        # 3. set parameters
+
+        # architecture layer, create instances
+        parameter_instance_list = self.element.config_yaml.get("parameter_sets")
+
+        # call parameter set instance from the parameter_set_list
+
+        # propagate parameter to children
+
+        # if the parameter set is itself, set the parameter
 
 
 class Deployment:
@@ -419,7 +447,9 @@ class Deployment:
         self.name = self.config_yaml.get("name")
 
         self.module_list: awa_cls.ModuleList = awa_cls.ModuleList(element_list.get_module_list())
-        self.pipeline_list: awa_cls.PipelineList = awa_cls.PipelineList(element_list.get_pipeline_list())
+        self.pipeline_list: awa_cls.PipelineList = awa_cls.PipelineList(
+            element_list.get_pipeline_list()
+        )
         self.parameter_set_list: awa_cls.ParameterSetList = awa_cls.ParameterSetList(
             element_list.get_parameter_set_list()
         )
@@ -473,7 +503,7 @@ class Deployment:
             raise ValueError(f"Architecture not found: {self.config_yaml.get('architecture')}")
 
         # 1. set architecture instance
-        self.architecture_instance = Instance(self.name)
+        self.architecture_instance = ArchitectureInstance(self.name)
         self.architecture_instance.set_architecture(
             architecture, self.module_list, self.pipeline_list
         )
