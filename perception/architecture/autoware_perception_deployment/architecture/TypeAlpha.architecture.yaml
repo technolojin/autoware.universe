@@ -16,6 +16,7 @@ components:
     element: PerceptionA.pipeline
     namespace: perception
     compute_unit: main_ecu
+    parameter_set: PerceptionPipelineA.parameter_set
   - component: map_loader
     element: MapDummy.module
     namespace: map
@@ -32,11 +33,3 @@ connections:
     to: perception_pipeline_a.input.vector_map
   - from: perception_pipeline_a.output.objects
     to: planner.input.tracked_objects
-
-parameter_sets:
-  - name: perception_parameter_set_pipeline_a
-    set: PerceptionPipelineA.parameter_set
-
-parameter_connections:
-  - from: perception_parameter_set_pipeline_a.*
-    to: perception_pipeline_a.parameter.*

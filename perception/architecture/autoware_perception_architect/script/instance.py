@@ -340,12 +340,28 @@ class Instance:
                 for user_port in user_port_list:
                     print(f"    user: {user_port.full_name}")
 
+    def set_parameter(self, param_list_yaml):
+        # in case of pipeline, search parameter connection and call set_parameter for children
+        if self.element_type == "pipeline":
+            for param in param_list_yaml:
+                instance_name = param.get("name")
+                print(f"Setting parameter: {instance_name}")
+                param_path_list = param.get("parameter_paths")
+                for param_path in param_path_list:
+                    print(f"  Parameter path: {param_path}")
+
+        # in case of module, set the parameter
+        elif self.element_type == "module":
+            # do something
+
+        else:
+            raise ValueError(f"Invalid element type: {self.element_type}")
 
 class ArchitectureInstance(Instance):
     def __init__(self, name: str):
         super().__init__(name)
 
-    def set_component_instances(self, module_list, pipeline_list):
+    def set_component_instances(self, module_list, pipeline_list, parameter_set_list):
         # 1. set component instances
         for component in self.element.config_yaml.get("components"):
             compute_unit_name = component.get("unit")
@@ -354,6 +370,16 @@ class ArchitectureInstance(Instance):
             element_id = component.get("element")
             namespace = component.get("namespace")
 
+            # parameter set
+            parameter_set = component.get("parameter_set")
+            if parameter_set:
+                param_set_name, _ = element_name_decode(parameter_set)
+                param_set = parameter_set_list.get(param_set_name)
+                param_list_yaml = component.get("parameters")
+                # set the parameter
+                self.set_parameter(param_list_yaml)
+
+            # create instance
             instance = Instance(instance_name, compute_unit_name, [namespace])
             instance.parent = self
             instance.set_element(element_id, module_list, pipeline_list)
@@ -407,7 +433,7 @@ class ArchitectureInstance(Instance):
         self.check_ports()
 
     def set_architecture(
-        self, architecture: awa_cls.ArchitectureElement, module_list, pipeline_list
+        self, architecture: awa_cls.ArchitectureElement, module_list, pipeline_list, parameter_set_list
     ):
         if debug_mode:
             print(
@@ -417,26 +443,11 @@ class ArchitectureInstance(Instance):
         self.element_type = "architecture"
 
         # 1. set component instances
-        self.set_component_instances(module_list, pipeline_list)
+        self.set_component_instances(module_list, pipeline_list, parameter_set_list)
 
         # 2. build the connection tree
         #      set message topics
         self.set_connections()
-
-    def set_parameters(self, parameter_set_list: awa_cls.ParameterSetList):
-        # this method is only for architecture instance
-        if self.element_type != "architecture":
-            raise ValueError("set_parameters is only supported for architecture")
-        # 3. set parameters
-
-        # architecture layer, create instances
-        parameter_instance_list = self.element.config_yaml.get("parameter_sets")
-
-        # call parameter set instance from the parameter_set_list
-
-        # propagate parameter to children
-
-        # if the parameter set is itself, set the parameter
 
 
 class Deployment:
@@ -485,16 +496,6 @@ class Deployment:
                 return False
         return True
 
-    def find_parameter_set(self, parameter_set_name):
-        parameter_set = [
-            parameter_set
-            for parameter_set in self.parameter_set_list
-            if parameter_set.name == parameter_set_name
-        ]
-        if len(parameter_set) == 0:
-            raise ValueError(f"Parameter set not found: {parameter_set_name}")
-        return parameter_set[0]  # if multiple parameter sets have the same name, pick the first one
-
     def build(self):
         # 0. find the architecture
         architecture = self.architecture_list.get(self.config_yaml.get("architecture"))
@@ -505,14 +506,11 @@ class Deployment:
         # 1. set architecture instance
         self.architecture_instance = ArchitectureInstance(self.name)
         self.architecture_instance.set_architecture(
-            architecture, self.module_list, self.pipeline_list
+            architecture, self.module_list, self.pipeline_list, self.parameter_set_list
         )
 
-        # 2. set parameter sets
-        self.architecture_instance.set_parameters(self.parameter_set_list)
+        # 2. generate system monitor configuration
 
-        # 3. generate system monitor configuration
+        # 3. build the launcher
 
-        # 4. build the launcher
-
-        # 5. visualize the deployment diagram via plantuml
+        # 4. visualize the deployment diagram via plantuml

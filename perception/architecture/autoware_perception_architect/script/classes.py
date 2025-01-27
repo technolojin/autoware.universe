@@ -262,8 +262,6 @@ class ArchitectureElement(Element):
             "name",
             "components",
             "connections",
-            "parameter_sets",
-            "parameter_connections",
         ]
 
         for field in required_field:
