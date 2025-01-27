@@ -19,8 +19,8 @@ external_interfaces:
   output:
     - name: objects
   parameter:
-    - name: detector_a1
-    - name: detector_a2
+    - name: detector_a
+    - name: detector_b
     - name: filter_a
     - name: tracker
 
@@ -40,16 +40,16 @@ connections:
     to: output.objects
 
 parameters:
-  - name: parameter.detector_a1.*
-    to: detector_a1.parameter.detector.*
-  - name: parameter.detector_a2.*
-    to: detector_a2.parameter.detector.*
-  - name: parameter.filter_a.*
-    to: detector_a1.parameter.filter.*
-  - name: parameter.filter_a.*
-    to: detector_a2.parameter.filter.*
-  - name: parameter.tracker.*
-    to: node_tracker.parameter.*
+  - from: parameter.detector_a
+    to: detector_a1.parameter.detector
+  - from: parameter.detector_b
+    to: detector_a2.parameter.detector
+  - from: parameter.filter_a
+    to: detector_a1.parameter.filter
+  - from: parameter.filter_a
+    to: detector_a2.parameter.filter
+  - from: parameter.tracker
+    to: node_tracker
 
 configurations:
   - name: model_a.build_only

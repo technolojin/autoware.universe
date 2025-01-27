@@ -120,7 +120,7 @@ class ModuleElement(Element):
             )
             return False
 
-        # Check the launch field
+        # Check the required field
         required_field = [
             "name",
             "launch",
@@ -163,7 +163,7 @@ class PipelineElement(Element):
             )
             return False
 
-        # Check the launch field
+        # Check the required field
         required_field = [
             "name",
             "depends",
@@ -213,7 +213,7 @@ class ParameterSetElement(Element):
             )
             return False
 
-        # Check the launch field
+        # Check the required fields
         required_field = [
             "name",
             "parameters",
@@ -257,7 +257,7 @@ class ArchitectureElement(Element):
             )
             return False
 
-        # Check the launch field
+        # Check the required field
         required_field = [
             "name",
             "components",
@@ -361,6 +361,7 @@ class OutPort(Port):
 
 
 class Link:
+    # Link is a connection between two ports
     def __init__(self, msg_type: str, from_port: Port, to_port: Port, namespace: List[str] = []):
         self.msg_type: str = msg_type
         # from-port and to-port connection
@@ -427,6 +428,8 @@ class Link:
 
 
 class Connection:
+    # Connection is a connection between two elements
+    # In other words, it is a configuration to create link(s)
     def __init__(self, connection_dict: dict):
 
         # connection type
@@ -469,3 +472,29 @@ class Connection:
             raise ValueError(f"Invalid port name: {port_name}")
         else:
             raise ValueError(f"Invalid port name: {port_name}")
+
+
+class Parameter:
+    def __init__(self, name: str, value: str):
+        self.name = name
+        self.value = value
+
+
+class ParameterList:
+    def __init__(self):
+        self.list: List[Parameter] = []
+
+    def get_parameter(self, parameter_name):
+        for parameter in self.list:
+            if parameter.name == parameter_name:
+                return parameter.value
+        # not found, return None
+        return None
+
+    def set_parameter(self, parameter_name, parameter_value):
+        for parameter in self.list:
+            if parameter.name == parameter_name:
+                parameter.value = parameter_value
+                return
+        # if not found, add it
+        self.list.append(Parameter(parameter_name, parameter_value))

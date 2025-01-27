@@ -23,7 +23,7 @@ debug_mode = True
 
 # build the deployment
 # search and connect the connections between the modules
-def build(deployment_file: str, architecture_yaml_list_file: str):
+def build(deployment_file: str, architecture_yaml_list_file: str, output_root_dir: str):
     print("autoware architect: Building deployment...")
 
     # Inputs:
@@ -39,8 +39,8 @@ def build(deployment_file: str, architecture_yaml_list_file: str):
     element_list = ElementList(architecture_yaml_list)
 
     # load the deployment yaml file
-    deployment = Deployment(deployment_file, element_list)
+    deployment = Deployment(deployment_file, element_list, output_root_dir)
 
 
 if __name__ == "__main__":
-    build(sys.argv[1], sys.argv[2])
+    build(sys.argv[1], sys.argv[2], sys.argv[3])

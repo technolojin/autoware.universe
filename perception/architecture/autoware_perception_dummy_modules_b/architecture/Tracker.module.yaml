@@ -23,11 +23,11 @@ outputs:
       durability: transient_local
 parameters:
   - name: tracker_setting_path
-    default: "path/to/tracker_setting_path.yaml"
+    default: path/to/tracker_setting_path.yaml
   - name: data_association_matrix_path
-    default: "path/to/data_association_matrix_path.yaml"
+    default: path/to/data_association_matrix_path.yaml
   - name: input_channels_path
-    default: "path/to/input_channels_path.yaml"
+    default: path/to/input_channels_path.yaml
 
 # configurations
 configurations: []

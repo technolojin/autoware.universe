@@ -22,7 +22,7 @@ outputs:
       durability: transient_local
 parameters:
   - name: filtering_range_param
-    default: "path/to/filtering_range_param.yaml"
+    default: path/to/filtering_range_param.yaml
 
 # configurations
 configurations: []

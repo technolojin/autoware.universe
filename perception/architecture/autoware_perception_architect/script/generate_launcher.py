@@ -153,7 +153,7 @@ def generate_launcher(module_yaml_dir, executable_name, launch_file_dir) -> None
             print(exc)
             return
     if "name" not in module_yaml:
-        ValueError(f"Field 'name' is required in module configuration.")
+        ValueError(f"Field 'name' is required in module configuration., {module_yaml_dir}")
         return
     module_name = module_yaml.get("name")
 

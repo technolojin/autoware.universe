@@ -31,10 +31,10 @@ connections:
     to: output.*
 
 parameters:
-  - name: parameter.detector.*
-    to: node_detector.parameter.*
-  - name: parameter.filter.*
-    to: node_filter.parameter.*
+  - from: parameter.detector
+    to: node_detector
+  - from: parameter.filter
+    to: node_filter
 
 configurations:
   - name: model.build_only

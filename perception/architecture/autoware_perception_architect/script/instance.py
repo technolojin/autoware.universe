@@ -13,6 +13,7 @@
 # limitations under the License.
 
 
+import os
 from typing import List
 
 import classes as awa_cls
@@ -56,9 +57,11 @@ class Instance:
         self.out_ports: List[awa_cls.OutPort] = []
         self.links: List[awa_cls.Link] = []
 
+        # parameters
+        self.parameters: awa_cls.ParameterList = awa_cls.ParameterList()
+
         # status
         self.is_initialized = False
-
 
     def set_element(self, element_id, module_list, pipeline_list):
         element_name, element_type = element_name_decode(element_id)
@@ -150,7 +153,7 @@ class Instance:
                 for link in link_list:
                     self.links.append(link)
                     if debug_mode:
-                        print(f"Connection: {link.from_port.full_name}-> {link.to_port.full_name}")
+                        print(f"Link: {link.from_port.full_name}-> {link.to_port.full_name}")
 
             # case 2. from internal output to internal input
             if connection.type == 2:
@@ -168,7 +171,7 @@ class Instance:
                 for link in link_list:
                     self.links.append(link)
                     if debug_mode:
-                        print(f"Connection: {link.from_port.full_name}-> {link.to_port.full_name}")
+                        print(f"Link: {link.from_port.full_name}-> {link.to_port.full_name}")
 
             # case 3. from internal output to external output
             if connection.type == 3:
@@ -235,6 +238,12 @@ class Instance:
             out_port_msg_type = out_port.get("message_type")
             out_port_instance = awa_cls.OutPort(out_port_name, out_port_msg_type, self.namespace)
             self.out_ports.append(out_port_instance)
+
+        # set parameters
+        for param in self.element.config_yaml.get("parameters"):
+            param_name = param.get("name")
+            param_value = param.get("default")
+            self.parameters.set_parameter(param_name, param_value)
 
     def get_child(self, name: str):
         for child in self.children:
@@ -340,34 +349,69 @@ class Instance:
                 for user_port in user_port_list:
                     print(f"    user: {user_port.full_name}")
 
-    def set_parameter(self, param_list_yaml):
-
-        print(f'Instance {self.name} set_parameter: Setting parameters')
-        print(f'  Parameter list: {param_list_yaml}')
-
+    def set_parameter(self, param):
         # in case of pipeline, search parameter connection and call set_parameter for children
         if self.element_type == "pipeline":
-            for param in param_list_yaml:
-                instance_name = param.get("name")
-                print(f"Setting parameter: {instance_name}")
-                param_path_list = param.get("parameter_paths")
-                for param_path in param_path_list:
-                    print(f"  Parameter path: {param_path}")
-
+            self.set_pipeline_parameter(param)
         # in case of module, set the parameter
         elif self.element_type == "module":
-            # do something
-            pass
-
+            self.set_module_parameter(param)
         else:
             raise ValueError(f"Invalid element type: {self.element_type}")
+
+    def set_pipeline_parameter(self, param):
+        if self.element_type != "pipeline":
+            raise ValueError("set_pipeline_parameter is only supported for pipeline")
+        param_name = param.get("name")
+
+        # check external_interfaces/parameter
+        pipeline_parameter_list = self.element.config_yaml.get("external_interfaces").get(
+            "parameter"
+        )
+        # check if the param_list_yaml is superset of pipeline_parameter_list
+        pipeline_parameter_list = [param.get("name") for param in pipeline_parameter_list]
+        if param_name not in pipeline_parameter_list:
+            raise ValueError(f"Parameter not found: {param_name} in {pipeline_parameter_list}")
+
+        # check parameters to connect parameters to the children
+        param_connection_list = self.element.config_yaml.get("parameters")
+        for connection in param_connection_list:
+            param_from = connection.get("from")
+            param_from_name = param_from.split(".")[1]
+            if param_from_name != param_name:
+                continue
+
+            param_to = connection.get("to")
+            param_to_inst_name = param_to.split(".")[0]
+            child_instance = self.get_child(param_to_inst_name)
+
+            # set the parameter to the child instance
+            if child_instance.element_type == "pipeline":
+                param["name"] = param_to.split(".")[2]
+
+            child_instance.set_parameter(param)
+
+    def set_module_parameter(self, param):
+        if self.element_type != "module":
+            raise ValueError("set_module_parameter is only supported for module")
+        param_path_list = param.get("parameter_paths")
+        # get list of parameter paths, which comes in dictionary format
+        for param_path in param_path_list:
+            param_keys = param_path.keys()
+            for param_key in param_keys:
+                param_value = param_path.get(param_key)
+                self.parameters.set_parameter(param_key, param_value)
+        if debug_mode:
+            for param in self.parameters.list:
+                print(f"  Parameter: {param.name} = {param.value}")
+
 
 class ArchitectureInstance(Instance):
     def __init__(self, name: str):
         super().__init__(name)
 
     def set_component_instances(self, module_list, pipeline_list, parameter_set_list):
-        # 1. set component instances
+        # set pipeline and module instances as 'components'
         for component in self.element.config_yaml.get("components"):
             compute_unit_name = component.get("compute_unit")
 
@@ -390,7 +434,8 @@ class ArchitectureInstance(Instance):
             instance.parent = self
             instance.set_element(element_id, module_list, pipeline_list)
             if param_list_yaml is not None:
-                instance.set_parameter(param_list_yaml)
+                for param in param_list_yaml:
+                    instance.set_parameter(param)
 
             self.children.append(instance)
         # all children are initialized
@@ -441,7 +486,11 @@ class ArchitectureInstance(Instance):
         self.check_ports()
 
     def set_architecture(
-        self, architecture: awa_cls.ArchitectureElement, module_list, pipeline_list, parameter_set_list
+        self,
+        architecture: awa_cls.ArchitectureElement,
+        module_list,
+        pipeline_list,
+        parameter_set_list,
     ):
         if debug_mode:
             print(
@@ -459,7 +508,9 @@ class ArchitectureInstance(Instance):
 
 
 class Deployment:
-    def __init__(self, config_yaml_dir: str, element_list: awa_cls.ElementList):
+    def __init__(
+        self, config_yaml_dir: str, element_list: awa_cls.ElementList, output_root_dir: str
+    ):
         # load yaml file
         self.config_yaml_dir = config_yaml_dir
         self.config_yaml = load_config_yaml(config_yaml_dir)
@@ -487,6 +538,13 @@ class Deployment:
 
         # set the vehicle individual parameters
         #   sensor calibration, vehicle parameters, map, etc.
+        self.individual_parameters_yaml = None
+
+        # output paths
+        self.output_root_dir = output_root_dir
+        self.launcher_dir = os.path.join(self.output_root_dir, "launcher/")
+        self.system_monitor_dir = os.path.join(self.output_root_dir, "system_monitor/")
+        self.visualization_dir = os.path.join(self.output_root_dir, "visualization/")
 
     def check_config(self) -> bool:
         # Check the name field
@@ -505,20 +563,25 @@ class Deployment:
         return True
 
     def build(self):
-        # 0. find the architecture
+        # 1. set architecture instance
         architecture = self.architecture_list.get(self.config_yaml.get("architecture"))
 
         if not architecture:
             raise ValueError(f"Architecture not found: {self.config_yaml.get('architecture')}")
 
-        # 1. set architecture instance
         self.architecture_instance = ArchitectureInstance(self.name)
         self.architecture_instance.set_architecture(
             architecture, self.module_list, self.pipeline_list, self.parameter_set_list
         )
 
+    def generate_system_monitor(self):
         # 2. generate system monitor configuration
+        pass
 
+    def generate_launcher(self):
         # 3. build the launcher
+        pass
 
+    def visualize(self):
         # 4. visualize the deployment diagram via plantuml
+        pass
