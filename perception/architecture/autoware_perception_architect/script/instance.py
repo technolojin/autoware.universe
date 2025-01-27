@@ -341,6 +341,10 @@ class Instance:
                     print(f"    user: {user_port.full_name}")
 
     def set_parameter(self, param_list_yaml):
+
+        print(f'Instance {self.name} set_parameter: Setting parameters')
+        print(f'  Parameter list: {param_list_yaml}')
+
         # in case of pipeline, search parameter connection and call set_parameter for children
         if self.element_type == "pipeline":
             for param in param_list_yaml:
@@ -353,6 +357,7 @@ class Instance:
         # in case of module, set the parameter
         elif self.element_type == "module":
             # do something
+            pass
 
         else:
             raise ValueError(f"Invalid element type: {self.element_type}")
@@ -364,7 +369,7 @@ class ArchitectureInstance(Instance):
     def set_component_instances(self, module_list, pipeline_list, parameter_set_list):
         # 1. set component instances
         for component in self.element.config_yaml.get("components"):
-            compute_unit_name = component.get("unit")
+            compute_unit_name = component.get("compute_unit")
 
             instance_name = component.get("component")
             element_id = component.get("element")
@@ -372,17 +377,20 @@ class ArchitectureInstance(Instance):
 
             # parameter set
             parameter_set = component.get("parameter_set")
-            if parameter_set:
-                param_set_name, _ = element_name_decode(parameter_set)
+            param_list_yaml = None
+            if parameter_set is not None:
+                param_set_name, element_type = element_name_decode(parameter_set)
+                if element_type != "parameter_set":
+                    raise ValueError(f"Invalid parameter set type: {element_type}")
                 param_set = parameter_set_list.get(param_set_name)
-                param_list_yaml = component.get("parameters")
-                # set the parameter
-                self.set_parameter(param_list_yaml)
+                param_list_yaml = param_set.config_yaml.get("parameters")
 
             # create instance
             instance = Instance(instance_name, compute_unit_name, [namespace])
             instance.parent = self
             instance.set_element(element_id, module_list, pipeline_list)
+            if param_list_yaml is not None:
+                instance.set_parameter(param_list_yaml)
 
             self.children.append(instance)
         # all children are initialized

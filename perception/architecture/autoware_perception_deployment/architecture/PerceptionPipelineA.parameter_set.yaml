@@ -1,5 +1,4 @@
 name: PerceptionPipelineA.parameter_set
-package: autoware_perception_deployment
 parameters:
   - name: detector_a1
     parameter_paths:
