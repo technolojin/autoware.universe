@@ -87,7 +87,12 @@ class Instance:
                 instance.parent = self
                 instance.parent_pipeline_list = self.parent_pipeline_list.copy()
                 # recursive call of set_element
-                instance.set_element(node.get("element"), module_list, pipeline_list)
+                try:
+                    instance.set_element(node.get("element"), module_list, pipeline_list)
+                except Exception as e:
+                    # add the instance to the children list for debugging
+                    self.children.append(instance)
+                    raise ValueError(f"Error in setting child instance {instance.name} : {e}")
                 self.children.append(instance)
 
             # run the pipeline configuration
@@ -433,7 +438,13 @@ class ArchitectureInstance(Instance):
             # create instance
             instance = Instance(instance_name, compute_unit_name, [namespace])
             instance.parent = self
-            instance.set_element(element_id, module_list, pipeline_list)
+            try:
+                instance.set_element(element_id, module_list, pipeline_list)
+            except Exception as e:
+                # add the instance to the children list for debugging
+                self.children.append(instance)
+                raise ValueError(f"Error in setting component instance {instance_name} : {e}")
+
             if param_list_yaml is not None:
                 for param in param_list_yaml:
                     instance.set_parameter(param)
@@ -500,12 +511,8 @@ class ArchitectureInstance(Instance):
         self.element = architecture
         self.element_type = "architecture"
 
-        # 1. set component instances
+        # set component instances
         self.set_component_instances(module_list, pipeline_list, parameter_set_list)
-
-        # 2. build the connection tree
-        #      set message topics
-        self.set_connections()
 
 
 class Deployment:
@@ -533,12 +540,6 @@ class Deployment:
 
         # member variables
         self.architecture_instance: Instance = None
-
-        # build the deployment
-        self.build()
-
-        # set the vehicle individual parameters
-        #   sensor calibration, vehicle parameters, map, etc.
         self.individual_parameters_yaml = None
 
         # output paths
@@ -546,6 +547,12 @@ class Deployment:
         self.launcher_dir = os.path.join(self.output_root_dir, "launcher/")
         self.system_monitor_dir = os.path.join(self.output_root_dir, "system_monitor/")
         self.visualization_dir = os.path.join(self.output_root_dir, "visualization/")
+
+        # build the deployment
+        self.build()
+
+        # set the vehicle individual parameters
+        #   sensor calibration, vehicle parameters, map, etc.
 
     def check_config(self) -> bool:
         # Check the name field
@@ -570,23 +577,21 @@ class Deployment:
         if not architecture:
             raise ValueError(f"Architecture not found: {self.config_yaml.get('architecture')}")
 
-        self.architecture_instance = ArchitectureInstance(self.name)
-        self.architecture_instance.set_architecture(
-            architecture, self.module_list, self.pipeline_list, self.parameter_set_list
-        )
+        try:
+            self.architecture_instance = ArchitectureInstance(self.name)
+            # 1. set architecture instance
+            self.architecture_instance.set_architecture(
+                architecture, self.module_list, self.pipeline_list, self.parameter_set_list
+            )
+            # 2. set connections
+            self.architecture_instance.set_connections()
+        except Exception as e:
+            # try to visualize the architecture to show error status
+            self.visualize()
+            raise ValueError(f"Error in setting architecture: {e}")
 
     def visualize(self):
         # 4. visualize the deployment diagram via plantuml
-
-        # generate the plantuml file for the architecture
-        # the diagram will show the connections between the module instances
-        # the module instances will be shown as a box with in and out ports
-        # the ports will be shown as a small box, in ports in the left side and out ports in the right side
-        # the port name will be shown next to the port
-        # the connections will be shown as arrows between the ports
-        # the modules are within the pipeline instances
-        # the architecture instance is the top level instance
-
         # define the traverse_instance function
         def traverse_instance(instance, lines):
             if instance.element_type == "module":
@@ -596,6 +601,13 @@ class Deployment:
                 for out_port in instance.out_ports:
                     lines.append(f'  portout "output/{out_port.name}" as {out_port.id}')
                 lines.append("}")
+                for out_port in instance.out_ports:
+                    topic_name = "/".join(out_port.topic)
+                    lines.append(f"note as {out_port.id}_note")
+                    lines.append(f"    {topic_name}")
+                    lines.append("end note")
+                    lines.append(f"  {out_port.id}_note - {out_port.id}")
+
             elif instance.element_type == "pipeline":
                 lines.append(f"frame {instance.name} as {instance.id} {{")
                 for child in instance.children:
@@ -623,6 +635,7 @@ class Deployment:
             "port{FontSize 9}",
             "arrow{FontSize 5",
             "Fontcolor #000066}",
+            "node {BackgroundColor #dddddd}",
             "</style>\n",
         ]
         lines.extend(style)
