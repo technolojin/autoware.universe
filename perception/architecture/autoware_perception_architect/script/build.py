@@ -38,8 +38,17 @@ def build(deployment_file: str, architecture_yaml_list_file: str, output_root_di
     # load the architecture yaml files
     element_list = ElementList(architecture_yaml_list)
 
-    # load the deployment yaml file
+    # load and build the deployment yaml file
     deployment = Deployment(deployment_file, element_list, output_root_dir)
+
+    # generate the system visualization
+    deployment.visualize()
+
+    # generate the launch files
+    deployment.generate_launcher()
+
+    # generate the system monitor configuration
+    deployment.generate_system_monitor()
 
 
 if __name__ == "__main__":

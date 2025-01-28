@@ -34,6 +34,7 @@ class Instance:
         self.namespace.append(name)
         # create namespace string, FOR ERROR MESSAGE ONLY
         self.namespace_str: str = "/" + "/".join(self.namespace)
+        self.id = "__".join(self.namespace) + "__" + name
 
         self.compute_unit: str = compute_unit
         self.layer: int = layer
@@ -574,14 +575,73 @@ class Deployment:
             architecture, self.module_list, self.pipeline_list, self.parameter_set_list
         )
 
+    def visualize(self):
+        # 4. visualize the deployment diagram via plantuml
+
+        # generate the plantuml file for the architecture
+        # the diagram will show the connections between the module instances
+        # the module instances will be shown as a box with in and out ports
+        # the ports will be shown as a small box, in ports in the left side and out ports in the right side
+        # the port name will be shown next to the port
+        # the connections will be shown as arrows between the ports
+        # the modules are within the pipeline instances
+        # the architecture instance is the top level instance
+
+        # define the traverse_instance function
+        def traverse_instance(instance, lines):
+            if instance.element_type == "module":
+                lines.append(f"node {instance.name} as {instance.id} {{")
+                for in_port in instance.in_ports:
+                    lines.append(f'  portin "input/{in_port.name}" as {in_port.id}')
+                for out_port in instance.out_ports:
+                    lines.append(f'  portout "output/{out_port.name}" as {out_port.id}')
+                lines.append("}")
+            elif instance.element_type == "pipeline":
+                lines.append(f"frame {instance.name} as {instance.id} {{")
+                for child in instance.children:
+                    traverse_instance(child, lines)
+                for in_port in instance.in_ports:
+                    lines.append(f'  portin "input/{in_port.name}" as {in_port.id}')
+                for out_port in instance.out_ports:
+                    lines.append(f'  portout "output/{out_port.name}" as {out_port.id}')
+                for link in instance.links:
+                    lines.append(f'  {link.from_port.id} --> {link.to_port.id} : "{link.msg_type}"')
+                lines.append("}")
+            elif instance.element_type == "architecture":
+                for child in instance.children:
+                    lines.append(f'folder "{child.namespace[0]}" {{')
+                    traverse_instance(child, lines)
+                    lines.append("}")
+                for link in instance.links:
+                    lines.append(f'  {link.from_port.id} --> {link.to_port.id} : "{link.msg_type}"')
+
+        # generate the plantuml file
+        lines = ["@startuml", f"title Architecture Diagram {self.name}", ""]
+        lines.extend(["skinparam componentStyle rectangle", "left to right direction\n"])
+        style = [
+            "<style>",
+            "port{FontSize 9}",
+            "arrow{FontSize 5",
+            "Fontcolor #000066}",
+            "</style>\n",
+        ]
+        lines.extend(style)
+        traverse_instance(self.architecture_instance, lines)
+        lines.append("@enduml")
+
+        # write the plantuml file
+        plantuml_file = os.path.join(self.visualization_dir, "architecture.puml")
+        if os.path.exists(plantuml_file):
+            os.remove(plantuml_file)
+        if not os.path.exists(self.visualization_dir):
+            os.makedirs(self.visualization_dir, exist_ok=True)
+        with open(plantuml_file, "w") as f:
+            f.write("\n".join(lines))
+
     def generate_system_monitor(self):
         # 2. generate system monitor configuration
         pass
 
     def generate_launcher(self):
         # 3. build the launcher
-        pass
-
-    def visualize(self):
-        # 4. visualize the deployment diagram via plantuml
         pass

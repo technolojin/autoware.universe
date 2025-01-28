@@ -329,6 +329,7 @@ class InPort(Port):
     def __init__(self, name, msg_type, namespace: List[str] = []):
         super().__init__(name, msg_type, namespace)
         self.full_name = "/" + "/".join(namespace) + "/input/" + name
+        self.id = "__".join(namespace) + "__input_" + name
         # to enable/disable connection checker
         self.is_required = True
         # reference port
@@ -346,6 +347,7 @@ class OutPort(Port):
     def __init__(self, name, msg_type, namespace: List[str] = []):
         super().__init__(name, msg_type, namespace)
         self.full_name = "/" + "/".join(namespace) + "/output/" + name
+        self.id = "__".join(namespace) + "__output_" + name
         # for topic monitor
         self.period = 0.0
         self.is_monitored = False
