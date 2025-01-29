@@ -15,48 +15,48 @@ node {BackgroundColor #dddddd}
 </style>
 
 {% macro traverse_instance(instance) -%}
-    {% if instance.element_type == "module" %}
-        node {{ instance.name }} as {{ instance.id }} {
-            {% for in_port in instance.in_ports %}
-                portin "input/{{ in_port.name }}" as {{ in_port.id }}
-            {% endfor %}
-            {% for out_port in instance.out_ports %}
-                portout "output/{{ out_port.name }}" as {{ out_port.id }}
-            {% endfor %}
-        }
-        {% for out_port in instance.out_ports %}
-            note as {{ out_port.id }}_note
-                {{ "/" + "/".join(out_port.topic) }}
-                {{ out_port.msg_type }}
-            end note
-            {{ out_port.id }}_note - {{ out_port.id }}
-        {% endfor %}
-    {% elif instance.element_type == "pipeline" %}
-        frame {{ instance.name }} as {{ instance.id }} {
-            {% for child in instance.children %}
-                {{ traverse_instance(child) }}
-            {% endfor %}
-            {% for in_port in instance.in_ports %}
-                portin "input/{{ in_port.name }}" as {{ in_port.id }}
-            {% endfor %}
-            {% for out_port in instance.out_ports %}
-                portout "output/{{ out_port.name }}" as {{ out_port.id }}
-            {% endfor %}
-            {% for link in instance.links %}
-                {{ link.from_port.id }} --> {{ link.to_port.id }}
-            {% endfor %}
-        }
-    {% endif %}
-{% endmacro %}
-
-{% for child in children %}
-    folder "{{ child.namespace[0] }}" {
-        {{ traverse_instance(child) }}
+    {% if instance.element_type == "module" -%}
+    node {{ instance.name }} as {{ instance.id }} {
+        {% for in_port in instance.in_ports -%}
+            portin "input/{{ in_port.name }}" as {{ in_port.id }}
+        {% endfor -%}
+        {% for out_port in instance.out_ports -%}
+            portout "output/{{ out_port.name }}" as {{ out_port.id }}
+        {% endfor -%}
     }
+    {% for out_port in instance.out_ports -%}
+        note as {{ out_port.id }}_note
+            {{ "/" + "/".join(out_port.topic) }}
+            {{ out_port.msg_type }}
+        end note
+        {{ out_port.id }}_note - {{ out_port.id }}
+    {% endfor -%}
+    {% elif instance.element_type == "pipeline" -%}
+    frame {{ instance.name }} as {{ instance.id }} {
+        {% for child in instance.children -%}
+            {{ traverse_instance(child) }}
+        {% endfor -%}
+        {% for in_port in instance.in_ports -%}
+            portin "input/{{ in_port.name }}" as {{ in_port.id }}
+        {% endfor -%}
+        {% for out_port in instance.out_ports -%}
+            portout "output/{{ out_port.name }}" as {{ out_port.id }}
+        {% endfor -%}
+        {% for link in instance.links -%}
+            {{ link.from_port.id }} --> {{ link.to_port.id }}
+        {% endfor -%}
+    }
+    {% endif -%}
+{% endmacro -%}
+
+{% for child in children -%}
+folder "{{ child.namespace[0] }}" {
+    {{ traverse_instance(child) }}
+}
 {% endfor %}
 
-{% for link in links %}
-    {{ link.from_port.id }} ---> {{ link.to_port.id }}
+{% for link in links -%}
+{{ link.from_port.id }} ---> {{ link.to_port.id }}
 {% endfor %}
 
 @enduml

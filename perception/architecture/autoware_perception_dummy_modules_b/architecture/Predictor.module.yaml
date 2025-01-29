@@ -30,6 +30,8 @@ processes:
     trigger_conditions:
       - and:
           - periodic: 10.0 # Hz
+            warn: 0.3 # s
+            timeout:  0.5 # s
           - on_input: objects
             warn: 0.3 # s
             timeout:  0.5 # s
