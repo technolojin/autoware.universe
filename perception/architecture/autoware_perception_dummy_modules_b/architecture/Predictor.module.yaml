@@ -28,6 +28,11 @@ configurations: []
 processes:
   - name: predict
     trigger_conditions:
-      - periodic: 10.0
+      - and:
+          - periodic: 10.0 # Hz
+          - on_input: objects
+            warn: 0.3 # s
+            timeout:  0.5 # s
+          - once: lanelet_map
     outcome:
       - to_output: objects

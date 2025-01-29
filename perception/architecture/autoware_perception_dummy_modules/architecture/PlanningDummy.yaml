@@ -19,9 +19,9 @@ configurations: []
 
 # processes
 processes:
-  - name: drive
+  - name: plan_path
     trigger_conditions:
       - and:
           - once: lanelet_map
           - on_input: predicted_objects
-    outcome: []
+    outcomes: []

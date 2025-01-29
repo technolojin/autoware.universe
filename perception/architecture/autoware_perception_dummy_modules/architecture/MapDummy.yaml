@@ -23,5 +23,5 @@ processes:
   - name: export
     trigger_conditions:
       - once: vector_map
-    outcome:
+    outcomes:
       - to_output: vector_map

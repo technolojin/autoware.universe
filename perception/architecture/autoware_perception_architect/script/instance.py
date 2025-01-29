@@ -59,6 +59,9 @@ class Instance:
         self.out_ports: List[awa_cls.OutPort] = []
         self.links: List[awa_cls.Link] = []
 
+        # processes
+        self.processes: awa_cls.ProcessList = None
+
         # parameters
         self.parameters: awa_cls.ParameterList = awa_cls.ParameterList()
 
@@ -251,6 +254,7 @@ class Instance:
             self.parameters.set_parameter(param_name, param_value)
 
         # parse processes and get trigger conditions and output conditions
+        self.processes = awa_cls.ProcessList(self.element.config_yaml.get("processes"))
 
     def get_child(self, name: str):
         for child in self.children:

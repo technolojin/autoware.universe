@@ -44,5 +44,5 @@ processes:
   - name: detector
     trigger_conditions:
       - on_input: pointcloud
-    outcome:
+    outcomes:
       - to_output: objects

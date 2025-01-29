@@ -299,6 +299,25 @@ class ArchitectureList:
 
 
 # classes for deployment
+class Event:
+    def __init__(self):
+        self.name = ""
+        self.condition: ["and", "or", "on_input", "on_trigger", "once", "periodic"] = None
+        # and: all children triggers are activated, this event is activated
+        # or: any of the children triggers are activated, this event is activated
+        # on_input: activate the event when the input is received
+        # on_trigger: activate the event when the trigger is activated
+        # once: fulfill the condition if the input is received once
+        # periodic: periodically activate this event
+        self.condition_value: [str, float] = None
+        self.triggers: List[Event] = []  # children triggers
+        self.actions: List[Event] = []  # event to trigger when this event is activated
+
+        self.period: float = None
+        self.timeout: float = None
+        self.is_set: bool = False
+
+
 class Port:
     def __init__(self, name: str, msg_type: str, namespace: List[str] = []):
         self.name = name
@@ -307,6 +326,7 @@ class Port:
         self.full_name = "/" + "/".join(namespace) + "/" + name
         self.reference: List["Port"] = []
         self.topic: List[str] = []
+        self.event = Event()
 
     def set_references(self, port_list: List["Port"]):
         # check if the port is already in the reference list
@@ -473,6 +493,29 @@ class Connection:
             raise ValueError(f"Invalid port name: {port_name}")
         else:
             raise ValueError(f"Invalid port name: {port_name}")
+
+
+class Process:
+    def __init__(self, name: str, config_yaml: dict):
+        self.name = name
+        self.config_yaml = config_yaml
+        self.event = Event()
+        print(f"Process: {self.name}")
+
+        # parse the config dictionary
+        trigger_conditions = config_yaml.get("trigger_conditions")
+        print(trigger_conditions)
+
+        outcome = config_yaml.get("outcomes")
+        print(outcome)
+
+
+class ProcessList:
+    def __init__(self, process_list: List[dict]):
+        self.list: List[Process] = []
+        for process_config in process_list:
+            name = process_config.get("name")
+            self.list.append(Process(name, process_config))
 
 
 class Parameter:

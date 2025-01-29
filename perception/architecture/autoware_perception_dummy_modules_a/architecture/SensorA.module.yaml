@@ -23,5 +23,5 @@ processes:
   - name: detector
     trigger_conditions:
       - periodic: 10.0
-    outcome:
+    outcomes:
       - to_output: pointcloud

@@ -56,7 +56,7 @@ node {BackgroundColor #dddddd}
 {% endfor %}
 
 {% for link in links %}
-    {{ link.from_port.id }} --> {{ link.to_port.id }}
+    {{ link.from_port.id }} ---> {{ link.to_port.id }}
 {% endfor %}
 
 @enduml

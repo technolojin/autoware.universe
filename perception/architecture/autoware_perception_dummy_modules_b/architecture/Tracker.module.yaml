@@ -15,6 +15,7 @@ inputs:
     message_type: autoware_perception_msgs/msg/DetectedObjects
   - name: objects3
     message_type: autoware_perception_msgs/msg/DetectedObjects
+    required: false
 outputs:
   - name: objects
     message_type: autoware_perception_msgs/msg/TrackedObjects
@@ -40,10 +41,11 @@ processes:
           - on_input: objects1
           - on_input: objects2
           - on_input: objects3
-    outcome:
+    outcomes:
       - to_trigger: predict
   - name: predict
     trigger_conditions:
       - periodic: 10.0
-    outcome:
+      - on_trigger: update
+    outcomes:
       - to_output: objects
