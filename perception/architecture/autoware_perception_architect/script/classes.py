@@ -304,7 +304,6 @@ class Port:
         self.name = name
         self.msg_type = msg_type
         self.namespace = namespace
-        self.topic: List[str] = []
         self.full_name = "/" + "/".join(namespace) + "/" + name
         self.reference: List["Port"] = []
         self.topic: List[str] = []

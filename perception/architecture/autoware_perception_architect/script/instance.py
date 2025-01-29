@@ -19,6 +19,7 @@ from typing import List
 import classes as awa_cls
 from classes import element_name_decode
 from classes import load_config_yaml
+import jinja2
 
 debug_mode = True
 
@@ -593,54 +594,50 @@ class Deployment:
     def visualize(self):
         # 4. visualize the deployment diagram via plantuml
         # define the traverse_instance function
-        def traverse_instance(instance, lines):
-            if instance.element_type == "module":
-                lines.append(f"node {instance.name} as {instance.id} {{")
-                for in_port in instance.in_ports:
-                    lines.append(f'  portin "input/{in_port.name}" as {in_port.id}')
-                for out_port in instance.out_ports:
-                    lines.append(f'  portout "output/{out_port.name}" as {out_port.id}')
-                lines.append("}")
-                for out_port in instance.out_ports:
-                    topic_name = "/".join(out_port.topic)
-                    lines.append(f"note as {out_port.id}_note")
-                    lines.append(f"    {topic_name}")
-                    lines.append("end note")
-                    lines.append(f"  {out_port.id}_note - {out_port.id}")
 
-            elif instance.element_type == "pipeline":
-                lines.append(f"frame {instance.name} as {instance.id} {{")
-                for child in instance.children:
-                    traverse_instance(child, lines)
-                for in_port in instance.in_ports:
-                    lines.append(f'  portin "input/{in_port.name}" as {in_port.id}')
-                for out_port in instance.out_ports:
-                    lines.append(f'  portout "output/{out_port.name}" as {out_port.id}')
-                for link in instance.links:
-                    lines.append(f'  {link.from_port.id} --> {link.to_port.id} : "{link.msg_type}"')
-                lines.append("}")
-            elif instance.element_type == "architecture":
-                for child in instance.children:
-                    lines.append(f'folder "{child.namespace[0]}" {{')
-                    traverse_instance(child, lines)
-                    lines.append("}")
-                for link in instance.links:
-                    lines.append(f'  {link.from_port.id} --> {link.to_port.id} : "{link.msg_type}"')
+        # load the template file
+        script_dir = os.path.dirname(__file__)
+        template_path = os.path.join(script_dir, "node-diagram.puml.jinja2")
+        with open(template_path, "r") as f:
+            plantuml_template = f.read()
 
-        # generate the plantuml file
-        lines = ["@startuml", f"title Architecture Diagram {self.name}", ""]
-        lines.extend(["skinparam componentStyle rectangle", "left to right direction\n"])
-        style = [
-            "<style>",
-            "port{FontSize 9}",
-            "arrow{FontSize 5",
-            "Fontcolor #000066}",
-            "node {BackgroundColor #dddddd}",
-            "</style>\n",
-        ]
-        lines.extend(style)
-        traverse_instance(self.architecture_instance, lines)
-        lines.append("@enduml")
+        def collect_instance_data(instance):
+            data = {
+                "name": instance.name,
+                "id": instance.id,
+                "element_type": instance.element_type,
+                "namespace": instance.namespace,
+                "in_ports": [{"name": port.name, "id": port.id} for port in instance.in_ports],
+                "out_ports": [
+                    {"name": port.name, "id": port.id, "topic": port.topic}
+                    for port in instance.out_ports
+                ],
+                "children": (
+                    [collect_instance_data(child) for child in instance.children]
+                    if hasattr(instance, "children")
+                    else []
+                ),
+                "links": (
+                    [
+                        {
+                            "from_port": link.from_port,
+                            "to_port": link.to_port,
+                            "msg_type": link.msg_type,
+                        }
+                        for link in instance.links
+                    ]
+                    if hasattr(instance, "links")
+                    else []
+                ),
+            }
+            return data
+
+        # Collect data from the architecture instance
+        data = collect_instance_data(self.architecture_instance)
+
+        # Render the Jinja2 template with the collected data
+        template = jinja2.Template(plantuml_template)
+        plantuml_output = template.render(data)
 
         # write the plantuml file
         plantuml_file = os.path.join(self.visualization_dir, "architecture.puml")
@@ -649,7 +646,8 @@ class Deployment:
         if not os.path.exists(self.visualization_dir):
             os.makedirs(self.visualization_dir, exist_ok=True)
         with open(plantuml_file, "w") as f:
-            f.write("\n".join(lines))
+            # f.write("\n".join(lines))
+            f.write(plantuml_output)
 
     def generate_system_monitor(self):
         # 2. generate system monitor configuration
