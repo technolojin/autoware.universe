@@ -230,8 +230,6 @@ class Instance:
         if self.element_type != "module":
             raise ValueError("run_module_configuration is only supported for module")
 
-        # parse processes and get trigger conditions and output conditions
-
         # set in_ports
         for in_port in self.element.config_yaml.get("inputs"):
             in_port_name = in_port.get("name")
@@ -251,6 +249,8 @@ class Instance:
             param_name = param.get("name")
             param_value = param.get("default")
             self.parameters.set_parameter(param_name, param_value)
+
+        # parse processes and get trigger conditions and output conditions
 
     def get_child(self, name: str):
         for child in self.children:
@@ -411,6 +411,37 @@ class Instance:
         if debug_mode:
             for param in self.parameters.list:
                 print(f"  Parameter: {param.name} = {param.value}")
+
+    def collect_instance_data(self):
+        data = {
+            "name": self.name,
+            "id": self.id,
+            "element_type": self.element_type,
+            "namespace": self.namespace,
+            "in_ports": [{"name": port.name, "id": port.id} for port in self.in_ports],
+            "out_ports": [
+                {"name": port.name, "id": port.id, "topic": port.topic, "msg_type": port.msg_type}
+                for port in self.out_ports
+            ],
+            "children": (
+                [child.collect_instance_data() for child in self.children]
+                if hasattr(self, "children")
+                else []
+            ),
+            "links": (
+                [
+                    {
+                        "from_port": link.from_port,
+                        "to_port": link.to_port,
+                        "msg_type": link.msg_type,
+                    }
+                    for link in self.links
+                ]
+                if hasattr(self, "links")
+                else []
+            ),
+        }
+        return data
 
 
 class ArchitectureInstance(Instance):
@@ -601,39 +632,9 @@ class Deployment:
         with open(template_path, "r") as f:
             plantuml_template = f.read()
 
-        def collect_instance_data(instance):
-            data = {
-                "name": instance.name,
-                "id": instance.id,
-                "element_type": instance.element_type,
-                "namespace": instance.namespace,
-                "in_ports": [{"name": port.name, "id": port.id} for port in instance.in_ports],
-                "out_ports": [
-                    {"name": port.name, "id": port.id, "topic": port.topic}
-                    for port in instance.out_ports
-                ],
-                "children": (
-                    [collect_instance_data(child) for child in instance.children]
-                    if hasattr(instance, "children")
-                    else []
-                ),
-                "links": (
-                    [
-                        {
-                            "from_port": link.from_port,
-                            "to_port": link.to_port,
-                            "msg_type": link.msg_type,
-                        }
-                        for link in instance.links
-                    ]
-                    if hasattr(instance, "links")
-                    else []
-                ),
-            }
-            return data
-
         # Collect data from the architecture instance
-        data = collect_instance_data(self.architecture_instance)
+        # data = collect_instance_data(self.architecture_instance)
+        data = self.architecture_instance.collect_instance_data()
 
         # Render the Jinja2 template with the collected data
         template = jinja2.Template(plantuml_template)

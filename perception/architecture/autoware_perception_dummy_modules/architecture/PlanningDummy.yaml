@@ -7,8 +7,8 @@ launch:
 
 # interface
 inputs:
-  - name: tracked_objects
-    message_type: autoware_perception_msgs/msg/TrackedObjects
+  - name: lanelet_map
+    message_type: autoware_map_msgs/msg/LaneletMapBin
   - name: predicted_objects
     message_type: autoware_perception_msgs/msg/PredictedObjects
 outputs: []
@@ -21,7 +21,7 @@ configurations: []
 processes:
   - name: drive
     trigger_conditions:
-      - or:
-          - on_input: detected_objects
+      - and:
+          - once: lanelet_map
           - on_input: predicted_objects
     outcome: []

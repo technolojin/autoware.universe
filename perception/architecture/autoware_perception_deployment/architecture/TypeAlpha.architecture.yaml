@@ -12,7 +12,7 @@ components:
     element: SensingA.pipeline
     namespace: sensing
     compute_unit: main_ecu
-  - component: perception_pipeline_a
+  - component: object_recognition
     element: PerceptionA.pipeline
     namespace: perception
     compute_unit: main_ecu
@@ -28,8 +28,10 @@ components:
 
 connections:
   - from: sensor_pipeline_a.output.pointcloud
-    to: perception_pipeline_a.input.pointcloud
+    to: object_recognition.input.pointcloud
   - from: map_loader.output.vector_map
-    to: perception_pipeline_a.input.vector_map
-  - from: perception_pipeline_a.output.objects
-    to: planner.input.tracked_objects
+    to: object_recognition.input.vector_map
+  - from: map_loader.output.vector_map
+    to: planner.input.lanelet_map
+  - from: object_recognition.output.objects
+    to: planner.input.predicted_objects

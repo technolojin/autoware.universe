@@ -27,6 +27,7 @@ node {BackgroundColor #dddddd}
         {% for out_port in instance.out_ports %}
             note as {{ out_port.id }}_note
                 {{ "/" + "/".join(out_port.topic) }}
+                {{ out_port.msg_type }}
             end note
             {{ out_port.id }}_note - {{ out_port.id }}
         {% endfor %}
@@ -42,7 +43,7 @@ node {BackgroundColor #dddddd}
                 portout "output/{{ out_port.name }}" as {{ out_port.id }}
             {% endfor %}
             {% for link in instance.links %}
-                {{ link.from_port.id }} --> {{ link.to_port.id }} : "{{ link.msg_type }}"
+                {{ link.from_port.id }} --> {{ link.to_port.id }}
             {% endfor %}
         }
     {% endif %}
@@ -55,7 +56,7 @@ node {BackgroundColor #dddddd}
 {% endfor %}
 
 {% for link in links %}
-    {{ link.from_port.id }} --> {{ link.to_port.id }} : "{{ link.msg_type }}"
+    {{ link.from_port.id }} --> {{ link.to_port.id }}
 {% endfor %}
 
 @enduml
