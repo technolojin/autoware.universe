@@ -45,7 +45,8 @@ processes:
       - to_trigger: predict
   - name: predict
     trigger_conditions:
-      - periodic: 10.0
-      - on_trigger: update
+      - or:
+          - periodic: 10.0
+          - on_trigger: update
     outcomes:
       - to_output: objects

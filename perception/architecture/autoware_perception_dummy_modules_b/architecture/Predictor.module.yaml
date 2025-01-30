@@ -30,11 +30,13 @@ processes:
     trigger_conditions:
       - and:
           - periodic: 10.0 # Hz
-            warn: 0.3 # s
-            timeout:  0.5 # s
+            warn_rate: 5.0 # Hz
+            error_rate: 2.0 # Hz
+            timeout: 0.5 # s
           - on_input: objects
-            warn: 0.3 # s
-            timeout:  0.5 # s
+            warn_rate: 0.3 # Hz
+            error_rate: 2.0 # Hz
+            timeout: 1.0 # s
           - once: lanelet_map
-    outcome:
+    outcomes:
       - to_output: objects

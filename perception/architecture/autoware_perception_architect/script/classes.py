@@ -302,20 +302,80 @@ class ArchitectureList:
 class Event:
     def __init__(self):
         self.name = ""
-        self.condition: ["and", "or", "on_input", "on_trigger", "once", "periodic"] = None
+        self.condition_list = [
+            "and",
+            "or",
+            "on_input",
+            "on_trigger",
+            "to_output",
+            "once",
+            "periodic",
+        ]
+        self.condition: condition_list = None
         # and: all children triggers are activated, this event is activated
         # or: any of the children triggers are activated, this event is activated
         # on_input: activate the event when the input is received
         # on_trigger: activate the event when the trigger is activated
         # once: fulfill the condition if the input is received once
         # periodic: periodically activate this event
-        self.condition_value: [str, float] = None
+        self.condition_value: [str, float, List] = None
         self.triggers: List[Event] = []  # children triggers
         self.actions: List[Event] = []  # event to trigger when this event is activated
 
         self.period: float = None
+        self.warn_rate: float = None
+        self.error_rate: float = None
         self.timeout: float = None
         self.is_set: bool = False
+
+    def set_condition(self, condition_yaml):
+        self.parse_configuration(condition_yaml)
+
+    def parse_configuration(self, condition_yaml):
+        if len(condition_yaml) == 0:
+            raise ValueError("Condition is empty")
+        # check the first element
+        condi_dict = list(condition_yaml)[0]
+        if isinstance(condi_dict, str):
+            # if the first element is string, it is the type
+            type_key = condi_dict
+            value = condition_yaml.get(type_key)
+        elif isinstance(condi_dict, dict):
+            # in case of dict, the first key is the type
+            type_key = list(condi_dict.keys())[0]
+            value = condi_dict[type_key]
+
+        # set the condition based on the type
+        if type_key not in self.condition_list:
+            raise ValueError(f"Invalid condition: {type_key}")
+        if type_key == "and" or type_key == "or":
+            self.condition = type_key
+            # recursively set the triggers
+            for key in value:
+                event = Event()
+                event.set_condition(key)
+                event.actions.append(self)
+                self.triggers.append(event)
+        elif type_key == "periodic":
+            self.condition = type_key
+            self.period = value
+            self.is_set = True
+        elif (
+            type_key == "on_input"
+            or type_key == "on_trigger"
+            or type_key == "to_output"
+            or type_key == "once"
+        ):
+            self.condition = type_key
+            self.condition_value = value
+
+        # set optional values
+        if "warn_rate" in condition_yaml:
+            self.warn_rate = condition_yaml.get("warn_rate")
+        if "error_rate" in condition_yaml:
+            self.error_rate = condition_yaml.get("error_rate")
+        if "timeout" in condition_yaml:
+            self.timeout = condition_yaml.get("timeout")
 
 
 class Port:
@@ -504,18 +564,11 @@ class Process:
 
         # parse the config dictionary
         trigger_conditions = config_yaml.get("trigger_conditions")
-        print(trigger_conditions)
+        print(f"  Trigger: {trigger_conditions}")
+        self.event.set_condition(trigger_conditions)
 
         outcome = config_yaml.get("outcomes")
-        print(outcome)
-
-
-class ProcessList:
-    def __init__(self, process_list: List[dict]):
-        self.list: List[Process] = []
-        for process_config in process_list:
-            name = process_config.get("name")
-            self.list.append(Process(name, process_config))
+        print(f"  Outcomes: {outcome}")
 
 
 class Parameter:

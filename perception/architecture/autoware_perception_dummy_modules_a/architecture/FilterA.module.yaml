@@ -34,5 +34,5 @@ processes:
       - and:
           - on_input: objects
           - once: vector_map
-    outcome:
+    outcomes:
       - to_output: objects
