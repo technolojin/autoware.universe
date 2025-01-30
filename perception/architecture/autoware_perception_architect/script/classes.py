@@ -324,7 +324,7 @@ class Event:
         self.error_rate: float = None
         self.timeout: float = None
         self.is_set: bool = False
-    
+
     def get_id(self):
         if self.type is None:
             return self.name
@@ -442,17 +442,33 @@ class Process:
     def set_condition(self, process_list, on_input_list):
         trigger_condition_config = self.config_yaml.get("trigger_conditions")
 
-        if debug_mode:
-            print(f"Process {self.name} trigger condition: {trigger_condition_config}")
-            print(f"  process list: {[p.get_id() for p in process_list]}")
-            print(f"  on_input list: {[p.get_id() for p in on_input_list]}")
+        # print(f"Process {self.name} trigger condition: {trigger_condition_config}")
+        # print(f"  process list: {[p.get_id() for p in process_list]}")
+        # print(f"  on_input list: {[p.get_id() for p in on_input_list]}")
 
         self.event.set_chain(trigger_condition_config, process_list, on_input_list)
-    
+
     def set_outcomes(self, process_list, to_output_events):
         outcome_config = self.config_yaml.get("outcomes")
-        print(f"Process {self.name} outcomes: {outcome_config}")
-
+        # print(f"Process {self.name} outcomes: {outcome_config}")
+        for outcome in outcome_config:
+            # parse the outcome type
+            outcome_type = list(outcome.keys())[0]
+            outcome_value = outcome[outcome_type]
+            if outcome_type == "to_output":
+                # search the event in the to_output_events
+                for event in to_output_events:
+                    if event.name == outcome_value:
+                        event.triggers.append(self.event)
+                        self.event.actions.append(event)
+                        break
+            elif outcome_type == "to_trigger":
+                # search the event in the process_list
+                for event in process_list:
+                    if event.name == outcome_value:
+                        event.triggers.append(self.event)
+                        self.event.actions.append(event)
+                        break
 
 
 class Port:
@@ -621,18 +637,18 @@ class Connection:
         self.to_port_name: str = to_port_name
 
     def parse_port_name(self, port_name: str) -> (str, str):  # (instance_name, port_name)
-        name_splited = port_name.split(".")
-        if len(name_splited) == 2:
-            if name_splited[0] == "input":
-                return "", name_splited[1]  # external input
-            if name_splited[0] == "output":
-                return "", name_splited[1]  # external output
+        name_splitted = port_name.split(".")
+        if len(name_splitted) == 2:
+            if name_splitted[0] == "input":
+                return "", name_splitted[1]  # external input
+            if name_splitted[0] == "output":
+                return "", name_splitted[1]  # external output
             raise ValueError(f"Invalid port name: {port_name}")
-        elif len(name_splited) == 3:
-            if name_splited[1] == "input":
-                return name_splited[0], name_splited[2]  # internal input
-            if name_splited[1] == "output":
-                return name_splited[0], name_splited[2]  # internal output
+        elif len(name_splitted) == 3:
+            if name_splitted[1] == "input":
+                return name_splitted[0], name_splitted[2]  # internal input
+            if name_splitted[1] == "output":
+                return name_splitted[0], name_splitted[2]  # internal output
             raise ValueError(f"Invalid port name: {port_name}")
         else:
             raise ValueError(f"Invalid port name: {port_name}")
