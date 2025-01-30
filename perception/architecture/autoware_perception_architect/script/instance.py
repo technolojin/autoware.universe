@@ -253,13 +253,23 @@ class Instance:
             param_value = param.get("default")
             self.parameters.set_parameter(param_name, param_value)
 
+        # connect port events and the process events
+        on_input_events = []
+        for in_port in self.in_ports:
+            on_input_events.append(in_port.event)
+        on_output_events = []
+        for out_port in self.out_ports:
+            on_output_events.append(out_port.event)
+
         # parse processes and get trigger conditions and output conditions
-        # self.processes = awa_cls.ProcessList(self.element.config_yaml.get("processes"))
         for process_config in self.element.config_yaml.get("processes"):
             name = process_config.get("name")
             self.processes.append(awa_cls.Process(name, process_config))
 
-        # connect port events and the process events
+        # set the process events
+        process_event_list = [process.event for process in self.processes]
+        for process in self.processes:
+            process.set_condition(process_event_list, on_input_events, on_output_events)
 
     def get_child(self, name: str):
         for child in self.children:

@@ -300,27 +300,24 @@ class ArchitectureList:
 
 # classes for deployment
 class Event:
-    def __init__(self):
-        self.name = ""
-        self.condition_list = [
-            "and",
-            "or",
+    def __init__(self, name: str):
+        self.name = name
+        self.type_list = [
             "on_input",
             "on_trigger",
-            "to_output",
             "once",
             "periodic",
+            "to_trigger",
+            "to_output",
         ]
-        self.condition: condition_list = None
-        # and: all children triggers are activated, this event is activated
-        # or: any of the children triggers are activated, this event is activated
         # on_input: activate the event when the input is received
         # on_trigger: activate the event when the trigger is activated
         # once: fulfill the condition if the input is received once
         # periodic: periodically activate this event
-        self.condition_value: [str, float, List] = None
-        self.triggers: List[Event] = []  # children triggers
-        self.actions: List[Event] = []  # event to trigger when this event is activated
+        self.type: str = None
+
+        self.triggers: List["Event"] = []  # children triggers
+        self.actions: List["Event"] = []  # event to trigger when this event is activated
 
         self.period: float = None
         self.warn_rate: float = None
@@ -328,54 +325,95 @@ class Event:
         self.timeout: float = None
         self.is_set: bool = False
 
-    def set_condition(self, condition_yaml):
-        self.parse_configuration(condition_yaml)
+    def set_type(self, type_str):
+        if type_str not in self.type_list:
+            raise ValueError(f"Invalid event type: {type_str}")
+        self.type = type_str
 
-    def parse_configuration(self, condition_yaml):
-        if len(condition_yaml) == 0:
-            raise ValueError("Condition is empty")
+    def determine_type(self, config_yaml):
+        if len(config_yaml) == 0:
+            raise ValueError("Config is empty")
         # check the first element
-        condi_dict = list(condition_yaml)[0]
-        if isinstance(condi_dict, str):
+        first_config = list(config_yaml)[0]
+        if isinstance(first_config, str):
             # if the first element is string, it is the type
-            type_key = condi_dict
-            value = condition_yaml.get(type_key)
-        elif isinstance(condi_dict, dict):
+            type_key = first_config
+            value = config_yaml.get(type_key)
+        elif isinstance(first_config, dict):
             # in case of dict, the first key is the type
-            type_key = list(condi_dict.keys())[0]
-            value = condi_dict[type_key]
+            type_key = list(first_config.keys())[0]
+            value = first_config[type_key]
+        return type_key, value
 
-        # set the condition based on the type
-        if type_key not in self.condition_list:
-            raise ValueError(f"Invalid condition: {type_key}")
-        if type_key == "and" or type_key == "or":
-            self.condition = type_key
+    def set_trigger(
+        self,
+        config_yaml,
+        process_list: List["Event"],
+        on_input_list: List["Event"],
+        to_trigger_list: List["Event"],
+    ):
+        # get the config type
+        config_key, config_value = self.determine_type(config_yaml)
+
+        self.set_type(config_key)
+        if config_key in self.type_list:
+            # incoming event
+            if config_key == "periodic":
+                self.period = config_value
+                self.is_set = True
+            elif config_key == "on_input" or config_key == "on_trigger" or config_key == "once":
+                self.condition_value = config_value
+
+            # debug
+            print(f"Event {self.name} is set as {self.type}, {config_value}")
+        else:
+            raise ValueError(f"Invalid event type: {config_key}")
+
+
+class EventChain(Event):
+    def __init__(self, name: str):
+        super().__init__(name)
+        self.chain_list = [
+            "and",
+            "or",
+        ]
+        # and: all children triggers are activated, this event is activated
+        # or: any of the children triggers are activated, this event is activated
+
+    def set_chain(
+        self,
+        config_yaml,
+        process_list: List[Event],
+        on_input_list: List[Event],
+        to_trigger_list: List[Event],
+    ):
+        config_key, config_value = self.determine_type(config_yaml)
+
+        if config_key in self.chain_list:
+            self.type = config_key
             # recursively set the triggers
-            for key in value:
-                event = Event()
-                event.set_condition(key)
+            for chain in config_value:
+                event = EventChain(self.name + "_" + self.type)
+                event.set_chain(chain, process_list, on_input_list, to_trigger_list)
                 event.actions.append(self)
                 self.triggers.append(event)
-        elif type_key == "periodic":
-            self.condition = type_key
-            self.period = value
-            self.is_set = True
-        elif (
-            type_key == "on_input"
-            or type_key == "on_trigger"
-            or type_key == "to_output"
-            or type_key == "once"
-        ):
-            self.condition = type_key
-            self.condition_value = value
+        elif config_key in self.type_list:
+            self.type = "or"
+            event = Event(self.name + "_" + config_key)
+            event.set_trigger(config_yaml, process_list, on_input_list, to_trigger_list)
+            event.actions.append(self)
+            self.triggers.append(event)
 
-        # set optional values
-        if "warn_rate" in condition_yaml:
-            self.warn_rate = condition_yaml.get("warn_rate")
-        if "error_rate" in condition_yaml:
-            self.error_rate = condition_yaml.get("error_rate")
-        if "timeout" in condition_yaml:
-            self.timeout = condition_yaml.get("timeout")
+
+class Process:
+    def __init__(self, name: str, config_yaml: dict):
+        self.name = name
+        self.config_yaml = config_yaml
+        self.event: EventChain = EventChain("process_trigger_" + name)
+
+    def set_condition(self, process_list, on_input_list, to_trigger_list):
+        trigger_condition_config = self.config_yaml.get("trigger_conditions")
+        self.event.set_chain(trigger_condition_config, process_list, on_input_list, to_trigger_list)
 
 
 class Port:
@@ -386,7 +424,7 @@ class Port:
         self.full_name = "/" + "/".join(namespace) + "/" + name
         self.reference: List["Port"] = []
         self.topic: List[str] = []
-        self.event = Event()
+        self.event = None
 
     def set_references(self, port_list: List["Port"]):
         # check if the port is already in the reference list
@@ -413,6 +451,8 @@ class InPort(Port):
         self.is_required = True
         # reference port
         self.servers: List[Port] = []
+        # trigger event
+        self.event = Event("on_input_" + name)
 
     def set_servers(self, port_list: List[Port]):
         # check if the port is already in the reference list
@@ -432,6 +472,8 @@ class OutPort(Port):
         self.is_monitored = False
         # reference port
         self.users: List[Port] = []
+        # action event
+        self.event = Event("to_output_" + name)
 
     def set_users(self, port_list: List[Port]):
         # check if the port is already in the reference list
@@ -553,22 +595,6 @@ class Connection:
             raise ValueError(f"Invalid port name: {port_name}")
         else:
             raise ValueError(f"Invalid port name: {port_name}")
-
-
-class Process:
-    def __init__(self, name: str, config_yaml: dict):
-        self.name = name
-        self.config_yaml = config_yaml
-        self.event = Event()
-        print(f"Process: {self.name}")
-
-        # parse the config dictionary
-        trigger_conditions = config_yaml.get("trigger_conditions")
-        print(f"  Trigger: {trigger_conditions}")
-        self.event.set_condition(trigger_conditions)
-
-        outcome = config_yaml.get("outcomes")
-        print(f"  Outcomes: {outcome}")
 
 
 class Parameter:
