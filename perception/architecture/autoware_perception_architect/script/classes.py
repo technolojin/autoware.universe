@@ -408,6 +408,7 @@ class EventChain(Event):
         ]
         # and: all children triggers are activated, this event is activated
         # or: any of the children triggers are activated, this event is activated
+        self.children: List[Event] = []
 
     def set_chain(
         self,
@@ -415,29 +416,57 @@ class EventChain(Event):
         process_list: List[Event],
         on_input_list: List[Event],
     ):
+        config_size = len(config_yaml)
         config_key, config_value = self.determine_type(config_yaml)
+        if config_size == 1:
+            if config_key in self.type_list:
+                # set the type and trigger
+                self.set_type(config_key)
+                self.set_trigger(config_yaml, process_list, on_input_list)
+            elif config_key in self.chain_list:
+                self.type = config_key  # and/or
+                # recursively set the triggers
+                for chain in config_value:
+                    chain_key, chain_value = self.determine_type(chain)
+                    if chain_key in self.type_list:
+                        self.set_trigger(chain, process_list, on_input_list)
+                    elif chain_key in self.chain_list:
+                        event = EventChain(self.name + "_" + self.type)
+                        event.set_chain(chain, process_list, on_input_list)
+                        event.actions.append(self)
+                        self.children.append(event)
+                    else:
+                        raise ValueError(f"Invalid trigger condition type: {chain_key}")
+        else:
+            # multiple triggers
+            self.set_type("or")
+            for chain in config_yaml:
+                chain_key, chain_value = self.determine_type(chain)
+                if chain_key in self.type_list:
+                    self.set_trigger(chain, process_list, on_input_list)
+                elif chain_key in self.chain_list:
+                    event = EventChain(self.name + "_" + self.type)
+                    event.set_chain(chain, process_list, on_input_list)
+                    event.actions.append(self)
+                    self.children.append(event)
+                else:
+                    raise ValueError(f"Invalid trigger condition type: {chain_key}")
 
-        if config_key in self.chain_list:
-            self.type = config_key
-            # recursively set the triggers
-            for chain in config_value:
-                event = EventChain(self.name + "_" + self.type)
-                event.set_chain(chain, process_list, on_input_list)
-                event.actions.append(self)
-                self.triggers.append(event)
-        elif config_key in self.type_list:
-            self.type = "or"
-            event = Event(self.name + "_" + config_key)
-            event.set_trigger(config_yaml, process_list, on_input_list)
-            event.actions.append(self)
-            self.triggers.append(event)
+    def get_children(self):
+        # recursively get the children
+        children_list = []
+        for child in self.children:
+            children_list += child.get_children()
+        return children_list + self.children
 
 
 class Process:
-    def __init__(self, name: str, config_yaml: dict):
+    def __init__(self, name: str, namespace: List[str], config_yaml: dict):
         self.name = name
+        self.namespace = namespace
         self.config_yaml = config_yaml
         self.event: EventChain = EventChain(name)
+        self.id = "__".join(namespace) + "__process__" + name
 
     def set_condition(self, process_list, on_input_list):
         trigger_condition_config = self.config_yaml.get("trigger_conditions")

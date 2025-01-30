@@ -61,6 +61,7 @@ class Instance:
 
         # processes
         self.processes: List[awa_cls.Process] = []
+        self.event_list: List[awa_cls.Event] = []
 
         # parameters
         self.parameters: awa_cls.ParameterList = awa_cls.ParameterList()
@@ -260,7 +261,7 @@ class Instance:
         # parse processes and get trigger conditions and output conditions
         for process_config in self.element.config_yaml.get("processes"):
             name = process_config.get("name")
-            self.processes.append(awa_cls.Process(name, process_config))
+            self.processes.append(awa_cls.Process(name, self.namespace, process_config))
 
         # set the process events
         process_event_list = [process.event for process in self.processes]
@@ -501,6 +502,23 @@ class ArchitectureInstance(Instance):
         # all children are initialized
         self.is_initialized = True
 
+    def set_architecture(
+        self,
+        architecture: awa_cls.ArchitectureElement,
+        module_list,
+        pipeline_list,
+        parameter_set_list,
+    ):
+        if debug_mode:
+            print(
+                f"Instance set_architecture: Setting {architecture.full_name} instance {self.name}"
+            )
+        self.element = architecture
+        self.element_type = "architecture"
+
+        # set component instances
+        self.set_component_instances(module_list, pipeline_list, parameter_set_list)
+
     def set_connections(self):
         # 2. connect instances
         # set connections
@@ -545,22 +563,9 @@ class ArchitectureInstance(Instance):
             print(f"Instance {self.name}: checking ports")
         self.check_ports()
 
-    def set_architecture(
-        self,
-        architecture: awa_cls.ArchitectureElement,
-        module_list,
-        pipeline_list,
-        parameter_set_list,
-    ):
-        if debug_mode:
-            print(
-                f"Instance set_architecture: Setting {architecture.full_name} instance {self.name}"
-            )
-        self.element = architecture
-        self.element_type = "architecture"
-
-        # set component instances
-        self.set_component_instances(module_list, pipeline_list, parameter_set_list)
+    def build_logical_topology(self):
+        # build logical topology
+        pass
 
 
 class Deployment:
@@ -633,6 +638,8 @@ class Deployment:
             )
             # 2. set connections
             self.architecture_instance.set_connections()
+            # 3. build the logical topology
+            self.architecture_instance.build_logical_topology()
         except Exception as e:
             # try to visualize the architecture to show error status
             self.visualize()
