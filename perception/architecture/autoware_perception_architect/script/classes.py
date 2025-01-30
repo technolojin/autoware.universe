@@ -324,6 +324,12 @@ class Event:
         self.error_rate: float = None
         self.timeout: float = None
         self.is_set: bool = False
+    
+    def get_id(self):
+        if self.type is None:
+            return self.name
+        else:
+            return self.type + "_" + self.name
 
     def set_type(self, type_str):
         if type_str not in self.type_list:
@@ -350,7 +356,6 @@ class Event:
         config_yaml,
         process_list: List["Event"],
         on_input_list: List["Event"],
-        to_trigger_list: List["Event"],
     ):
         # get the config type
         config_key, config_value = self.determine_type(config_yaml)
@@ -360,9 +365,33 @@ class Event:
             # incoming event
             if config_key == "periodic":
                 self.period = config_value
+                if "warn_rate" in config_yaml:
+                    self.warn_rate = config_yaml.get("warn_rate")
+                if "error_rate" in config_yaml:
+                    self.error_rate = config_yaml.get("error_rate")
+                if "timeout" in config_yaml:
+                    self.timeout = config_yaml.get("timeout")
                 self.is_set = True
-            elif config_key == "on_input" or config_key == "on_trigger" or config_key == "once":
+            elif config_key == "on_input" or config_key == "once":
                 self.condition_value = config_value
+                # search the event in the on_input_list
+                for event in on_input_list:
+                    if event.name == config_value:
+                        self.triggers.append(event)
+                        event.actions.append(self)
+                        self.is_set = True
+                        break
+            elif config_key == "on_trigger":
+                self.condition_value = config_value
+                # search the event in the process_list
+                for event in process_list:
+                    if event.name == config_value:
+                        self.triggers.append(event)
+                        event.actions.append(self)
+                        self.is_set = True
+                        break
+            else:
+                raise ValueError(f"Invalid event type to set trigger: {config_key}")
 
             # debug
             print(f"Event {self.name} is set as {self.type}, {config_value}")
@@ -385,7 +414,6 @@ class EventChain(Event):
         config_yaml,
         process_list: List[Event],
         on_input_list: List[Event],
-        to_trigger_list: List[Event],
     ):
         config_key, config_value = self.determine_type(config_yaml)
 
@@ -394,13 +422,13 @@ class EventChain(Event):
             # recursively set the triggers
             for chain in config_value:
                 event = EventChain(self.name + "_" + self.type)
-                event.set_chain(chain, process_list, on_input_list, to_trigger_list)
+                event.set_chain(chain, process_list, on_input_list)
                 event.actions.append(self)
                 self.triggers.append(event)
         elif config_key in self.type_list:
             self.type = "or"
             event = Event(self.name + "_" + config_key)
-            event.set_trigger(config_yaml, process_list, on_input_list, to_trigger_list)
+            event.set_trigger(config_yaml, process_list, on_input_list)
             event.actions.append(self)
             self.triggers.append(event)
 
@@ -409,11 +437,22 @@ class Process:
     def __init__(self, name: str, config_yaml: dict):
         self.name = name
         self.config_yaml = config_yaml
-        self.event: EventChain = EventChain("process_trigger_" + name)
+        self.event: EventChain = EventChain(name)
 
-    def set_condition(self, process_list, on_input_list, to_trigger_list):
+    def set_condition(self, process_list, on_input_list):
         trigger_condition_config = self.config_yaml.get("trigger_conditions")
-        self.event.set_chain(trigger_condition_config, process_list, on_input_list, to_trigger_list)
+
+        if debug_mode:
+            print(f"Process {self.name} trigger condition: {trigger_condition_config}")
+            print(f"  process list: {[p.get_id() for p in process_list]}")
+            print(f"  on_input list: {[p.get_id() for p in on_input_list]}")
+
+        self.event.set_chain(trigger_condition_config, process_list, on_input_list)
+    
+    def set_outcomes(self, process_list, to_output_events):
+        outcome_config = self.config_yaml.get("outcomes")
+        print(f"Process {self.name} outcomes: {outcome_config}")
+
 
 
 class Port:
@@ -452,7 +491,8 @@ class InPort(Port):
         # reference port
         self.servers: List[Port] = []
         # trigger event
-        self.event = Event("on_input_" + name)
+        self.event = Event(name)
+        self.event.set_type("on_input")
 
     def set_servers(self, port_list: List[Port]):
         # check if the port is already in the reference list
@@ -473,7 +513,8 @@ class OutPort(Port):
         # reference port
         self.users: List[Port] = []
         # action event
-        self.event = Event("to_output_" + name)
+        self.event = Event(name)
+        self.event.set_type("to_output")
 
     def set_users(self, port_list: List[Port]):
         # check if the port is already in the reference list

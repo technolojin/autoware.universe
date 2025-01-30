@@ -254,12 +254,8 @@ class Instance:
             self.parameters.set_parameter(param_name, param_value)
 
         # connect port events and the process events
-        on_input_events = []
-        for in_port in self.in_ports:
-            on_input_events.append(in_port.event)
-        on_output_events = []
-        for out_port in self.out_ports:
-            on_output_events.append(out_port.event)
+        on_input_events = [in_port.event for in_port in self.in_ports]
+        to_output_events = [out_port.event for out_port in self.out_ports]
 
         # parse processes and get trigger conditions and output conditions
         for process_config in self.element.config_yaml.get("processes"):
@@ -269,7 +265,8 @@ class Instance:
         # set the process events
         process_event_list = [process.event for process in self.processes]
         for process in self.processes:
-            process.set_condition(process_event_list, on_input_events, on_output_events)
+            process.set_condition(process_event_list, on_input_events)
+            process.set_outcomes(process_event_list, to_output_events)
 
     def get_child(self, name: str):
         for child in self.children:
