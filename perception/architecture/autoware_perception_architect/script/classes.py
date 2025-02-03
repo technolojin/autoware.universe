@@ -362,7 +362,7 @@ class Event:
         # get the config type
         config_key, config_value = self.determine_type(config_yaml)
 
-        self.set_type(config_key)
+        # self.set_type(config_key)
         if config_key in self.type_list:
             # incoming event
             if config_key == "periodic":
@@ -378,25 +378,26 @@ class Event:
                 self.condition_value = config_value
                 # search the event in the on_input_list
                 for event in on_input_list:
-                    if event.name == config_value:
-                        self.triggers.append(event)
+                    if event.name == ("input_"+config_value):
                         event.actions.append(self)
+                        self.triggers.append(event)
                         self.is_set = True
                         break
             elif config_key == "on_trigger":
                 self.condition_value = config_value
                 # search the event in the process_list
                 for event in process_list:
-                    if event.name == config_value:
-                        self.triggers.append(event)
+                    if event.name == (config_value):
                         event.actions.append(self)
+                        self.triggers.append(event)
                         self.is_set = True
                         break
             else:
                 raise ValueError(f"Invalid event type to set trigger: {config_key}")
 
             # debug
-            print(f"Event {self.name} is set as {self.type}, {config_value}, triggers: {[t.name for t in self.triggers]}")
+            print(f"Event {self.name} is set as {self.type}, {config_key}")
+            print(f" triggers: {[t.name for t in self.triggers]}, input_list: {[e.name for e in on_input_list]}, process_list: {[e.name for e in process_list]}")
         else:
             raise ValueError(f"Invalid event type: {config_key}")
 
@@ -489,7 +490,7 @@ class Process:
             if outcome_type == "to_output":
                 # search the event in the to_output_events
                 for event in to_output_events:
-                    if event.name == outcome_value:
+                    if event.name == ("output_"+ outcome_value):
                         event.triggers.append(self.event)
                         self.event.actions.append(event)
                         break
@@ -500,6 +501,10 @@ class Process:
                         event.triggers.append(self.event)
                         self.event.actions.append(event)
                         break
+        
+        # debug
+        print(f"Process {self.name} outcomes: {outcome_config}")
+        print(f"  triggers: {[t.id for t in self.event.triggers]}, to_output: {[e.name for e in to_output_events]}")
 
 
 class Port:
