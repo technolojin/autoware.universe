@@ -20,7 +20,7 @@ configurations:
 
 # processes
 processes:
-  - name: detector
+  - name: lidar
     trigger_conditions:
       - periodic: 10.0 # Hz
         warn_rate: 0.3 # Hz

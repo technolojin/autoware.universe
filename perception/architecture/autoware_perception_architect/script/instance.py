@@ -265,6 +265,8 @@ class Instance:
 
         # set the process events
         process_event_list = [process.event for process in self.processes]
+        if len(process_event_list) == 0:
+            raise ValueError(f"No process found in {self.name}")
         for process in self.processes:
             process.set_condition(process_event_list, on_input_events)
             process.set_outcomes(process_event_list, to_output_events)
@@ -432,6 +434,12 @@ class Instance:
             for param in self.parameters.list:
                 print(f"  Parameter: {param.name} = {param.value}")
 
+    def set_event_tree(self):
+        for event in self.event_list:
+            event.set_frequency_tree()
+        for child in self.children:
+            child.set_event_tree()
+
     def collect_instance_data(self):
         data = {
             "name": self.name,
@@ -571,10 +579,11 @@ class ArchitectureInstance(Instance):
         self.check_ports()
 
     def build_logical_topology(self):
+        print(f"Instance {self.name}: building logical topology")
+        print(f"  children: {[child.name for child in self.children]}")
         # build logical topology
         for child in self.children:
-            for out_port in child.out_ports:
-                out_port.event.set_frequency_tree()
+            child.set_event_tree()
 
 
 class Deployment:

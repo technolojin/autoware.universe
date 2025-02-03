@@ -20,11 +20,11 @@ node {BackgroundColor #dddddd}
         {# PORTS #}
         {% for in_port in instance.in_ports -%}
             portin "input/{{ in_port.name }}" as {{ in_port.id }}
-            interface "{{in_port.event.name}}\n #{{in_port.event.type}}" as {{ in_port.event.id }}
+            interface "{{in_port.event.name}}\n #{{in_port.event.type}}\n @{{in_port.event.period}}" as {{ in_port.event.id }}
         {% endfor -%}
         {% for out_port in instance.out_ports -%}
             portout "output/{{ out_port.name }}" as {{ out_port.id }}
-            interface "{{out_port.event.name}}\n #{{out_port.event.type}}" as {{ out_port.event.id }}
+            interface "{{out_port.event.name}}\n #{{out_port.event.type}}\n @{{out_port.event.period}}" as {{ out_port.event.id }}
         {% endfor -%}
     }
     {% for out_port in instance.out_ports -%}

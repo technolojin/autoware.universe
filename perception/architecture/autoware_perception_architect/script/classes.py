@@ -362,17 +362,14 @@ class Event:
         # get the config type
         config_key, config_value = self.determine_type(config_yaml)
 
-        # self.set_type(config_key)
+        # convert to dict if the type is list and the size is 1
+        if isinstance(config_yaml, list) and len(config_yaml) == 1:
+            config_yaml = config_yaml[0]
+
         if config_key in self.type_list:
             # incoming event
             if config_key == "periodic":
                 self.period = config_value
-                if "warn_rate" in config_yaml:
-                    self.warn_rate = config_yaml.get("warn_rate")
-                if "error_rate" in config_yaml:
-                    self.error_rate = config_yaml.get("error_rate")
-                if "timeout" in config_yaml:
-                    self.timeout = config_yaml.get("timeout")
                 self.is_set = True
             elif config_key == "once" and config_value == None:
                 self.period = 0.0
@@ -383,35 +380,50 @@ class Event:
             elif config_key == "on_input" or config_key == "once":
                 self.condition_value = config_value
                 # search the event in the on_input_list
+                is_found = False
                 for event in on_input_list:
                     if event.name == ("input_"+config_value):
                         event.actions.append(self)
                         self.triggers.append(event)
+                        is_found = True
                         break
                 # if not found, warn
-                if self.triggers == []:
+                if not is_found:
                     raise ValueError(f"Input event not found: {config_value}")
             elif config_key == "on_trigger":
                 self.condition_value = config_value
                 # search the event in the process_list
+                is_found = False
                 for event in process_list:
                     if event.name == (config_value):
                         event.actions.append(self)
                         self.triggers.append(event)
+                        is_found = True
                         break
                 # if not found, warn
-                if self.triggers == []:
+                if not is_found:
                     raise ValueError(f"Trigger event not found: {config_value}")
             else:
                 raise ValueError(f"Invalid event type to set trigger: {config_key}")
+            
+            # if configuration exist in the dictionary, update the period
+            if "warn_rate" in config_yaml.keys():
+                self.warn_rate = config_yaml.get("warn_rate")
+            if "error_rate" in config_yaml.keys():
+                self.error_rate = config_yaml.get("error_rate")
+            if "timeout" in config_yaml.keys():
+                self.timeout = config_yaml.get("timeout")
 
             # debug
-            print(f"Event {self.name} is set as {self.type}, {config_key}")
-            print(f" triggers: {[t.name for t in self.triggers]}, input_list: {[e.name for e in on_input_list]}, process_list: {[e.name for e in process_list]}")
+            # print(f"Event '{self.name}' is set as {self.type}, {config_key}")
+            # print(f" triggers: {[t.name for t in self.triggers]}, input_list: {[e.name for e in on_input_list]}, process_list: {[e.name for e in process_list]}")
         else:
             raise ValueError(f"Invalid event type: {config_key}")
 
     def set_event_frequency(self, period: float, warn_rate: float, error_rate: float, timeout: float):
+        # debug
+        # print(f"Event '{self.name}' set_event_frequency: {period}, {warn_rate}, {error_rate}, {timeout}")
+
         # update the period, take higher value
         if period is not None:
             if self.period is None or period > self.period:
@@ -437,13 +449,17 @@ class Event:
             action.set_event_frequency(period, warn_rate, error_rate, timeout)
 
     def set_frequency_tree(self):
+        # print actions
+        # print(f"Event '{self.name}' actions: {[a.id for a in self.actions]}")
         if self.type == "periodic" and self.is_set:
             # propagate the period to the children
             for action in self.actions:
+                # print(f"Event '{self.name}' set_event_frequency: {self.period}, {self.warn_rate}, {self.error_rate}, {self.timeout}")
                 action.set_event_frequency(self.period, self.warn_rate, self.error_rate, self.timeout)
         elif self.type == "once" and self.is_set:
             # propagate the period to the children
             for action in self.actions:
+                # print(f"Event '{self.name}' set_event_frequency: {self.period}, {self.warn_rate}, {self.error_rate}, {self.timeout}")
                 action.set_event_frequency(0.0, 0.0, 0.0, 0.0)
         
         
@@ -528,7 +544,6 @@ class Process:
 
     def set_outcomes(self, process_list, to_output_events):
         outcome_config = self.config_yaml.get("outcomes")
-        # print(f"Process {self.name} outcomes: {outcome_config}")
         for outcome in outcome_config:
             # parse the outcome type
             outcome_type = list(outcome.keys())[0]
@@ -540,6 +555,9 @@ class Process:
                         event.triggers.append(self.event)
                         self.event.actions.append(event)
                         break
+                # if not found, warn
+                if self.event.actions == []:
+                    raise ValueError(f"Output event not found: {outcome_value}")
             elif outcome_type == "to_trigger":
                 # search the event in the process_list
                 for event in process_list:
@@ -547,10 +565,13 @@ class Process:
                         event.triggers.append(self.event)
                         self.event.actions.append(event)
                         break
+                # if not found, warn
+                if self.event.actions == []:
+                    raise ValueError(f"Trigger event not found: {outcome_value}")
         
         # debug
-        print(f"Process {self.name} outcomes: {outcome_config}")
-        print(f"  triggers: {[t.id for t in self.event.triggers]}, to_output: {[e.name for e in to_output_events]}")
+        # print(f"Process '{self.name}' outcomes: {outcome_config}")
+        # print(f"  actions: {[t.id for t in self.event.actions]}, to_output: {[e.name for e in to_output_events]}")
 
 
 class Port:
