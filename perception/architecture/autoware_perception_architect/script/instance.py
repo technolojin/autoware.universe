@@ -350,7 +350,7 @@ class Instance:
         for child in self.children:
             child.check_ports()
 
-        # check ports only for module. others are only for connection
+        # check ports only for module. in case of pipeline, the check is done
         if self.element_type != "module":
             return
 
@@ -461,26 +461,7 @@ class Instance:
                 else []
             ),
             "events": (
-                [
-                    {
-                        "name": event.name,
-                        "id": event.id,
-                        "type": event.type,
-                        "triggers":
-                            [
-                                {
-                                    "name": trigger.name,
-                                    "id": trigger.id,
-                                }
-                                for trigger in event.triggers
-                            ]
-                            if hasattr(event, "triggers")
-                            else [],
-                    }
-                    for event in self.event_list
-                ]
-                if hasattr(self, "event_list")
-                else []
+                self.event_list
             )
         }
         print(data)
@@ -591,7 +572,9 @@ class ArchitectureInstance(Instance):
 
     def build_logical_topology(self):
         # build logical topology
-        pass
+        for child in self.children:
+            for out_port in child.out_ports:
+                out_port.event.set_frequency_tree()
 
 
 class Deployment:

@@ -374,6 +374,12 @@ class Event:
                 if "timeout" in config_yaml:
                     self.timeout = config_yaml.get("timeout")
                 self.is_set = True
+            elif config_key == "once" and config_value == None:
+                self.period = 0.0
+                self.warn_rate = 0.0
+                self.error_rate = 0.0
+                self.timeout = 0.0
+                self.is_set = True
             elif config_key == "on_input" or config_key == "once":
                 self.condition_value = config_value
                 # search the event in the on_input_list
@@ -381,8 +387,10 @@ class Event:
                     if event.name == ("input_"+config_value):
                         event.actions.append(self)
                         self.triggers.append(event)
-                        self.is_set = True
                         break
+                # if not found, warn
+                if self.triggers == []:
+                    raise ValueError(f"Input event not found: {config_value}")
             elif config_key == "on_trigger":
                 self.condition_value = config_value
                 # search the event in the process_list
@@ -390,8 +398,10 @@ class Event:
                     if event.name == (config_value):
                         event.actions.append(self)
                         self.triggers.append(event)
-                        self.is_set = True
                         break
+                # if not found, warn
+                if self.triggers == []:
+                    raise ValueError(f"Trigger event not found: {config_value}")
             else:
                 raise ValueError(f"Invalid event type to set trigger: {config_key}")
 
@@ -401,6 +411,42 @@ class Event:
         else:
             raise ValueError(f"Invalid event type: {config_key}")
 
+    def set_event_frequency(self, period: float, warn_rate: float, error_rate: float, timeout: float):
+        # update the period, take higher value
+        if period is not None:
+            if self.period is None or period > self.period:
+                self.period = period
+        # update the warn_rate, take higher value
+        if warn_rate is not None:
+            if self.warn_rate is None or warn_rate > self.warn_rate:
+                self.warn_rate = warn_rate
+        # update the error_rate, take higher value
+        if error_rate is not None:
+            if self.error_rate is None or error_rate > self.error_rate:
+                self.error_rate = error_rate
+        # update the timeout, take higher value
+        if timeout is not None:
+            if self.timeout is None or timeout > self.timeout:
+                self.timeout = timeout
+
+        # set the flag
+        self.is_set = True
+
+        # propagate the period to the children
+        for action in self.actions:
+            action.set_event_frequency(period, warn_rate, error_rate, timeout)
+
+    def set_frequency_tree(self):
+        if self.type == "periodic" and self.is_set:
+            # propagate the period to the children
+            for action in self.actions:
+                action.set_event_frequency(self.period, self.warn_rate, self.error_rate, self.timeout)
+        elif self.type == "once" and self.is_set:
+            # propagate the period to the children
+            for action in self.actions:
+                action.set_event_frequency(0.0, 0.0, 0.0, 0.0)
+        
+        
 
 class EventChain(Event):
     def __init__(self, name: str, namespace: List[str] = []):
@@ -621,6 +667,12 @@ class Link:
                 from_port_ref.set_topic(self.from_port.namespace, self.from_port.name)
             for to_port_ref in to_port_list:
                 to_port_ref.set_topic(self.from_port.namespace, self.from_port.name)
+
+            # set the trigger event of the to-port
+            for to_port_ref in to_port_list:
+                for server_port in to_port_ref.servers:
+                    to_port_ref.event.triggers.append(server_port.event)
+                    server_port.event.actions.append(to_port_ref.event)
 
         # case 2: from internal output to external output
         elif is_from_port_internal and not is_to_port_internal:

@@ -22,6 +22,6 @@ configurations: []
 processes:
   - name: export
     trigger_conditions:
-      - once: vector_map
+      - once:
     outcomes:
       - to_output: vector_map
