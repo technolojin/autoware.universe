@@ -268,6 +268,9 @@ class Instance:
         for process in self.processes:
             process.set_condition(process_event_list, on_input_events)
             process.set_outcomes(process_event_list, to_output_events)
+        
+        # set the process events
+        self.event_list = [process.event for process in self.processes]
 
     def get_child(self, name: str):
         for child in self.children:
@@ -435,9 +438,9 @@ class Instance:
             "id": self.id,
             "element_type": self.element_type,
             "namespace": self.namespace,
-            "in_ports": [{"name": port.name, "id": port.id} for port in self.in_ports],
+            "in_ports": [{"name": port.name, "id": port.id, "event": port.event} for port in self.in_ports],
             "out_ports": [
-                {"name": port.name, "id": port.id, "topic": port.topic, "msg_type": port.msg_type}
+                {"name": port.name, "id": port.id, "topic": port.topic, "msg_type": port.msg_type, "event": port.event}
                 for port in self.out_ports
             ],
             "children": (
@@ -457,7 +460,30 @@ class Instance:
                 if hasattr(self, "links")
                 else []
             ),
+            "events": (
+                [
+                    {
+                        "name": event.name,
+                        "id": event.id,
+                        "type": event.type,
+                        "triggers":
+                            [
+                                {
+                                    "name": trigger.name,
+                                    "id": trigger.id,
+                                }
+                                for trigger in event.triggers
+                            ]
+                            if hasattr(event, "triggers")
+                            else [],
+                    }
+                    for event in self.event_list
+                ]
+                if hasattr(self, "event_list")
+                else []
+            )
         }
+        print(data)
         return data
 
 

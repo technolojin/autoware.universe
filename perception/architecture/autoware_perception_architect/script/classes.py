@@ -300,8 +300,10 @@ class ArchitectureList:
 
 # classes for deployment
 class Event:
-    def __init__(self, name: str):
+    def __init__(self, name: str, namespace: List[str]):
         self.name = name
+        self.namespace = namespace
+        self.id = "__".join(namespace) + "__" + name + "__event"
         self.type_list = [
             "on_input",
             "on_trigger",
@@ -394,14 +396,14 @@ class Event:
                 raise ValueError(f"Invalid event type to set trigger: {config_key}")
 
             # debug
-            print(f"Event {self.name} is set as {self.type}, {config_value}")
+            print(f"Event {self.name} is set as {self.type}, {config_value}, triggers: {[t.name for t in self.triggers]}")
         else:
             raise ValueError(f"Invalid event type: {config_key}")
 
 
 class EventChain(Event):
-    def __init__(self, name: str):
-        super().__init__(name)
+    def __init__(self, name: str, namespace: List[str] = []):
+        super().__init__(name, namespace)
         self.chain_list = [
             "and",
             "or",
@@ -431,7 +433,7 @@ class EventChain(Event):
                     if chain_key in self.type_list:
                         self.set_trigger(chain, process_list, on_input_list)
                     elif chain_key in self.chain_list:
-                        event = EventChain(self.name + "_" + self.type)
+                        event = EventChain(self.name + "_" + self.type, self.namespace)
                         event.set_chain(chain, process_list, on_input_list)
                         event.actions.append(self)
                         self.children.append(event)
@@ -445,7 +447,7 @@ class EventChain(Event):
                 if chain_key in self.type_list:
                     self.set_trigger(chain, process_list, on_input_list)
                 elif chain_key in self.chain_list:
-                    event = EventChain(self.name + "_" + self.type)
+                    event = EventChain(self.name + "_" + self.type, self.namespace)
                     event.set_chain(chain, process_list, on_input_list)
                     event.actions.append(self)
                     self.children.append(event)
@@ -465,7 +467,7 @@ class Process:
         self.name = name
         self.namespace = namespace
         self.config_yaml = config_yaml
-        self.event: EventChain = EventChain(name)
+        self.event: EventChain = EventChain(name, namespace)
         self.id = "__".join(namespace) + "__process__" + name
 
     def set_condition(self, process_list, on_input_list):
@@ -536,7 +538,7 @@ class InPort(Port):
         # reference port
         self.servers: List[Port] = []
         # trigger event
-        self.event = Event(name)
+        self.event = Event( "input_" + name, namespace)
         self.event.set_type("on_input")
 
     def set_servers(self, port_list: List[Port]):
@@ -558,7 +560,7 @@ class OutPort(Port):
         # reference port
         self.users: List[Port] = []
         # action event
-        self.event = Event(name)
+        self.event = Event("output_"+ name, namespace)
         self.event.set_type("to_output")
 
     def set_users(self, port_list: List[Port]):
