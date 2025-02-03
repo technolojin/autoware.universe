@@ -2,8 +2,9 @@ name: vehicle_x.deployment
 
 architecture: TypeAlpha.architecture
 
-# additional components for experiment/development
-additional_components: []
+# vehicle specific parameters, such as sensor calibration, vehicle dimensions
+vehicle_parameters: []
 
-# vehicle specific parameters
-individual_parameters: []
+# environment specific parameters, such as map data
+environment_parameters: []
+

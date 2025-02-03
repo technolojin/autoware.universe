@@ -34,7 +34,7 @@ processes:
             error_rate: 2.0 # Hz
             timeout: 0.5 # s
           - on_input: objects
-            warn_rate: 0.3 # Hz
+            warn_rate: 3.3 # Hz
             error_rate: 2.0 # Hz
             timeout: 1.0 # s
           - once: lanelet_map

@@ -46,7 +46,6 @@ processes:
   - name: predict
     trigger_conditions:
       - or:
-          - periodic: 10.0
-          - on_trigger: update
+          - periodic: 10.0 # Hz
     outcomes:
       - to_output: objects

@@ -139,7 +139,6 @@ class Instance:
         for connection in connection_list:
             # case 1. from external input to internal input
             if connection.type == 1:
-                link_list: List[awa_cls.Link] = []
                 # find the to_instance from children
                 to_instance = self.get_child(connection.to_instance)
                 port_list = list(to_instance.in_ports)
@@ -150,7 +149,7 @@ class Instance:
                     for port in port_list:
                         from_port = awa_cls.InPort(port.name, port.msg_type, self.namespace)
                         link = awa_cls.Link(port.msg_type, from_port, port, self.namespace)
-                        link_list.append(link)
+                        self.links.append(link)
                 else:
                     # match the port name
                     to_port = to_instance.get_in_port(connection.to_port_name)
@@ -159,16 +158,10 @@ class Instance:
                         connection.from_port_name, to_port.msg_type, self.namespace
                     )
                     link = awa_cls.Link(to_port.msg_type, from_port, to_port, self.namespace)
-                    link_list.append(link)
-
-                for link in link_list:
                     self.links.append(link)
-                    if debug_mode:
-                        print(f"Link: {link.from_port.full_name}-> {link.to_port.full_name}")
 
             # case 2. from internal output to internal input
             if connection.type == 2:
-                link_list: List[awa_cls.Link] = []
                 # find the from_instance and to_instance from children
                 from_instance = self.get_child(connection.from_instance)
                 to_instance = self.get_child(connection.to_instance)
@@ -177,29 +170,21 @@ class Instance:
                 to_port = to_instance.get_in_port(connection.to_port_name)
                 # create link
                 link = awa_cls.Link(from_port.msg_type, from_port, to_port, self.namespace)
-                link_list.append(link)
-
-                for link in link_list:
-                    self.links.append(link)
-                    if debug_mode:
-                        print(f"Link: {link.from_port.full_name}-> {link.to_port.full_name}")
+                self.links.append(link)
 
             # case 3. from internal output to external output
             if connection.type == 3:
-                link_list: List[awa_cls.Link] = []
-
                 # find the from_instance from children
                 from_instance = self.get_child(connection.from_instance)
                 port_list = list(from_instance.out_ports)
                 if len(port_list) == 0:
                     raise ValueError(f"No available port found in {from_instance.name}")
-
                 # if the port name is wildcard, find available port from the from_instance
                 if connection.from_port_name == "*":
                     for port in port_list:
                         to_port = awa_cls.OutPort(port.name, port.msg_type, self.namespace)
                         link = awa_cls.Link(port.msg_type, port, to_port, self.namespace)
-                        link_list.append(link)
+                        self.links.append(link)
                 else:
                     # match the port name
                     from_port = from_instance.get_out_port(connection.from_port_name)
@@ -208,19 +193,14 @@ class Instance:
                         connection.to_port_name, from_port.msg_type, self.namespace
                     )
                     link = awa_cls.Link(from_port.msg_type, from_port, to_port, self.namespace)
-                    link_list.append(link)
-
-                for link in link_list:
                     self.links.append(link)
-                    if debug_mode:
-                        print(f"Connection: {link.from_port.full_name}-> {link.to_port.full_name}")
 
         # create external ports
         self.create_external_ports(self.links)
 
         if debug_mode:
             print(
-                f"Instance {self.name} run_pipeline_configuration: {len(self.links)} links are established"
+                f"Instance '{self.name}' run_pipeline_configuration: {len(self.links)} links are established"
             )
             for link in self.links:
                 print(f"  Link: {link.from_port.full_name} -> {link.to_port.full_name}")
@@ -270,7 +250,7 @@ class Instance:
         for process in self.processes:
             process.set_condition(process_event_list, on_input_events)
             process.set_outcomes(process_event_list, to_output_events)
-        
+
         # set the process events
         self.event_list = [process.event for process in self.processes]
 
@@ -400,7 +380,7 @@ class Instance:
         # check if the param_list_yaml is superset of pipeline_parameter_list
         pipeline_parameter_list = [param.get("name") for param in pipeline_parameter_list]
         if param_name not in pipeline_parameter_list:
-            raise ValueError(f"Parameter not found: {param_name} in {pipeline_parameter_list}")
+            raise ValueError(f"Parameter not found: '{param_name}' in {pipeline_parameter_list}")
 
         # check parameters to connect parameters to the children
         param_connection_list = self.element.config_yaml.get("parameters")
@@ -446,9 +426,17 @@ class Instance:
             "id": self.id,
             "element_type": self.element_type,
             "namespace": self.namespace,
-            "in_ports": [{"name": port.name, "id": port.id, "event": port.event} for port in self.in_ports],
+            "in_ports": [
+                {"name": port.name, "id": port.id, "event": port.event} for port in self.in_ports
+            ],
             "out_ports": [
-                {"name": port.name, "id": port.id, "topic": port.topic, "msg_type": port.msg_type, "event": port.event}
+                {
+                    "name": port.name,
+                    "id": port.id,
+                    "topic": port.topic,
+                    "msg_type": port.msg_type,
+                    "event": port.event,
+                }
                 for port in self.out_ports
             ],
             "children": (
@@ -468,9 +456,7 @@ class Instance:
                 if hasattr(self, "links")
                 else []
             ),
-            "events": (
-                self.event_list
-            )
+            "events": (self.event_list),
         }
         print(data)
         return data
@@ -575,11 +561,11 @@ class ArchitectureInstance(Instance):
 
         # check ports
         if debug_mode:
-            print(f"Instance {self.name}: checking ports")
+            print(f"\n\nInstance '{self.name}': checking ports")
         self.check_ports()
 
     def build_logical_topology(self):
-        print(f"Instance {self.name}: building logical topology")
+        print(f"\nInstance '{self.name}': building logical topology")
         print(f"  children: {[child.name for child in self.children]}")
         # build logical topology
         for child in self.children:
@@ -611,7 +597,9 @@ class Deployment:
 
         # member variables
         self.architecture_instance: Instance = None
-        self.individual_parameters_yaml = None
+        self.vehicle_parameters_yaml = None
+        self.sensor_calibration_yaml = None
+        self.map_yaml = None
 
         # output paths
         self.output_root_dir = output_root_dir
@@ -630,8 +618,8 @@ class Deployment:
         deployment_config_fields = [
             "name",
             "architecture",
-            "additional_components",
-            "individual_parameters",
+            "vehicle_parameters",
+            "environment_parameters",
         ]
         for field in deployment_config_fields:
             if field not in self.config_yaml:

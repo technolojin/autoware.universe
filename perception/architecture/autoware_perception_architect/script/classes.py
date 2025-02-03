@@ -321,7 +321,7 @@ class Event:
         self.triggers: List["Event"] = []  # children triggers
         self.actions: List["Event"] = []  # event to trigger when this event is activated
 
-        self.period: float = None
+        self.frequency: float = None
         self.warn_rate: float = None
         self.error_rate: float = None
         self.timeout: float = None
@@ -369,10 +369,10 @@ class Event:
         if config_key in self.type_list:
             # incoming event
             if config_key == "periodic":
-                self.period = config_value
+                self.frequency = config_value
                 self.is_set = True
             elif config_key == "once" and config_value == None:
-                self.period = 0.0
+                self.frequency = 0.0
                 self.warn_rate = 0.0
                 self.error_rate = 0.0
                 self.timeout = 0.0
@@ -382,7 +382,7 @@ class Event:
                 # search the event in the on_input_list
                 is_found = False
                 for event in on_input_list:
-                    if event.name == ("input_"+config_value):
+                    if event.name == ("input_" + config_value):
                         event.actions.append(self)
                         self.triggers.append(event)
                         is_found = True
@@ -405,8 +405,8 @@ class Event:
                     raise ValueError(f"Trigger event not found: {config_value}")
             else:
                 raise ValueError(f"Invalid event type to set trigger: {config_key}")
-            
-            # if configuration exist in the dictionary, update the period
+
+            # set the topic monitor configurations, if available
             if "warn_rate" in config_yaml.keys():
                 self.warn_rate = config_yaml.get("warn_rate")
             if "error_rate" in config_yaml.keys():
@@ -420,14 +420,19 @@ class Event:
         else:
             raise ValueError(f"Invalid event type: {config_key}")
 
-    def set_event_frequency(self, period: float, warn_rate: float, error_rate: float, timeout: float):
+    def set_event_frequency(
+        self, frequency: float, warn_rate: float, error_rate: float, timeout: float
+    ):
         # debug
-        # print(f"Event '{self.name}' set_event_frequency: {period}, {warn_rate}, {error_rate}, {timeout}")
+        # print(f"Event '{self.name}' set_event_frequency: {frequency}, {warn_rate}, {error_rate}, {timeout}")
 
-        # update the period, take higher value
-        if period is not None:
-            if self.period is None or period > self.period:
-                self.period = period
+        # if the event is already set, update the values and do not propagate
+        # it is for loop prevention
+
+        # update the frequency, take higher value
+        if frequency is not None:
+            if self.frequency is None or frequency > self.frequency:
+                self.frequency = frequency
         # update the warn_rate, take higher value
         if warn_rate is not None:
             if self.warn_rate is None or warn_rate > self.warn_rate:
@@ -444,25 +449,26 @@ class Event:
         # set the flag
         self.is_set = True
 
-        # propagate the period to the children
+        # propagate the frequency to the children
         for action in self.actions:
-            action.set_event_frequency(period, warn_rate, error_rate, timeout)
+            action.set_event_frequency(frequency, warn_rate, error_rate, timeout)
 
     def set_frequency_tree(self):
         # print actions
         # print(f"Event '{self.name}' actions: {[a.id for a in self.actions]}")
         if self.type == "periodic" and self.is_set:
-            # propagate the period to the children
+            # propagate the frequency to the children
             for action in self.actions:
-                # print(f"Event '{self.name}' set_event_frequency: {self.period}, {self.warn_rate}, {self.error_rate}, {self.timeout}")
-                action.set_event_frequency(self.period, self.warn_rate, self.error_rate, self.timeout)
+                # print(f"Event '{self.name}' set_event_frequency: {self.frequency}, {self.warn_rate}, {self.error_rate}, {self.timeout}")
+                action.set_event_frequency(
+                    self.frequency, self.warn_rate, self.error_rate, self.timeout
+                )
         elif self.type == "once" and self.is_set:
-            # propagate the period to the children
+            # propagate the frequency to the children
             for action in self.actions:
-                # print(f"Event '{self.name}' set_event_frequency: {self.period}, {self.warn_rate}, {self.error_rate}, {self.timeout}")
+                # print(f"Event '{self.name}' set_event_frequency: {self.frequency}, {self.warn_rate}, {self.error_rate}, {self.timeout}")
                 action.set_event_frequency(0.0, 0.0, 0.0, 0.0)
-        
-        
+
 
 class EventChain(Event):
     def __init__(self, name: str, namespace: List[str] = []):
@@ -551,7 +557,7 @@ class Process:
             if outcome_type == "to_output":
                 # search the event in the to_output_events
                 for event in to_output_events:
-                    if event.name == ("output_"+ outcome_value):
+                    if event.name == ("output_" + outcome_value):
                         event.triggers.append(self.event)
                         self.event.actions.append(event)
                         break
@@ -568,7 +574,7 @@ class Process:
                 # if not found, warn
                 if self.event.actions == []:
                     raise ValueError(f"Trigger event not found: {outcome_value}")
-        
+
         # debug
         # print(f"Process '{self.name}' outcomes: {outcome_config}")
         # print(f"  actions: {[t.id for t in self.event.actions]}, to_output: {[e.name for e in to_output_events]}")
@@ -610,7 +616,7 @@ class InPort(Port):
         # reference port
         self.servers: List[Port] = []
         # trigger event
-        self.event = Event( "input_" + name, namespace)
+        self.event = Event("input_" + name, namespace)
         self.event.set_type("on_input")
 
     def set_servers(self, port_list: List[Port]):
@@ -627,12 +633,12 @@ class OutPort(Port):
         self.full_name = "/" + "/".join(namespace) + "/output/" + name
         self.id = "__".join(namespace) + "__output_" + name
         # for topic monitor
-        self.period = 0.0
+        self.frequency = 0.0
         self.is_monitored = False
         # reference port
         self.users: List[Port] = []
         # action event
-        self.event = Event("output_"+ name, namespace)
+        self.event = Event("output_" + name, namespace)
         self.event.set_type("to_output")
 
     def set_users(self, port_list: List[Port]):

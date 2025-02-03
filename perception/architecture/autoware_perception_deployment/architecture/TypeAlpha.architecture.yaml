@@ -12,15 +12,15 @@ components:
     element: SensingA.pipeline
     namespace: sensing
     compute_unit: main_ecu
+  - component: map_loader
+    element: MapDummy.module
+    namespace: map
+    compute_unit: dummy_ecu
   - component: object_recognition
     element: PerceptionA.pipeline
     namespace: perception
     compute_unit: main_ecu
     parameter_set: PerceptionPipelineA.parameter_set
-  - component: map_loader
-    element: MapDummy.module
-    namespace: map
-    compute_unit: dummy_ecu
   - component: planner
     element: PlanningDummy.module
     namespace: planning
