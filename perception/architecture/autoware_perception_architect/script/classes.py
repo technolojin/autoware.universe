@@ -320,6 +320,7 @@ class Event:
 
         self.triggers: List["Event"] = []  # children triggers
         self.actions: List["Event"] = []  # event to trigger when this event is activated
+        self.trigger_root_ids: List[str] = []  # trigger root ids
 
         self.frequency: float = None
         self.warn_rate: float = None
@@ -327,16 +328,35 @@ class Event:
         self.timeout: float = None
         self.is_set: bool = False
 
-    def get_id(self):
-        if self.type is None:
-            return self.name
-        else:
-            return self.type + "_" + self.name
-
     def set_type(self, type_str):
         if type_str not in self.type_list:
             raise ValueError(f"Invalid event type: {type_str}")
         self.type = type_str
+
+    def check_trigger_root_ids(self, trigger_root_id):
+        if trigger_root_id in self.trigger_root_ids:
+            return True
+        else:
+            self.trigger_root_ids.append(trigger_root_id)
+            return False
+
+    def add_trigger_event(self, event):
+        if event.id == self.id:
+            raise ValueError(f"Event cannot trigger itself: {self.id}")
+        # check if the event is already in the list
+        for e in self.triggers:
+            if e.id == event.id:
+                return
+        self.triggers.append(event)
+
+    def add_action_event(self, event):
+        if event.id == self.id:
+            raise ValueError(f"Event cannot trigger itself: {self.id}")
+        # check if the event is already in the list
+        for e in self.actions:
+            if e.id == event.id:
+                return
+        self.actions.append(event)
 
     def determine_type(self, config_yaml):
         if len(config_yaml) == 0:
@@ -383,8 +403,8 @@ class Event:
                 is_found = False
                 for event in on_input_list:
                     if event.name == ("input_" + config_value):
-                        event.actions.append(self)
-                        self.triggers.append(event)
+                        event.add_action_event(self)
+                        self.add_trigger_event(event)
                         is_found = True
                         break
                 # if not found, warn
@@ -396,8 +416,8 @@ class Event:
                 is_found = False
                 for event in process_list:
                     if event.name == (config_value):
-                        event.actions.append(self)
-                        self.triggers.append(event)
+                        event.add_action_event(self)
+                        self.add_trigger_event(event)
                         is_found = True
                         break
                 # if not found, warn
@@ -421,13 +441,20 @@ class Event:
             raise ValueError(f"Invalid event type: {config_key}")
 
     def set_event_frequency(
-        self, frequency: float, warn_rate: float, error_rate: float, timeout: float
+        self,
+        trigger_root_id: str,
+        frequency: float,
+        warn_rate: float,
+        error_rate: float,
+        timeout: float,
     ):
         # debug
         # print(f"Event '{self.name}' set_event_frequency: {frequency}, {warn_rate}, {error_rate}, {timeout}")
 
         # if the event is already set, update the values and do not propagate
         # it is for loop prevention
+        if self.check_trigger_root_ids(trigger_root_id):
+            return
 
         # update the frequency, take higher value
         if frequency is not None:
@@ -451,23 +478,22 @@ class Event:
 
         # propagate the frequency to the children
         for action in self.actions:
-            action.set_event_frequency(frequency, warn_rate, error_rate, timeout)
+            action.set_event_frequency(trigger_root_id, frequency, warn_rate, error_rate, timeout)
 
     def set_frequency_tree(self):
-        # print actions
-        # print(f"Event '{self.name}' actions: {[a.id for a in self.actions]}")
+        trigger_root_id = self.id
         if self.type == "periodic" and self.is_set:
             # propagate the frequency to the children
             for action in self.actions:
-                # print(f"Event '{self.name}' set_event_frequency: {self.frequency}, {self.warn_rate}, {self.error_rate}, {self.timeout}")
                 action.set_event_frequency(
-                    self.frequency, self.warn_rate, self.error_rate, self.timeout
+                    trigger_root_id, self.frequency, self.warn_rate, self.error_rate, self.timeout
                 )
         elif self.type == "once" and self.is_set:
             # propagate the frequency to the children
             for action in self.actions:
-                # print(f"Event '{self.name}' set_event_frequency: {self.frequency}, {self.warn_rate}, {self.error_rate}, {self.timeout}")
-                action.set_event_frequency(0.0, 0.0, 0.0, 0.0)
+                action.set_event_frequency(trigger_root_id, 0.0, 0.0, 0.0, 0.0)
+        else:
+            pass
 
 
 class EventChain(Event):
@@ -504,7 +530,7 @@ class EventChain(Event):
                     elif chain_key in self.chain_list:
                         event = EventChain(self.name + "_" + self.type, self.namespace)
                         event.set_chain(chain, process_list, on_input_list)
-                        event.actions.append(self)
+                        event.add_action_event(self)
                         self.children.append(event)
                     else:
                         raise ValueError(f"Invalid trigger condition type: {chain_key}")
@@ -518,7 +544,7 @@ class EventChain(Event):
                 elif chain_key in self.chain_list:
                     event = EventChain(self.name + "_" + self.type, self.namespace)
                     event.set_chain(chain, process_list, on_input_list)
-                    event.actions.append(self)
+                    event.add_action_event(self)
                     self.children.append(event)
                 else:
                     raise ValueError(f"Invalid trigger condition type: {chain_key}")
@@ -543,8 +569,6 @@ class Process:
         trigger_condition_config = self.config_yaml.get("trigger_conditions")
 
         # print(f"Process {self.name} trigger condition: {trigger_condition_config}")
-        # print(f"  process list: {[p.get_id() for p in process_list]}")
-        # print(f"  on_input list: {[p.get_id() for p in on_input_list]}")
 
         self.event.set_chain(trigger_condition_config, process_list, on_input_list)
 
@@ -558,8 +582,8 @@ class Process:
                 # search the event in the to_output_events
                 for event in to_output_events:
                     if event.name == ("output_" + outcome_value):
-                        event.triggers.append(self.event)
-                        self.event.actions.append(event)
+                        event.add_trigger_event(self.event)
+                        self.event.add_action_event(event)
                         break
                 # if not found, warn
                 if self.event.actions == []:
@@ -568,8 +592,8 @@ class Process:
                 # search the event in the process_list
                 for event in process_list:
                     if event.name == outcome_value:
-                        event.triggers.append(self.event)
-                        self.event.actions.append(event)
+                        event.add_trigger_event(self.event)
+                        self.event.add_action_event(event)
                         break
                 # if not found, warn
                 if self.event.actions == []:
@@ -698,8 +722,8 @@ class Link:
             # set the trigger event of the to-port
             for to_port_ref in to_port_list:
                 for server_port in to_port_ref.servers:
-                    to_port_ref.event.triggers.append(server_port.event)
-                    server_port.event.actions.append(to_port_ref.event)
+                    to_port_ref.event.add_trigger_event(server_port.event)
+                    server_port.event.add_action_event(to_port_ref.event)
 
         # case 2: from internal output to external output
         elif is_from_port_internal and not is_to_port_internal:

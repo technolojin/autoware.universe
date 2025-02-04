@@ -101,7 +101,7 @@ class Instance:
                 self.children.append(instance)
 
             # run the pipeline configuration
-            self.run_pipeline_configuration()
+            self._run_pipeline_configuration()
 
             # recursive call is finished
             self.is_initialized = True
@@ -113,7 +113,7 @@ class Instance:
             self.element_type = element_type
 
             # run the module configuration
-            self.run_module_configuration()
+            self._run_module_configuration()
 
             # recursive call is finished
             self.is_initialized = True
@@ -121,7 +121,7 @@ class Instance:
         else:
             raise ValueError(f"Invalid element type: {element_type}")
 
-    def run_pipeline_configuration(self):
+    def _run_pipeline_configuration(self):
         if self.element_type != "pipeline":
             raise ValueError("run_pipeline_configuration is only supported for pipeline")
 
@@ -196,7 +196,7 @@ class Instance:
                     self.links.append(link)
 
         # create external ports
-        self.create_external_ports(self.links)
+        self._create_external_ports(self.links)
 
         if debug_mode:
             print(
@@ -210,7 +210,7 @@ class Instance:
             for out_port in self.out_ports:
                 print(f"  New out port: {out_port.full_name}")
 
-    def run_module_configuration(self):
+    def _run_module_configuration(self):
         if self.element_type != "module":
             raise ValueError("run_module_configuration is only supported for module")
 
@@ -246,6 +246,7 @@ class Instance:
         # set the process events
         process_event_list = [process.event for process in self.processes]
         if len(process_event_list) == 0:
+            # process configuration is not found
             raise ValueError(f"No process found in {self.name}")
         for process in self.processes:
             process.set_condition(process_event_list, on_input_events)
@@ -316,7 +317,7 @@ class Instance:
         # same port name is not found, add the port
         self.out_ports.append(out_port)
 
-    def create_external_ports(self, link_list):
+    def _create_external_ports(self, link_list):
         # create in ports based on the link_list
         for link in link_list:
             # create port only if the namespace is the same as the instance
@@ -415,8 +416,12 @@ class Instance:
                 print(f"  Parameter: {param.name} = {param.value}")
 
     def set_event_tree(self):
+        # trigger the event tree from the current instance
+        # in case of pipeline, event_list is empty
         for event in self.event_list:
             event.set_frequency_tree()
+        # recursive call for children
+        # in case of module, children is empty
         for child in self.children:
             child.set_event_tree()
 
@@ -566,7 +571,6 @@ class ArchitectureInstance(Instance):
 
     def build_logical_topology(self):
         print(f"\nInstance '{self.name}': building logical topology")
-        print(f"  children: {[child.name for child in self.children]}")
         # build logical topology
         for child in self.children:
             child.set_event_tree()
