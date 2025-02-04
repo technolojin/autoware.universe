@@ -303,7 +303,7 @@ class Event:
     def __init__(self, name: str, namespace: List[str]):
         self.name = name
         self.namespace = namespace
-        self.id = "__".join(namespace) + "__" + name + "__event"
+        self.id = "__".join(namespace) + "__" + name
         self.type_list = [
             "on_input",
             "on_trigger",
