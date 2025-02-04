@@ -43,6 +43,7 @@ configurations:
 processes:
   - name: detector
     trigger_conditions:
-      - on_input: pointcloud
+      - or:
+          - on_input: pointcloud
     outcomes:
       - to_output: objects
