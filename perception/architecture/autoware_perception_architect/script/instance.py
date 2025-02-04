@@ -253,7 +253,11 @@ class Instance:
             process.set_outcomes(process_event_list, to_output_events)
 
         # set the process events
-        self.event_list = [process.event for process in self.processes]
+        # self.event_list = [process.get_event_list() for process in self.processes]
+        process_event_list = []
+        for process in self.processes:
+            process_event_list.extend(process.get_event_list())
+        self.event_list = process_event_list
 
     def get_child(self, name: str):
         for child in self.children:

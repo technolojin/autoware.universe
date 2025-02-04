@@ -340,23 +340,29 @@ class Event:
             self.trigger_root_ids.append(trigger_root_id)
             return False
 
-    def add_trigger_event(self, event):
+    def add_trigger_event(self, event, vise_versa=True):
         if event.id == self.id:
             raise ValueError(f"Event cannot trigger itself: {self.id}")
         # check if the event is already in the list
         for e in self.triggers:
             if e.id == event.id:
                 return
+        # relationship is established
         self.triggers.append(event)
+        if vise_versa:
+            event.add_action_event(self, False)
 
-    def add_action_event(self, event):
+    def add_action_event(self, event, vise_versa=True):
         if event.id == self.id:
             raise ValueError(f"Event cannot trigger itself: {self.id}")
         # check if the event is already in the list
         for e in self.actions:
             if e.id == event.id:
                 return
+        # relationship is established
         self.actions.append(event)
+        if vise_versa:
+            event.add_trigger_event(self, False)
 
     def determine_type(self, config_yaml):
         if len(config_yaml) == 0:
@@ -403,7 +409,7 @@ class Event:
                 is_found = False
                 for event in on_input_list:
                     if event.name == ("input_" + config_value):
-                        event.add_action_event(self)
+                        # event.add_action_event(self)
                         self.add_trigger_event(event)
                         is_found = True
                         break
@@ -416,7 +422,7 @@ class Event:
                 is_found = False
                 for event in process_list:
                     if event.name == (config_value):
-                        event.add_action_event(self)
+                        # event.add_action_event(self)
                         self.add_trigger_event(event)
                         is_found = True
                         break
@@ -507,12 +513,21 @@ class EventChain(Event):
         # or: any of the children triggers are activated, this event is activated
         self.children: List[Event] = []
 
+    def set_type(self, type_str):
+        if type_str not in self.chain_list + self.type_list:
+            raise ValueError(f"Invalid event chain type: {type_str}")
+        self.type = type_str
+
     def set_chain(
         self,
         config_yaml,
         process_list: List[Event],
         on_input_list: List[Event],
+        child_idx=0,
     ):
+        # debug
+        print(f"EventChain '{self.name}' set_chain: {config_yaml}")
+
         config_size = len(config_yaml)
         config_key, config_value = self.determine_type(config_yaml)
         if config_size == 1:
@@ -528,9 +543,10 @@ class EventChain(Event):
                     if chain_key in self.type_list:
                         self.set_trigger(chain, process_list, on_input_list)
                     elif chain_key in self.chain_list:
-                        event = EventChain(self.name + "_" + self.type, self.namespace)
+                        event = EventChain(self.name + "_" + str(child_idx), self.namespace)
+                        child_idx += 1
                         event.set_chain(chain, process_list, on_input_list)
-                        event.add_action_event(self)
+                        self.add_trigger_event(event)
                         self.children.append(event)
                     else:
                         raise ValueError(f"Invalid trigger condition type: {chain_key}")
@@ -542,9 +558,10 @@ class EventChain(Event):
                 if chain_key in self.type_list:
                     self.set_trigger(chain, process_list, on_input_list)
                 elif chain_key in self.chain_list:
-                    event = EventChain(self.name + "_" + self.type, self.namespace)
+                    event = EventChain(self.name + "_" + str(child_idx), self.namespace)
+                    child_idx += 1
                     event.set_chain(chain, process_list, on_input_list)
-                    event.add_action_event(self)
+                    self.add_trigger_event(event)
                     self.children.append(event)
                 else:
                     raise ValueError(f"Invalid trigger condition type: {chain_key}")
@@ -569,7 +586,6 @@ class Process:
         trigger_condition_config = self.config_yaml.get("trigger_conditions")
 
         # print(f"Process {self.name} trigger condition: {trigger_condition_config}")
-
         self.event.set_chain(trigger_condition_config, process_list, on_input_list)
 
     def set_outcomes(self, process_list, to_output_events):
@@ -582,7 +598,6 @@ class Process:
                 # search the event in the to_output_events
                 for event in to_output_events:
                     if event.name == ("output_" + outcome_value):
-                        event.add_trigger_event(self.event)
                         self.event.add_action_event(event)
                         break
                 # if not found, warn
@@ -592,7 +607,6 @@ class Process:
                 # search the event in the process_list
                 for event in process_list:
                     if event.name == outcome_value:
-                        event.add_trigger_event(self.event)
                         self.event.add_action_event(event)
                         break
                 # if not found, warn
@@ -602,6 +616,9 @@ class Process:
         # debug
         # print(f"Process '{self.name}' outcomes: {outcome_config}")
         # print(f"  actions: {[t.id for t in self.event.actions]}, to_output: {[e.name for e in to_output_events]}")
+
+    def get_event_list(self):
+        return self.event.get_children() + [self.event]
 
 
 class Port:
@@ -723,7 +740,6 @@ class Link:
             for to_port_ref in to_port_list:
                 for server_port in to_port_ref.servers:
                     to_port_ref.event.add_trigger_event(server_port.event)
-                    server_port.event.add_action_event(to_port_ref.event)
 
         # case 2: from internal output to external output
         elif is_from_port_internal and not is_to_port_internal:
