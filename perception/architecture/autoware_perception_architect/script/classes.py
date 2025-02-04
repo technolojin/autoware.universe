@@ -524,7 +524,7 @@ class EventChain(Event):
         child_idx=0,
     ):
         # debug
-        print(f"EventChain '{self.name}' set_chain: {config_yaml}")
+        # print(f"EventChain '{self.name}' set_chain: {config_yaml}")
 
         if isinstance(config_yaml, dict):
             config_key, config_value = self.determine_type(config_yaml)

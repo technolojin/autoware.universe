@@ -678,7 +678,7 @@ class Deployment:
         plantuml_output = template.render(data)
 
         # write the plantuml file
-        plantuml_file = os.path.join(self.visualization_dir, "architecture.puml")
+        plantuml_file = os.path.join(self.visualization_dir, self.name + ".architecture.puml")
         if os.path.exists(plantuml_file):
             os.remove(plantuml_file)
         if not os.path.exists(self.visualization_dir):
