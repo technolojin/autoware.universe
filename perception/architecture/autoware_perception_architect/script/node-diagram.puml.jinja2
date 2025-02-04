@@ -19,7 +19,7 @@ node {BackgroundColor #dddddd}
     node {{ instance.name }} as {{ instance.id }} {
         {# PORTS #}
         {% for in_port in instance.in_ports -%}
-            portin "input/{{ in_port.name }} \n @{{in_port.event.frequency}}" as {{ in_port.id }}
+            portin "input/{{ in_port.name }} \n #{{in_port.event.type}}\n @{{in_port.event.frequency}}" as {{ in_port.id }}
         {% endfor -%}
         {% for out_port in instance.out_ports -%}
             portout "output/{{ out_port.name }}" as {{ out_port.id }}

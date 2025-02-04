@@ -2,8 +2,9 @@ name: TypeAlpha.architecture
 
 depends:
   - SensingA.pipeline
-  - PerceptionA.pipeline
   - MapDummy.module
+  - LocalizationDummy.module
+  - PerceptionA.pipeline
   - PlanningDummy.module
   - PerceptionPipelineA.parameter_set
 
@@ -15,6 +16,10 @@ components:
   - component: map_loader
     element: MapDummy.module
     namespace: map
+    compute_unit: dummy_ecu
+  - component: localizer
+    element: LocalizationDummy.module
+    namespace: localization
     compute_unit: dummy_ecu
   - component: object_recognition
     element: PerceptionA.pipeline
@@ -29,6 +34,10 @@ components:
 connections:
   - from: sensor_pipeline_a.output.pointcloud
     to: object_recognition.input.pointcloud
+  - from: sensor_pipeline_a.output.pointcloud
+    to: localizer.input.pointcloud
+  - from: map_loader.output.vector_map
+    to: localizer.input.lanelet_map
   - from: map_loader.output.vector_map
     to: object_recognition.input.vector_map
   - from: map_loader.output.vector_map

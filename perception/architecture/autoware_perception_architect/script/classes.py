@@ -409,7 +409,6 @@ class Event:
                 is_found = False
                 for event in on_input_list:
                     if event.name == ("input_" + config_value):
-                        # event.add_action_event(self)
                         self.add_trigger_event(event)
                         is_found = True
                         break
@@ -422,7 +421,6 @@ class Event:
                 is_found = False
                 for event in process_list:
                     if event.name == (config_value):
-                        # event.add_action_event(self)
                         self.add_trigger_event(event)
                         is_found = True
                         break
