@@ -1,0 +1,44 @@
+# module information
+name: ObjectAssociationMerger.module
+
+launch:
+  package: autoware_object_merger
+  plugin: autoware::object_merger::ObjectAssociationMergerNode
+  executable: object_association_merger_node
+  node_output: screen
+
+# interface
+inputs:
+  - name: ros_transform
+    message_type: tf2_msgs/msg/TFMessage
+    global: /tf
+  - name: object0
+    message_type: autoware_perception_msgs/msg/DetectedObjects
+  - name: object1
+    message_type: autoware_perception_msgs/msg/DetectedObjects
+outputs:
+  - name: merged_object
+    message_type: autoware_perception_msgs/msg/DetectedObjects
+    qos:
+      reliability: reliable
+      durability: transient_local
+parameters:
+  - name: data_association_matrix_path
+    default: config/data_association_matrix.param.yaml
+  - name: distance_threshold_list_path
+    default: config/overlapped_judge.param.yaml
+  - name: object_association_merger_param_path
+    default: config/object_association_merger.param.yaml
+
+# configurations
+configurations: []
+
+# processes
+processes:
+  - name: merger
+    trigger_conditions:
+      - and:
+          - on_input: object0
+          - on_input: object1
+    outcomes:
+      - to_output: merged_object

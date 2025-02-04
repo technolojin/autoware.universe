@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.14)
-project(autoware_perception_dummy_modules_a)
+project(autoware_perception_example_pipeline)
 
 find_package(autoware_cmake REQUIRED)
 autoware_package()
@@ -12,16 +12,16 @@ ament_auto_package(
 autoware_architect_configure()
 
 autoware_architect_generate_launcher(
-  DetectorA.module
+  module/DetectorA.module
   detector_a_node
 )
 
 autoware_architect_generate_launcher(
-  FilterA.module
+  module/FilterA.module
   filter_a_node
 )
 
 autoware_architect_generate_launcher(
-  SensorA.module
-  sensor_a_node
+  module/Tracker.module
+  tracker_node
 )

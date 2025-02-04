@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.14)
-project(autoware_perception_dummy_modules_b)
+project(autoware_perception_modules)
 
 find_package(autoware_cmake REQUIRED)
 autoware_package()
@@ -10,8 +10,3 @@ ament_auto_package(
 )
 
 autoware_architect_configure()
-
-autoware_architect_generate_launcher(
-  Tracker.module
-  tracker_node
-)

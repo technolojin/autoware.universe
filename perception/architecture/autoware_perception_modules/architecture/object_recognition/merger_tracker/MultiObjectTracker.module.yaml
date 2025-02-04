@@ -1,0 +1,69 @@
+# module information
+name: MultiObjectTracker.module
+
+launch:
+  package: autoware_multi_object_tracker
+  plugin: autoware::multi_object_tracker::MultiObjectTracker
+  executable: multi_object_tracker_node
+
+# interface
+inputs:
+  - name: ros_transform
+    message_type: tf2_msgs/msg/TFMessage
+    global: /tf
+  - name: detected_objects
+    message_type: autoware_perception_msgs/msg/DetectedObjects
+  - name: lidar_centerpoint
+    message_type: autoware_perception_msgs/msg/DetectedObjects
+  - name: lidar_apollo
+    message_type: autoware_perception_msgs/msg/DetectedObjects
+  - name: lidar_clustering
+    message_type: autoware_perception_msgs/msg/DetectedObjects
+  - name: lidar_pointpainting
+    message_type: autoware_perception_msgs/msg/DetectedObjects
+  - name: camera_lidar_fusion
+    message_type: autoware_perception_msgs/msg/DetectedObjects
+  - name: detection_by_tracker
+    message_type: autoware_perception_msgs/msg/DetectedObjects
+  - name: radar
+    message_type: autoware_perception_msgs/msg/DetectedObjects
+outputs:
+  - name: objects
+    message_type: autoware_perception_msgs/msg/TrackedObjects
+    qos:
+      reliability: reliable
+      durability: transient_local
+parameters:
+  - name: tracker_setting_path
+    default: config/multi_object_tracker_node.param.yaml
+  - name: data_association_matrix_path
+    default: config/data_association_matrix.param.yaml
+  - name: input_channels_path
+    default: config/input_channels.param.yaml
+
+# configurations
+configurations: []
+
+# processes
+processes:
+  - name: update
+    trigger_conditions:
+      - on_input: detected_objects
+      - and:
+          - or:
+            - on_input: lidar_centerpoint
+            - on_input: lidar_apollo
+            - on_input: lidar_pointpainting
+          - or:
+            - on_input: lidar_clustering
+            - on_input: camera_lidar_fusion
+      - on_input: detection_by_tracker
+      - on_input: radar
+    outcomes:
+      - to_trigger: track
+  - name: track
+    trigger_conditions:
+      - on_trigger: update
+      - periodic: 10.0 # Hz
+    outcomes:
+      - to_output: objects

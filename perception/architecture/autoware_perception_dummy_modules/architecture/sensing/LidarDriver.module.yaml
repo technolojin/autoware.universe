@@ -1,9 +1,9 @@
 # module
-name: SensorA.module
+name: LidarDriver.module
 
 launch:
   package: autoware_perception_dummy_nodes
-  plugin: autoware::perception_dummy_nodes::SensorADriver
+  plugin: autoware::perception_dummy_nodes::LidarDriver
 
 # interfaces
 inputs: []

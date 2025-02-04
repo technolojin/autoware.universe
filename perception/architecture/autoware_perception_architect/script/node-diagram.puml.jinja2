@@ -17,7 +17,7 @@ node {BackgroundColor #dddddd}
 {% macro build_instance_graph(instance) -%}
     {% if instance.element_type == "module" -%}
     node {{ instance.name }} as {{ instance.id }} {
-        {# PORTS #}
+        {# PORTS -#}
         {% for in_port in instance.in_ports -%}
             portin "input/{{ in_port.name }} \n #{{in_port.event.type}}\n @{{in_port.event.frequency}}" as {{ in_port.id }}
         {% endfor -%}
@@ -25,15 +25,29 @@ node {BackgroundColor #dddddd}
             portout "output/{{ out_port.name }}" as {{ out_port.id }}
         {% endfor -%}
     }
+    {# MESSAGE INFO -#}
+    {% for in_port in instance.in_ports -%}
+        {# if subscribing global topic, cloud -#}
+        {% if in_port.is_global -%}
+            cloud "{{ "/" + "/".join(in_port.topic) }}" as {{ in_port.id }}_cloud
+            {{ in_port.id }}_cloud -d-> {{ in_port.id }}
+        {% endif -%}
+    {% endfor -%}
     {% for out_port in instance.out_ports -%}
-        note as {{ out_port.id }}_note
-            topic: {{ "/" + "/".join(out_port.topic) }}
-            type: {{ out_port.msg_type }}
-            freq: {{ out_port.event.frequency}}
-            warn: {{ out_port.event.warn_rate }}
-            error: {{ out_port.event.error_rate }}
-        end note
+        {# if the port is global, cloud -#}
+        {% if out_port.is_global -%}
+            cloud "{{ "/" + "/".join(out_port.topic) }}\n @{{out_port.event.frequency}} Hz" as {{ out_port.id }}_cloud
+            {{ out_port.id }} -d-> {{ out_port.id }}_cloud
+        {% else %}
+            note as {{ out_port.id }}_note
+                topic: {{ "/" + "/".join(out_port.topic) }}
+                type: {{ out_port.msg_type }}
+                freq: {{ out_port.event.frequency}} Hz
+                warn: {{ out_port.event.warn_rate }} Hz
+                error: {{ out_port.event.error_rate }} s
+            end note
         {{ out_port.id }}_note -u- {{ out_port.id }}
+        {% endif -%}
     {% endfor -%}
     {% elif instance.element_type == "pipeline" -%}
     frame {{ instance.name }} as {{ instance.id }} {
@@ -87,26 +101,26 @@ node {BackgroundColor #dddddd}
 {% endmacro -%}
 
 
-{# instances #}
+{# instances -#}
 {% for child in children -%}
 folder "{{ child.namespace[0] }}" {
     {{ build_instance_graph(child) }}
 }
 {% endfor -%}
 
-{# links #}
+{# links -#}
 {% for link in links -%}
 {{ link.from_port.id }} -d-> {{ link.to_port.id }}
 {% endfor -%}
 
-{# events #}
+{# events -#}
 {% for child in children -%}
 folder "{{ child.namespace[0] }}" {
     {{ build_logic_graph(child) }}
 }
 {% endfor -%}
 
-{# only for the diagram shape #}
+{# only for the diagram shape -#}
 {% for i in range(children|length) -%}
     {% for j in range(i + 1, children|length) -%}
         {{ children[i].id }} -[hidden]d- {{ children[j].id }}

@@ -1,0 +1,23 @@
+name: SensingDummy.pipeline
+
+depends:
+  - LidarDriver.module
+
+nodes:
+  - node: lidar_top
+    element: LidarDriver.module
+
+external_interfaces:
+  input: []
+  output:
+    - name: pointcloud
+
+connections:
+  - from: lidar_top.output.pointcloud
+    to: output.pointcloud
+
+parameters: []
+
+configurations:
+  - name: lidar_top.composable_node
+    to: lidar_top.configuration.composable_node

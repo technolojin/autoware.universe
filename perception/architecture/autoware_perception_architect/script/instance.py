@@ -447,19 +447,8 @@ class Instance:
             "id": self.id,
             "element_type": self.element_type,
             "namespace": self.namespace,
-            "in_ports": [
-                {"name": port.name, "id": port.id, "event": port.event} for port in self.in_ports
-            ],
-            "out_ports": [
-                {
-                    "name": port.name,
-                    "id": port.id,
-                    "topic": port.topic,
-                    "msg_type": port.msg_type,
-                    "event": port.event,
-                }
-                for port in self.out_ports
-            ],
+            "in_ports": (self.in_ports),
+            "out_ports": (self.out_ports),
             "children": (
                 [child.collect_instance_data() for child in self.children]
                 if hasattr(self, "children")
