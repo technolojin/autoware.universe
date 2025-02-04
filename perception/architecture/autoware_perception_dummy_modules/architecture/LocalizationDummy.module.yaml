@@ -12,7 +12,7 @@ inputs:
   - name: pointcloud
     message_type: sensor_msgs/msg/PointCloud2
 outputs:
-  - name: tf
+  - name: ros_transform
     message_type: tf2_msgs/msg/TFMessage
     global: /tf
 
@@ -33,4 +33,4 @@ processes:
     trigger_conditions:
       - periodic: 100 # Hz
     outcomes:
-      - to_output: tf
+      - to_output: ros_transform

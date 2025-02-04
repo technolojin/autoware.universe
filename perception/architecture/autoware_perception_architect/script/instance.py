@@ -219,6 +219,12 @@ class Instance:
             in_port_name = in_port.get("name")
             in_port_msg_type = in_port.get("message_type")
             in_port_instance = awa_cls.InPort(in_port_name, in_port_msg_type, self.namespace)
+            if "global" in in_port:
+                in_port_instance.is_global = True
+                topic = in_port.get("global")
+                if topic[0] == "/":
+                    topic = topic[1:]
+                in_port_instance.topic = topic.split("/")
             self.in_ports.append(in_port_instance)
 
         # set out_ports
@@ -226,6 +232,12 @@ class Instance:
             out_port_name = out_port.get("name")
             out_port_msg_type = out_port.get("message_type")
             out_port_instance = awa_cls.OutPort(out_port_name, out_port_msg_type, self.namespace)
+            if "global" in out_port:
+                out_port_instance.is_global = True
+                topic = out_port.get("global")
+                if topic[0] == "/":
+                    topic = topic[1:]
+                out_port_instance.topic = topic.split("/")
             self.out_ports.append(out_port_instance)
 
         # set parameters
@@ -467,7 +479,9 @@ class Instance:
             ),
             "events": (self.event_list),
         }
+        # debug
         print(data)
+
         return data
 
 

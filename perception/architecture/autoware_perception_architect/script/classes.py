@@ -78,7 +78,11 @@ class Element:
 class ElementList:
     def __init__(self, config_yaml_file_dirs: List[str]):
         self.elements: List[Element] = []
-        self.fill_list(config_yaml_file_dirs)
+        try:
+            self.fill_list(config_yaml_file_dirs)
+        except ValueError as e:
+            print(e, config_yaml_file_dirs)
+            return
 
     def fill_list(self, config_yaml_file_dirs: List[str]):
         for config_yaml_file_dir in config_yaml_file_dirs:
@@ -625,6 +629,7 @@ class Port:
         self.reference: List["Port"] = []
         self.topic: List[str] = []
         self.event = None
+        self.is_global = False
 
     def set_references(self, port_list: List["Port"]):
         # check if the port is already in the reference list
