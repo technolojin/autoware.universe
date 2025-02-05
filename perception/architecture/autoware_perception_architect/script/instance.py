@@ -506,7 +506,7 @@ class ArchitectureInstance(Instance):
             except Exception as e:
                 # add the instance to the children list for debugging
                 self.children.append(instance)
-                raise ValueError(f"Error in setting component instance {instance_name} : {e}")
+                raise ValueError(f"Error in setting component instance '{instance_name}' : {e}")
 
             if param_list_yaml is not None:
                 for param in param_list_yaml:

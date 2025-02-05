@@ -6,28 +6,23 @@ depends:
   - ScanGroundFilter.module
   # camera-lidar fusion
   - PointPaintingFusion.module
-  - RoiClusterFusion.module
   - RoiDetectedObjectFusion.module
-  - RoiPointCloudFusion.module
-  # lidar detector
-  - LidarCenterPoint.module
-  - VoxelGridBasedEuclideanCluster.module
-  - ShapeEstimation.module
-  - DetectedObjectFeatureRemover.module
+
   # filter
   - ObjectLaneletFilter.module
-  - ObstaclePointCloudBasedValidator.module
-  - LowIntensityClusterFilter.module
   # merger
   - DecorativeTrackerMerger.module
   - ObjectAssociationMerger.module
-  - ClusterMerger.module
+
   # tracker
   - DetectionByTracker.module
   - MultiObjectTracker.module
 
   # pipeline
   - CameraLidarFusion.pipeline
+  - Clustering.pipeline
+  - Centerpoint.pipeline
+  - ObjectDetection.pipeline
 
 components:
   - component: voxel_based_compare_map_filter
@@ -43,30 +38,9 @@ components:
     element: PointPaintingFusion.module
     namespace: perception
     compute_unit: main_ecu
-  - component: roi_detected_object_fusion
-    element: RoiDetectedObjectFusion.module
-    namespace: perception
-    compute_unit: main_ecu
+
   - component: roi_pointcloud_fusion
     element: RoiPointCloudFusion.module
-    namespace: perception
-    compute_unit: main_ecu
-
-  - component: lidar_centerpoint
-    element: LidarCenterPoint.module
-    namespace: perception
-    compute_unit: main_ecu
-  - component: voxel_grid_based_euclidean_cluster
-    element: VoxelGridBasedEuclideanCluster.module
-    namespace: perception
-    compute_unit: main_ecu
-
-  - component: object_lanelet_filter
-    element: ObjectLaneletFilter.module
-    namespace: perception
-    compute_unit: main_ecu
-  - component: obstacle_pointcloud_based_validator
-    element: ObstaclePointCloudBasedValidator.module
     namespace: perception
     compute_unit: main_ecu
 
@@ -74,23 +48,27 @@ components:
     element: DecorativeTrackerMerger.module
     namespace: perception
     compute_unit: main_ecu
-  - component: object_association_merger
-    element: ObjectAssociationMerger.module
-    namespace: perception
-    compute_unit: main_ecu
 
-  - component: detection_by_tracker
-    element: DetectionByTracker.module
-    namespace: perception
-    compute_unit: main_ecu
   - component: multi_object_tracker
     element: MultiObjectTracker.module
     namespace: perception
     compute_unit: main_ecu
 
   # pipeline
-  - component: camera_lidar_fusion
-    element: CameraLidarFusion.pipeline
+  # - component: camera_lidar_fusion
+  #   element: CameraLidarFusion.pipeline
+  #   namespace: perception
+  #   compute_unit: main_ecu
+  # - component: clustering
+  #   element: Clustering.pipeline
+  #   namespace: perception
+  #   compute_unit: main_ecu
+  # - component: centerpoint
+  #   element: Centerpoint.pipeline
+  #   namespace: perception
+  #   compute_unit: main_ecu
+  - component: object_detection
+    element: ObjectDetection.pipeline
     namespace: perception
     compute_unit: main_ecu
 

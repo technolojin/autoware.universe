@@ -774,8 +774,15 @@ class Connection:
         #   3: internal output to external output
         self.type = 0
 
-        from_instance, from_port_name = self.parse_port_name(connection_dict.get("from"))
-        to_instance, to_port_name = self.parse_port_name(connection_dict.get("to"))
+        connection_from = connection_dict.get("from")
+        if connection_from is None:
+            raise ValueError(f"Connection couldn't found : {connection_dict}")
+        connection_to = connection_dict.get("to")
+        if connection_to is None:
+            raise ValueError(f"Connection couldn't found : {connection_dict}")
+
+        from_instance, from_port_name = self.parse_port_name(connection_from)
+        to_instance, to_port_name = self.parse_port_name(connection_to)
 
         if from_instance == "" and to_instance == "":
             raise ValueError(f"Invalid connection: {connection_dict}")

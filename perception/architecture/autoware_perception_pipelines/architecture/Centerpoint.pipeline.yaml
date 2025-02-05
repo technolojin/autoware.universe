@@ -1,0 +1,37 @@
+name: Centerpoint.pipeline
+
+depends:
+  - LidarCenterPoint.module
+  - ObstaclePointCloudBasedValidator.module
+
+nodes:
+  - node: lidar_centerpoint
+    element: LidarCenterPoint.module
+  - node: validation
+    element: ObstaclePointCloudBasedValidator.module
+
+external_interfaces:
+  input:
+    - name: pointcloud
+    - name: obstacle_pointcloud
+    - name: roi_fused_objects
+  output:
+    - name: detected_objects
+    - name: validated_objects
+  parameter: []
+
+connections:
+  - from: input.pointcloud
+    to: lidar_centerpoint.input.pointcloud
+  - from: lidar_centerpoint.output.objects
+    to: output.detected_objects
+  - from: input.obstacle_pointcloud
+    to: validation.input.obstacle_pointcloud
+  - from: input.roi_fused_objects
+    to: validation.input.detected_objects
+  - from: validation.output.objects
+    to: output.validated_objects
+
+parameters: []
+
+configurations: []

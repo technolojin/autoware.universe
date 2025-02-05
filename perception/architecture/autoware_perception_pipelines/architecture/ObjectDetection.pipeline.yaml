@@ -1,0 +1,176 @@
+name: ObjectDetection.pipeline
+
+depends:
+  # detectors
+  - Centerpoint.pipeline
+  - Clustering.pipeline
+  - DetectionByTracker.module
+  # filter
+  - VoxelBasedCompareMapFilter.module
+  - ObjectLaneletFilter.module
+  # merger
+  - RoiDetectedObjectFusion.module
+  - ObjectAssociationMerger.module
+nodes:
+  # compare map filter
+  - node: compare_map_filter
+    element: VoxelBasedCompareMapFilter.module
+  # detectors
+  - node: centerpoint
+    element: Centerpoint.pipeline
+  - node: clustering
+    element: Clustering.pipeline
+  - node: detection_by_tracker
+    element: DetectionByTracker.module
+  # filter
+  - node: lanelet_filter
+    element: ObjectLaneletFilter.module
+  # merger
+  - node: roi_detected_object_fusion
+    element: RoiDetectedObjectFusion.module
+  - node: object_association_merger_alpha
+    element: ObjectAssociationMerger.module
+  - node: object_association_merger_beta
+    element: ObjectAssociationMerger.module
+  # filter
+  - node: object_lanelet_filter
+    element: ObjectLaneletFilter.module
+
+external_interfaces:
+  input:
+    - name: pointcloud
+    - name: pointcloud_map
+    - name: vector_map
+    - name: obstacle_pointcloud
+    - name: rois0
+    - name: rois1
+    - name: rois2
+    - name: rois3
+    - name: rois4
+    - name: rois5
+    - name: rois6
+    - name: rois7
+    - name: camera_info0
+    - name: camera_info1
+    - name: camera_info2
+    - name: camera_info3
+    - name: camera_info4
+    - name: camera_info5
+    - name: camera_info6
+    - name: camera_info7
+    - name: radar_objects
+    - name: tracked_objects
+  output:
+    - name: detected_objects
+  parameter: []
+
+connections:
+  # compare map filter
+  - from: input.obstacle_pointcloud
+    to: compare_map_filter.input.input
+  - from: input.pointcloud_map
+    to: compare_map_filter.input.input_map
+  # centerpoint
+  - from: input.pointcloud
+    to: centerpoint.input.pointcloud
+  - from: compare_map_filter.output.output
+    to: centerpoint.input.obstacle_pointcloud
+  # clustering
+  - from: input.pointcloud
+    to: clustering.input.pointcloud
+  - from: input.pointcloud_map
+    to: clustering.input.pointcloud_map
+  - from: input.rois0
+    to: clustering.input.rois0
+  - from: input.rois1
+    to: clustering.input.rois1
+  - from: input.rois2
+    to: clustering.input.rois2
+  - from: input.rois3
+    to: clustering.input.rois3
+  - from: input.rois4
+    to: clustering.input.rois4
+  - from: input.rois5
+    to: clustering.input.rois5
+  - from: input.rois6
+    to: clustering.input.rois6
+  - from: input.rois7
+    to: clustering.input.rois7
+  - from: input.camera_info0
+    to: clustering.input.camera_info0
+  - from: input.camera_info1
+    to: clustering.input.camera_info1
+  - from: input.camera_info2
+    to: clustering.input.camera_info2
+  - from: input.camera_info3
+    to: clustering.input.camera_info3
+  - from: input.camera_info4
+    to: clustering.input.camera_info4
+  - from: input.camera_info5
+    to: clustering.input.camera_info5
+  - from: input.camera_info6
+    to: clustering.input.camera_info6
+  - from: input.camera_info7
+    to: clustering.input.camera_info7
+  # detection by tracker
+  - from: input.tracked_objects
+    to: detection_by_tracker.input.tracked_objects
+  - from: clustering.output.cluster_objects
+    to: detection_by_tracker.input.initial_objects
+  # roi detected object fusion
+  - from: centerpoint.output.detected_objects
+    to: roi_detected_object_fusion.input.objects
+  - from: input.rois0
+    to: roi_detected_object_fusion.input.rois0
+  - from: input.rois1
+    to: roi_detected_object_fusion.input.rois1
+  - from: input.rois2
+    to: roi_detected_object_fusion.input.rois2
+  - from: input.rois3
+    to: roi_detected_object_fusion.input.rois3
+  - from: input.rois4
+    to: roi_detected_object_fusion.input.rois4
+  - from: input.rois5
+    to: roi_detected_object_fusion.input.rois5
+  - from: input.rois6
+    to: roi_detected_object_fusion.input.rois6
+  - from: input.rois7
+    to: roi_detected_object_fusion.input.rois7
+  - from: input.camera_info0
+    to: roi_detected_object_fusion.input.camera_info0
+  - from: input.camera_info1
+    to: roi_detected_object_fusion.input.camera_info1
+  - from: input.camera_info2
+    to: roi_detected_object_fusion.input.camera_info2
+  - from: input.camera_info3
+    to: roi_detected_object_fusion.input.camera_info3
+  - from: input.camera_info4
+    to: roi_detected_object_fusion.input.camera_info4
+  - from: input.camera_info5
+    to: roi_detected_object_fusion.input.camera_info5
+  - from: input.camera_info6
+    to: roi_detected_object_fusion.input.camera_info6
+  - from: input.camera_info7
+    to: roi_detected_object_fusion.input.camera_info7
+  - from: roi_detected_object_fusion.output.fused_objects
+    to: centerpoint.input.roi_fused_objects
+  # merger
+  - from: centerpoint.output.validated_objects
+    to: object_association_merger_alpha.input.object0
+  - from: clustering.output.detected_objects
+    to: object_association_merger_alpha.input.object1
+  - from: object_association_merger_alpha.output.merged_object
+    to: object_association_merger_beta.input.object0
+  - from: detection_by_tracker.output.objects
+    to: object_association_merger_beta.input.object1
+  # filter
+  - from: object_association_merger_beta.output.merged_object
+    to: object_lanelet_filter.input.object
+  - from: input.vector_map
+    to: object_lanelet_filter.input.vector_map
+  - from: object_lanelet_filter.output.object
+    to: output.detected_objects
+
+parameters: []
+
+configurations: []

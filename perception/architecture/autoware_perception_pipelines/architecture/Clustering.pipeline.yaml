@@ -1,0 +1,132 @@
+name: Clustering.pipeline
+
+depends:
+  - VoxelGridBasedEuclideanCluster.module
+  - RoiPointCloudFusion.module
+  - ShapeEstimation.module
+  - CameraLidarFusion.pipeline
+
+nodes:
+  - node: voxel_grid_based_euclidean_cluster
+    element: VoxelGridBasedEuclideanCluster.module
+  - node: roi_pointcloud_fusion
+    element: RoiPointCloudFusion.module
+  - node: shape_estimation
+    element: ShapeEstimation.module
+  - node: camera_lidar_fusion
+    element: CameraLidarFusion.pipeline
+
+external_interfaces:
+  input:
+    - name: pointcloud
+    - name: pointcloud_map
+    - name: rois0
+    - name: rois1
+    - name: rois2
+    - name: rois3
+    - name: rois4
+    - name: rois5
+    - name: rois6
+    - name: rois7
+    - name: camera_info0
+    - name: camera_info1
+    - name: camera_info2
+    - name: camera_info3
+    - name: camera_info4
+    - name: camera_info5
+    - name: camera_info6
+    - name: camera_info7
+  output:
+    - name: detected_objects
+    - name: cluster_objects
+  parameter: []
+
+connections:
+  - from: input.pointcloud
+    to: voxel_grid_based_euclidean_cluster.input.input_pointcloud
+  - from: input.pointcloud_map
+    to: voxel_grid_based_euclidean_cluster.input.input_map
+
+  - from: voxel_grid_based_euclidean_cluster.output.output_clusters
+    to: shape_estimation.input.objects
+  - from: shape_estimation.output.objects
+    to: output.cluster_objects
+
+  - from: input.rois0
+    to: roi_pointcloud_fusion.input.rois0
+  - from: input.rois1
+    to: roi_pointcloud_fusion.input.rois1
+  - from: input.rois2
+    to: roi_pointcloud_fusion.input.rois2
+  - from: input.rois3
+    to: roi_pointcloud_fusion.input.rois3
+  - from: input.rois4
+    to: roi_pointcloud_fusion.input.rois4
+  - from: input.rois5
+    to: roi_pointcloud_fusion.input.rois5
+  - from: input.rois6
+    to: roi_pointcloud_fusion.input.rois6
+  - from: input.rois7
+    to: roi_pointcloud_fusion.input.rois7
+  - from: input.camera_info0
+    to: roi_pointcloud_fusion.input.camera_info0
+  - from: input.camera_info1
+    to: roi_pointcloud_fusion.input.camera_info1
+  - from: input.camera_info2
+    to: roi_pointcloud_fusion.input.camera_info2
+  - from: input.camera_info3
+    to: roi_pointcloud_fusion.input.camera_info3
+  - from: input.camera_info4
+    to: roi_pointcloud_fusion.input.camera_info4
+  - from: input.camera_info5
+    to: roi_pointcloud_fusion.input.camera_info5
+  - from: input.camera_info6
+    to: roi_pointcloud_fusion.input.camera_info6
+  - from: input.camera_info7
+    to: roi_pointcloud_fusion.input.camera_info7
+  - from: input.pointcloud
+    to: roi_pointcloud_fusion.input.pointcloud
+  - from: roi_pointcloud_fusion.output.clusters
+    to: camera_lidar_fusion.input.roi_clusters
+
+  - from: voxel_grid_based_euclidean_cluster.output.output_clusters
+    to: camera_lidar_fusion.input.euclidean_clusters
+  - from: input.rois0
+    to: camera_lidar_fusion.input.rois0
+  - from: input.rois1
+    to: camera_lidar_fusion.input.rois1
+  - from: input.rois2
+    to: camera_lidar_fusion.input.rois2
+  - from: input.rois3
+    to: camera_lidar_fusion.input.rois3
+  - from: input.rois4
+    to: camera_lidar_fusion.input.rois4
+  - from: input.rois5
+    to: camera_lidar_fusion.input.rois5
+  - from: input.rois6
+    to: camera_lidar_fusion.input.rois6
+  - from: input.rois7
+    to: camera_lidar_fusion.input.rois7
+  - from: input.camera_info0
+    to: camera_lidar_fusion.input.camera_info0
+  - from: input.camera_info1
+    to: camera_lidar_fusion.input.camera_info1
+  - from: input.camera_info2
+    to: camera_lidar_fusion.input.camera_info2
+  - from: input.camera_info3
+    to: camera_lidar_fusion.input.camera_info3
+  - from: input.camera_info4
+    to: camera_lidar_fusion.input.camera_info4
+  - from: input.camera_info5
+    to: camera_lidar_fusion.input.camera_info5
+  - from: input.camera_info6
+    to: camera_lidar_fusion.input.camera_info6
+  - from: input.camera_info7
+    to: camera_lidar_fusion.input.camera_info7
+
+  - from: camera_lidar_fusion.output.objects
+    to: output.detected_objects
+
+parameters: []
+
+configurations: []

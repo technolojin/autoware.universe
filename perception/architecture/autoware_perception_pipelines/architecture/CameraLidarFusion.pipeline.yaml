@@ -37,7 +37,7 @@ external_interfaces:
     - name: camera_info5
     - name: camera_info6
     - name: camera_info7
-    - name: clusters
+    - name: euclidean_clusters
     - name: roi_clusters
   output:
     - name: objects
@@ -76,9 +76,9 @@ connections:
     to: roi_cluster_fusion.input.camera_info6
   - from: input.camera_info7
     to: roi_cluster_fusion.input.camera_info7
-  - from: input.clusters
+  - from: input.euclidean_clusters
     to: roi_cluster_fusion.input.clusters
-  
+
   - from: roi_cluster_fusion.output.clusters
     to: low_intensity_cluster_filter_node.input.objects
   - from: low_intensity_cluster_filter_node.output.objects
@@ -92,7 +92,7 @@ connections:
     to: detected_object_feature_remover.input.input
   - from: detected_object_feature_remover.output.output
     to: output.objects
-  
+
 parameters: []
 
 configurations: []
