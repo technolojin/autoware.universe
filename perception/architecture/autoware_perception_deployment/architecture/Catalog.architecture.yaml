@@ -1,0 +1,35 @@
+name: Catalog.architecture
+
+depends:
+  - PointPaintingFusion.module
+  - LidarCenterPoint.module
+  - DecorativeTrackerMerger.module
+  - MultiObjectTracker.module
+  - ObjectAssociationMerger.module
+
+components:
+  - component: point_painting_fusion
+    element: PointPaintingFusion.module
+    namespace: perception
+    compute_unit: main_ecu
+  - component: lidar_center_point
+    element: LidarCenterPoint.module
+    namespace: perception
+    compute_unit: main_ecu
+  - component: decorative_tracker_merger
+    element: DecorativeTrackerMerger.module
+    namespace: perception
+    compute_unit: main_ecu
+  - component: multi_object_tracker
+    element: MultiObjectTracker.module
+    namespace: perception
+    compute_unit: main_ecu
+  - component: object_association_merger
+    element: ObjectAssociationMerger.module
+    namespace: perception
+    compute_unit: main_ecu
+
+connections: 
+  - from: point_painting_fusion.output.objects
+    to: multi_object_tracker.input.lidar_pointpainting
+

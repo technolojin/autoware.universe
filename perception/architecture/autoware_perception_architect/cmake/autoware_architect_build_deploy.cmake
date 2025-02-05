@@ -20,11 +20,11 @@ macro(autoware_architect_build_deploy project_name deployment_file)
 
 
   # run build.py script, without target
-  add_custom_target(run_build_py ALL
+  add_custom_target(run_build_py_${deployment_file} ALL
     COMMAND ${CMAKE_COMMAND} -E env python3 ${BUILD_PY_SCRIPT} ${DEPLOYMENT_FILE} ${ARCHITECTURE_YAML_LIST} ${OUTPUT_ROOT_DIR}
     COMMENT "Running build.py script from autoware_perception_architect package"
   )
 
   # add dependencies to trigger the build.py script when building the project
-  add_dependencies(${project_name} run_build_py)
+  add_dependencies(${project_name} run_build_py_${deployment_file})
 endmacro()
