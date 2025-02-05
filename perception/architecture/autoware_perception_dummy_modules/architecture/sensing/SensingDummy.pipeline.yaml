@@ -1,20 +1,65 @@
 name: SensingDummy.pipeline
 
 depends:
-  - LidarDriver.module
+  - LidarDummyDriver.module
 
 nodes:
   - node: lidar_top
-    element: LidarDriver.module
+    element: LidarDummyDriver.module
+  - node: camera_0
+    element: CameraDummyDriver.module
+  - node: camera_1
+    element: CameraDummyDriver.module
+  - node: camera_2
+    element: CameraDummyDriver.module
+  - node: camera_3
+    element: CameraDummyDriver.module
 
 external_interfaces:
   input: []
   output:
     - name: pointcloud
+    - name: image0
+    - name: camera_info0
+    - name: rois0
+    - name: image1
+    - name: camera_info1
+    - name: rois1
+    - name: image2
+    - name: camera_info2
+    - name: rois2
+    - name: image3
+    - name: camera_info3
+    - name: rois3
+
 
 connections:
   - from: lidar_top.output.pointcloud
     to: output.pointcloud
+  - from: camera_0.output.image
+    to: output.image0
+  - from: camera_0.output.camera_info
+    to: output.camera_info0
+  - from: camera_0.output.rois
+    to: output.rois0
+  - from: camera_1.output.image
+    to: output.image1
+  - from: camera_1.output.camera_info
+    to: output.camera_info1
+  - from: camera_1.output.rois
+    to: output.rois1
+  - from: camera_2.output.image
+    to: output.image2
+  - from: camera_2.output.camera_info
+    to: output.camera_info2
+  - from: camera_2.output.rois
+    to: output.rois2
+  - from: camera_3.output.image
+    to: output.image3
+  - from: camera_3.output.camera_info
+    to: output.camera_info3
+  - from: camera_3.output.rois
+    to: output.rois3
 
 parameters: []
 

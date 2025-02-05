@@ -3,6 +3,7 @@
 title Architecture Diagram {{ name }}
 
 skinparam componentStyle rectangle
+skinparam NoteFontSize 4
 left to right direction
 
 <style>
@@ -24,8 +25,25 @@ node {BackgroundColor #dddddd}
         {% for out_port in instance.out_ports -%}
             portout "output/{{ out_port.name }}" as {{ out_port.id }}
         {% endfor -%}
-    }
-    {# MESSAGE INFO -#}
+        {# MESSAGE INFO -#}
+        {% for out_port in instance.out_ports -%}
+            {# if the port is global, cloud -#}
+            {% if out_port.is_global -%}
+                cloud "{{ "/" + "/".join(out_port.topic) }}\n @{{out_port.event.frequency}} Hz" as {{ out_port.id }}_cloud
+                {{ out_port.id }} -d-> {{ out_port.id }}_cloud
+            {% else %}
+                note as {{ out_port.id }}_note
+                    topic: {{ "/" + "/".join(out_port.topic) }}
+                    type: {{ out_port.msg_type }}
+                    freq: {{ out_port.event.frequency}} Hz
+                    warn: {{ out_port.event.warn_rate }} Hz
+                    error: {{ out_port.event.error_rate }} s
+                end note
+            {{ out_port.id }}_note - {{ out_port.id }}
+            {% endif -%}
+        {% endfor -%}
+    }   
+    {# GLOBAL TOPIC #}
     {% for in_port in instance.in_ports -%}
         {# if subscribing global topic, cloud -#}
         {% if in_port.is_global -%}
@@ -33,22 +51,7 @@ node {BackgroundColor #dddddd}
             {{ in_port.id }}_cloud -d-> {{ in_port.id }}
         {% endif -%}
     {% endfor -%}
-    {% for out_port in instance.out_ports -%}
-        {# if the port is global, cloud -#}
-        {% if out_port.is_global -%}
-            cloud "{{ "/" + "/".join(out_port.topic) }}\n @{{out_port.event.frequency}} Hz" as {{ out_port.id }}_cloud
-            {{ out_port.id }} -d-> {{ out_port.id }}_cloud
-        {% else %}
-            note as {{ out_port.id }}_note
-                topic: {{ "/" + "/".join(out_port.topic) }}
-                type: {{ out_port.msg_type }}
-                freq: {{ out_port.event.frequency}} Hz
-                warn: {{ out_port.event.warn_rate }} Hz
-                error: {{ out_port.event.error_rate }} s
-            end note
-        {{ out_port.id }}_note -u- {{ out_port.id }}
-        {% endif -%}
-    {% endfor -%}
+
     {% elif instance.element_type == "pipeline" -%}
     frame {{ instance.name }} as {{ instance.id }} {
         {% for in_port in instance.in_ports -%}
