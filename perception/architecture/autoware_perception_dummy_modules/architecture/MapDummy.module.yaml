@@ -13,6 +13,11 @@ outputs:
     qos:
       reliability: reliable
       durability: transient_local
+  - name: pointcloud_map
+    message_type: sensor_msgs/msg/PointCloud2
+    qos:
+      reliability: reliable
+      durability: transient_local
 parameters: []
 
 # configurations
@@ -25,3 +30,4 @@ processes:
       - once:
     outcomes:
       - to_output: vector_map
+      - to_output: pointcloud_map

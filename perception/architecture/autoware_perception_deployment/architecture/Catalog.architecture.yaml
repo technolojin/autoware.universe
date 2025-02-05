@@ -1,21 +1,60 @@
 name: Catalog.architecture
 
 depends:
+  # segmentation
+  - VoxelBasedCompareMapFilter.module
+  - ScanGroundFilter.module
+  # camera-lidar fusion
   - PointPaintingFusion.module
+  - RoiClusterFusion.module
+  - RoiDetectedObjectFusion.module
+  - RoiPointCloudFusion.module
+  # lidar detector
   - LidarCenterPoint.module
+  # filter
+  - ObjectLaneletFilter.module
+  # tracker and merger
   - DecorativeTrackerMerger.module
   - MultiObjectTracker.module
   - ObjectAssociationMerger.module
 
 components:
-  - component: point_painting_fusion
+  - component: voxel_based_compare_map_filter
+    element: VoxelBasedCompareMapFilter.module
+    namespace: perception
+    compute_unit: main_ecu
+  - component: scan_ground_filter
+    element: ScanGroundFilter.module
+    namespace: perception
+    compute_unit: main_ecu
+
+  - component: pointpainting_fusion
     element: PointPaintingFusion.module
     namespace: perception
     compute_unit: main_ecu
-  - component: lidar_center_point
+  - component: roi_cluster_fusion
+    element: RoiClusterFusion.module
+    namespace: perception
+    compute_unit: main_ecu
+  - component: roi_detected_object_fusion
+    element: RoiDetectedObjectFusion.module
+    namespace: perception
+    compute_unit: main_ecu
+  - component: roi_pointcloud_fusion
+    element: RoiPointCloudFusion.module
+    namespace: perception
+    compute_unit: main_ecu
+
+  - component: lidar_centerpoint
     element: LidarCenterPoint.module
     namespace: perception
     compute_unit: main_ecu
+
+  - component: object_lanelet_filter
+    element: ObjectLaneletFilter.module
+    namespace: perception
+    compute_unit: main_ecu
+
   - component: decorative_tracker_merger
     element: DecorativeTrackerMerger.module
     namespace: perception
@@ -29,7 +68,6 @@ components:
     namespace: perception
     compute_unit: main_ecu
 
-connections: 
-  - from: point_painting_fusion.output.objects
+connections:
+  - from: pointpainting_fusion.output.objects
     to: multi_object_tracker.input.lidar_pointpainting
-

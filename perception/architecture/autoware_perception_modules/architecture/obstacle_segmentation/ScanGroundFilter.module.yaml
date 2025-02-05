@@ -1,0 +1,39 @@
+# module information
+name: ScanGroundFilter.module
+
+launch:
+  package: autoware_ground_segmentation
+  plugin: autoware::ground_segmentation::ScanGroundFilterComponent
+  executable: scan_ground_filter_node
+  node_output: screen
+  use_container: true
+  container_name: pointcloud_container
+
+# interface
+inputs:
+  - name: ros_transform
+    message_type: tf2_msgs/msg/TFMessage
+    global: /tf
+  - name: pointcloud
+    message_type: sensor_msgs/msg/PointCloud2
+outputs:
+  - name: pointcloud
+    message_type: sensor_msgs/msg/PointCloud2
+    qos:
+      reliability: reliable
+      durability: transient_local
+parameters:
+  - name: ground_segmentation_param_file
+    default: config/scan_ground_filter.param.yaml
+  - name: vehicle_info_param_file
+    default: $(find-pkg-share autoware_vehicle_info_utils)/config/vehicle_info.param.yaml
+# configurations
+configurations: []
+
+# processes
+processes:
+  - name: filter
+    trigger_conditions:
+      - on_input: pointcloud
+    outcomes:
+      - to_output: pointcloud

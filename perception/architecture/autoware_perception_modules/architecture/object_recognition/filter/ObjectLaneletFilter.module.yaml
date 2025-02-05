@@ -1,0 +1,40 @@
+# module information
+name: ObjectLaneletFilter.module
+
+launch:
+  package: autoware_detected_object_validation
+  plugin: autoware::detected_object_validation::lanelet_filter::ObjectLaneletFilterNode
+  node_output: screen
+
+# interface
+inputs:
+  - name: ros_transform
+    message_type: tf2_msgs/msg/TFMessage
+    global: /tf
+  - name: vector_map
+    message_type: autoware_map_msgs/msg/LaneletMapBin
+  - name: object
+    message_type: autoware_perception_msgs/msg/DetectedObjects
+outputs:
+  - name: object
+    message_type: autoware_perception_msgs/msg/DetectedObjects
+    qos:
+      reliability: reliable
+      durability: transient_local
+parameters:
+  - name: filtering_range_param
+    default: config/object_lanelet_filter.param.yaml
+    schema: schema/object_lanelet_filter.schema.json
+
+# configurations
+configurations: []
+
+# processes
+processes:
+  - name: filter
+    trigger_conditions:
+      - and:
+          - on_input: object
+          - once: vector_map
+    outcomes:
+      - to_output: object

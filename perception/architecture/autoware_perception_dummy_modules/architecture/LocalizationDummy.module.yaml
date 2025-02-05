@@ -15,6 +15,8 @@ outputs:
   - name: ros_transform
     message_type: tf2_msgs/msg/TFMessage
     global: /tf
+  - name: pose_with_covariance
+    message_type: geometry_msgs/msg/PoseWithCovarianceStamped
 
 parameters: []
 
@@ -34,3 +36,4 @@ processes:
       - periodic: 100 # Hz
     outcomes:
       - to_output: ros_transform
+      - to_output: pose_with_covariance
