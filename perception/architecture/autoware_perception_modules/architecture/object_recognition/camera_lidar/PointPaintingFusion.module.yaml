@@ -82,24 +82,24 @@ processes:
   - name: detector
     trigger_conditions:
       - and:
-        - on_input: pointcloud
-        - or:
-          - on_input: rois0
-          - on_input: rois1
-          - on_input: rois2
-          - on_input: rois3
-          - on_input: rois4
-          - on_input: rois5
-          - on_input: rois6
-          - on_input: rois7
-        - and:
-          - once: camera_info0
-          - once: camera_info1
-          - once: camera_info2
-          - once: camera_info3
-          - once: camera_info4
-          - once: camera_info5
-          - once: camera_info6
-          - once: camera_info7
+          - on_input: pointcloud
+          - or:
+              - on_input: rois0
+              - on_input: rois1
+              - on_input: rois2
+              - on_input: rois3
+              - on_input: rois4
+              - on_input: rois5
+              - on_input: rois6
+              - on_input: rois7
+          - and:
+              - once: camera_info0
+              - once: camera_info1
+              - once: camera_info2
+              - once: camera_info3
+              - once: camera_info4
+              - once: camera_info5
+              - once: camera_info6
+              - once: camera_info7
     outcomes:
       - to_output: objects

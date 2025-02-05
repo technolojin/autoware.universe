@@ -2,8 +2,15 @@
 
 title Architecture Diagram {{ name }}
 
-skinparam componentStyle rectangle
+' topic part
 skinparam NoteFontSize 4
+
+' logic part
+skinparam RectangleFontSize 4
+skinparam ControlFontSize 4
+
+' graph visual
+skinparam componentStyle rectangle
 left to right direction
 
 <style>
@@ -42,7 +49,7 @@ node {BackgroundColor #dddddd}
             {{ out_port.id }}_note - {{ out_port.id }}
             {% endif -%}
         {% endfor -%}
-    }   
+    }
     {# GLOBAL TOPIC #}
     {% for in_port in instance.in_ports -%}
         {# if subscribing global topic, cloud -#}
@@ -73,11 +80,12 @@ node {BackgroundColor #dddddd}
 {% macro build_logic_graph(instance) -%}
     {% if instance.element_type == "module" -%}
     node {{ instance.name }} as {{ instance.id }} {
+        rectangle "logic graph" as {{ instance.id }}_logic {
         {% for event in instance.events -%}
             {% if event.type == "periodic" -%}
                 control "{{event.name}}\n #{{event.type}}\n @{{event.frequency}}" as {{ event.id }}
             {% else -%}
-                action "{{event.name}}\n #{{event.type}}\n @{{event.frequency}}" as {{ event.id }}
+                process "{{event.name}}\n #{{event.type}}\n @{{event.frequency}}" as {{ event.id }}
             {% endif -%}
             {% for event_trigger in event.triggers -%}
                 {{ event_trigger.id }} -d-> {{ event.id }}
@@ -93,6 +101,7 @@ node {BackgroundColor #dddddd}
                 {{ input_trigger.id }} -[hidden]-> {{ in_port.event.id }}
             {% endfor -%}
         {% endfor -%}
+        }
     }
     {% elif instance.element_type == "pipeline" -%}
     frame {{ instance.name }} as {{ instance.id }} {
@@ -106,8 +115,10 @@ node {BackgroundColor #dddddd}
 
 {# instances -#}
 {% for child in children -%}
+card "{{ child.compute_unit}}"{
 folder "{{ child.namespace[0] }}" {
     {{ build_instance_graph(child) }}
+}
 }
 {% endfor -%}
 

@@ -1,0 +1,36 @@
+# module information
+name: ShapeEstimation.module
+
+launch:
+  package: autoware_shape_estimation
+  plugin: autoware::shape_estimation::ShapeEstimationNode
+  executable: shape_estimation_node
+  node_output: screen
+
+# interface
+inputs:
+  - name: ros_transform
+    message_type: tf2_msgs/msg/TFMessage
+    global: /tf
+  - name: objects
+    message_type: tier4_perception_msgs/msg/DetectedObjectsWithFeature
+outputs:
+  - name: objects
+    message_type: tier4_perception_msgs/msg/DetectedObjectsWithFeature
+    qos:
+      reliability: reliable
+      durability: transient_local
+parameters:
+  - name: config_file
+    default: config/shape_estimation.param.yaml
+
+# configurations
+configurations: []
+
+# processes
+processes:
+  - name: estimate
+    trigger_conditions:
+      - on_input: objects
+    outcomes:
+      - to_output: objects

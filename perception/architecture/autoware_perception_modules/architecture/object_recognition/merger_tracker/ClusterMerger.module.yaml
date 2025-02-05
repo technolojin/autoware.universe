@@ -1,0 +1,40 @@
+# module information
+name: ClusterMerger.module
+
+launch:
+  package: autoware_cluster_merger
+  plugin: autoware::cluster_merger::ClusterMergerNode
+  executable: cluster_merger_node
+  node_output: screen
+
+# interface
+inputs:
+  - name: ros_transform
+    message_type: tf2_msgs/msg/TFMessage
+    global: /tf
+  - name: cluster0
+    message_type: autoware_perception_msgs/msg/TrackedObjects
+  - name: cluster1
+    message_type: autoware_perception_msgs/msg/TrackedObjects
+outputs:
+  - name: clusters
+    message_type: autoware_perception_msgs/msg/TrackedObjects
+    qos:
+      reliability: reliable
+      durability: transient_local
+parameters:
+  - name: param_path
+    default: config/cluster_merger.param.yaml
+
+# configurations
+configurations: []
+
+# processes
+processes:
+  - name: merger
+    trigger_conditions:
+      - and:
+          - on_input: cluster0
+          - on_input: cluster1
+    outcomes:
+      - to_output: clusters

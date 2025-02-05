@@ -51,12 +51,12 @@ processes:
       - on_input: detected_objects
       - and:
           - or:
-            - on_input: lidar_centerpoint
-            - on_input: lidar_apollo
-            - on_input: lidar_pointpainting
+              - on_input: lidar_centerpoint
+              - on_input: lidar_apollo
+              - on_input: lidar_pointpainting
           - or:
-            - on_input: lidar_clustering
-            - on_input: camera_lidar_fusion
+              - on_input: lidar_clustering
+              - on_input: camera_lidar_fusion
       - on_input: detection_by_tracker
       - on_input: radar
     outcomes:

@@ -32,7 +32,6 @@ external_interfaces:
     - name: camera_info3
     - name: rois3
 
-
 connections:
   - from: lidar_top.output.pointcloud
     to: output.pointcloud

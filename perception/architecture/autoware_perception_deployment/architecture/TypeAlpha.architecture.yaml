@@ -12,15 +12,15 @@ components:
   - component: sensor_pipeline_a
     element: SensingDummy.pipeline
     namespace: sensing
-    compute_unit: main_ecu
+    compute_unit: perception_ecu_1
   - component: map_loader
     element: MapDummy.module
     namespace: map
-    compute_unit: dummy_ecu
+    compute_unit: dummy_ecu_1
   - component: localizer
     element: LocalizationDummy.module
     namespace: localization
-    compute_unit: dummy_ecu
+    compute_unit: dummy_ecu_1
   - component: object_recognition
     element: PerceptionA.pipeline
     namespace: perception
@@ -29,7 +29,7 @@ components:
   - component: planner
     element: PlanningDummy.module
     namespace: planning
-    compute_unit: dummy_ecu
+    compute_unit: dummy_ecu_2
 
 connections:
   - from: sensor_pipeline_a.output.pointcloud

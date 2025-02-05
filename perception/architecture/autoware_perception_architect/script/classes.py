@@ -401,7 +401,7 @@ class Event:
             if config_key == "periodic":
                 self.frequency = config_value
                 self.is_set = True
-            elif config_key == "once" and config_value == None:
+            elif config_key == "once" and config_value is None:
                 self.frequency = 0.0
                 self.warn_rate = 0.0
                 self.error_rate = 0.0

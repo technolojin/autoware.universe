@@ -43,7 +43,7 @@ configurations:
 
 # processes
 processes:
-  - name: detector
+  - name: detect
     trigger_conditions:
       - or:
           - on_input: pointcloud

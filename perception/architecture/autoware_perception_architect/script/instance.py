@@ -447,6 +447,7 @@ class Instance:
             "id": self.id,
             "element_type": self.element_type,
             "namespace": self.namespace,
+            "compute_unit": self.compute_unit,
             "in_ports": (self.in_ports),
             "out_ports": (self.out_ports),
             "children": (
