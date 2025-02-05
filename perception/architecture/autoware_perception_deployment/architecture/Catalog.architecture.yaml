@@ -26,6 +26,9 @@ depends:
   - DetectionByTracker.module
   - MultiObjectTracker.module
 
+  # pipeline
+  - CameraLidarFusion.pipeline
+
 components:
   - component: voxel_based_compare_map_filter
     element: VoxelBasedCompareMapFilter.module
@@ -38,10 +41,6 @@ components:
 
   - component: pointpainting_fusion
     element: PointPaintingFusion.module
-    namespace: perception
-    compute_unit: main_ecu
-  - component: roi_cluster_fusion
-    element: RoiClusterFusion.module
     namespace: perception
     compute_unit: main_ecu
   - component: roi_detected_object_fusion
@@ -61,14 +60,6 @@ components:
     element: VoxelGridBasedEuclideanCluster.module
     namespace: perception
     compute_unit: main_ecu
-  - component: shape_estimation
-    element: ShapeEstimation.module
-    namespace: perception
-    compute_unit: main_ecu
-  - component: detected_object_feature_remover
-    element: DetectedObjectFeatureRemover.module
-    namespace: perception
-    compute_unit: main_ecu
 
   - component: object_lanelet_filter
     element: ObjectLaneletFilter.module
@@ -76,10 +67,6 @@ components:
     compute_unit: main_ecu
   - component: obstacle_pointcloud_based_validator
     element: ObstaclePointCloudBasedValidator.module
-    namespace: perception
-    compute_unit: main_ecu
-  - component: low_intensity_cluster_filter
-    element: LowIntensityClusterFilter.module
     namespace: perception
     compute_unit: main_ecu
 
@@ -91,10 +78,6 @@ components:
     element: ObjectAssociationMerger.module
     namespace: perception
     compute_unit: main_ecu
-  - component: cluster_merger
-    element: ClusterMerger.module
-    namespace: perception
-    compute_unit: main_ecu
 
   - component: detection_by_tracker
     element: DetectionByTracker.module
@@ -104,6 +87,13 @@ components:
     element: MultiObjectTracker.module
     namespace: perception
     compute_unit: main_ecu
+
+  # pipeline
+  - component: camera_lidar_fusion
+    element: CameraLidarFusion.pipeline
+    namespace: perception
+    compute_unit: main_ecu
+
 connections:
   - from: pointpainting_fusion.output.objects
     to: multi_object_tracker.input.lidar_pointpainting

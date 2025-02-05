@@ -1,0 +1,98 @@
+name: CameraLidarFusion.pipeline
+
+depends:
+  - RoiClusterFusion.module
+  - LowIntensityClusterFilter.module
+  - ClusterMerger.module
+  - ShapeEstimation.module
+  - DetectedObjectFeatureRemover.module
+
+nodes:
+  - node: roi_cluster_fusion
+    element: RoiClusterFusion.module
+  - node: low_intensity_cluster_filter_node
+    element: LowIntensityClusterFilter.module
+  - node: cluster_merger
+    element: ClusterMerger.module
+  - node: shape_estimation
+    element: ShapeEstimation.module
+  - node: detected_object_feature_remover
+    element: DetectedObjectFeatureRemover.module
+
+external_interfaces:
+  input:
+    - name: rois0
+    - name: rois1
+    - name: rois2
+    - name: rois3
+    - name: rois4
+    - name: rois5
+    - name: rois6
+    - name: rois7
+    - name: camera_info0
+    - name: camera_info1
+    - name: camera_info2
+    - name: camera_info3
+    - name: camera_info4
+    - name: camera_info5
+    - name: camera_info6
+    - name: camera_info7
+    - name: clusters
+    - name: roi_clusters
+  output:
+    - name: objects
+  parameter: []
+
+connections:
+  - from: input.rois0
+    to: roi_cluster_fusion.input.rois0
+  - from: input.rois1
+    to: roi_cluster_fusion.input.rois1
+  - from: input.rois2
+    to: roi_cluster_fusion.input.rois2
+  - from: input.rois3
+    to: roi_cluster_fusion.input.rois3
+  - from: input.rois4
+    to: roi_cluster_fusion.input.rois4
+  - from: input.rois5
+    to: roi_cluster_fusion.input.rois5
+  - from: input.rois6
+    to: roi_cluster_fusion.input.rois6
+  - from: input.rois7
+    to: roi_cluster_fusion.input.rois7
+  - from: input.camera_info0
+    to: roi_cluster_fusion.input.camera_info0
+  - from: input.camera_info1
+    to: roi_cluster_fusion.input.camera_info1
+  - from: input.camera_info2
+    to: roi_cluster_fusion.input.camera_info2
+  - from: input.camera_info3
+    to: roi_cluster_fusion.input.camera_info3
+  - from: input.camera_info4
+    to: roi_cluster_fusion.input.camera_info4
+  - from: input.camera_info5
+    to: roi_cluster_fusion.input.camera_info5
+  - from: input.camera_info6
+    to: roi_cluster_fusion.input.camera_info6
+  - from: input.camera_info7
+    to: roi_cluster_fusion.input.camera_info7
+  - from: input.clusters
+    to: roi_cluster_fusion.input.clusters
+  
+  - from: roi_cluster_fusion.output.clusters
+    to: low_intensity_cluster_filter_node.input.objects
+  - from: low_intensity_cluster_filter_node.output.objects
+    to: cluster_merger.input.cluster0
+  - from: input.roi_clusters
+    to: cluster_merger.input.cluster1
+
+  - from: cluster_merger.output.clusters
+    to: shape_estimation.input.objects
+  - from: shape_estimation.output.objects
+    to: detected_object_feature_remover.input.input
+  - from: detected_object_feature_remover.output.output
+    to: output.objects
+  
+parameters: []
+
+configurations: []

@@ -13,12 +13,12 @@ inputs:
     message_type: tf2_msgs/msg/TFMessage
     global: /tf
   - name: cluster0
-    message_type: autoware_perception_msgs/msg/TrackedObjects
+    message_type: tier4_perception_msgs/msg/DetectedObjectsWithFeature
   - name: cluster1
-    message_type: autoware_perception_msgs/msg/TrackedObjects
+    message_type: tier4_perception_msgs/msg/DetectedObjectsWithFeature
 outputs:
   - name: clusters
-    message_type: autoware_perception_msgs/msg/TrackedObjects
+    message_type: tier4_perception_msgs/msg/DetectedObjectsWithFeature
     qos:
       reliability: reliable
       durability: transient_local
