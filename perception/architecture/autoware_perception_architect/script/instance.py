@@ -605,7 +605,7 @@ class Deployment:
         )
 
         # Check the configuration
-        self.check_config()
+        self._check_config()
 
         # member variables
         self.architecture_instance: Instance = None
@@ -625,7 +625,7 @@ class Deployment:
         # set the vehicle individual parameters
         #   sensor calibration, vehicle parameters, map, etc.
 
-    def check_config(self) -> bool:
+    def _check_config(self) -> bool:
         # Check the name field
         deployment_config_fields = [
             "name",

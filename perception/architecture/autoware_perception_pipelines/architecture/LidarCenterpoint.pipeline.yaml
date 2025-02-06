@@ -1,4 +1,4 @@
-name: Centerpoint.pipeline
+name: LidarCenterpoint.pipeline
 
 depends:
   - LidarCenterPoint.module

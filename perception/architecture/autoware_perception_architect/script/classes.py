@@ -79,12 +79,12 @@ class ElementList:
     def __init__(self, config_yaml_file_dirs: List[str]):
         self.elements: List[Element] = []
         try:
-            self.fill_list(config_yaml_file_dirs)
+            self._fill_list(config_yaml_file_dirs)
         except ValueError as e:
             print(e, config_yaml_file_dirs)
-            return
+            raise
 
-    def fill_list(self, config_yaml_file_dirs: List[str]):
+    def _fill_list(self, config_yaml_file_dirs: List[str]):
         for config_yaml_file_dir in config_yaml_file_dirs:
             if debug_mode:
                 print(f"ElementList fill_list: Loading {config_yaml_file_dir}")
@@ -93,7 +93,7 @@ class ElementList:
             for e in self.elements:
                 if e.full_name == element.full_name:
                     raise ValueError(
-                        f"Element is already in the list: \n to be added {element.config_yaml_dir}\n exist {e.config_yaml_dir}"
+                        f"Element {e.full_name} is already in the list: \n to be added {element.config_yaml_dir}\n exist {e.config_yaml_dir}"
                     )
             # add the element to the list
             self.elements.append(element)

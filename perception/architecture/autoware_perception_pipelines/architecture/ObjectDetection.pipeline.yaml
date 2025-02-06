@@ -2,8 +2,8 @@ name: ObjectDetection.pipeline
 
 depends:
   # detectors
-  - Centerpoint.pipeline
-  - Clustering.pipeline
+  - LidarCenterpoint.pipeline
+  - LidarClustering.pipeline
   - DetectionByTracker.module
   # filter
   - VoxelBasedCompareMapFilter.module
@@ -17,9 +17,9 @@ nodes:
     element: VoxelBasedCompareMapFilter.module
   # detectors
   - node: centerpoint
-    element: Centerpoint.pipeline
+    element: LidarCenterpoint.pipeline
   - node: clustering
-    element: Clustering.pipeline
+    element: LidarClustering.pipeline
   - node: detection_by_tracker
     element: DetectionByTracker.module
   # filter

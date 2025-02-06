@@ -20,8 +20,8 @@ depends:
 
   # pipeline
   - CameraLidarFusion.pipeline
-  - Clustering.pipeline
-  - Centerpoint.pipeline
+  - LidarClustering.pipeline
+  - LidarCenterpoint.pipeline
   - ObjectDetection.pipeline
 
 components:
@@ -60,11 +60,11 @@ components:
   #   namespace: perception
   #   compute_unit: main_ecu
   # - component: clustering
-  #   element: Clustering.pipeline
+  #   element: LidarClustering.pipeline
   #   namespace: perception
   #   compute_unit: main_ecu
   # - component: centerpoint
-  #   element: Centerpoint.pipeline
+  #   element: LidarCenterpoint.pipeline
   #   namespace: perception
   #   compute_unit: main_ecu
   - component: object_detection

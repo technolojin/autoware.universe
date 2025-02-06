@@ -1,4 +1,4 @@
-name: Clustering.pipeline
+name: LidarClustering.pipeline
 
 depends:
   - VoxelGridBasedEuclideanCluster.module
