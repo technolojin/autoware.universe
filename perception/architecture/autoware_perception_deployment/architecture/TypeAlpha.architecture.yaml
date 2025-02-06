@@ -1,7 +1,7 @@
 name: TypeAlpha.architecture
 
 depends:
-  - SensingDummy.pipeline
+  - LidarDummy.pipeline
   - MapDummy.module
   - LocalizationDummy.module
   - PerceptionA.pipeline
@@ -10,7 +10,7 @@ depends:
 
 components:
   - component: sensor_pipeline_a
-    element: SensingDummy.pipeline
+    element: LidarDummy.pipeline
     namespace: sensing
     compute_unit: perception_ecu_1
   - component: map_loader

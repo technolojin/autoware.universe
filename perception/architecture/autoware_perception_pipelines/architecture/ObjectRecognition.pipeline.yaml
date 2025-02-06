@@ -97,8 +97,8 @@ connections:
     to: tracking.input.detected_objects
   - from: detection.output.radar_filtered_objects
     to: tracking.input.radar_objects
-  # - from: tracking.output.objects
-  #   to: detection.input.tracked_objects
+  - from: tracking.output.objects
+    to: detection.input.tracked_objects
 
   # prediction
   - from: tracking.output.objects

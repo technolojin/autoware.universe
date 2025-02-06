@@ -10,10 +10,10 @@ inputs: []
 outputs:
   - name: image
     message_type: sensor_msgs/msg/Image
+  - name: compressed_image
+    message_type: sensor_msgs/msg/CompressedImage
   - name: camera_info
     message_type: sensor_msgs/msg/CameraInfo
-  - name: rois
-    message_type: tier4_perception_msgs/msg/DetectedObjectsWithFeature
 parameters: []
 
 # configurations
@@ -32,5 +32,5 @@ processes:
         timeout: 0.5 # s
     outcomes:
       - to_output: image
+      - to_output: compressed_image
       - to_output: camera_info
-      - to_output: rois

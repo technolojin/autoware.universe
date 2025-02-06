@@ -2,19 +2,25 @@ name: X2Gen2.architecture
 
 depends:
   # dummy
-  - SensingDummy.pipeline
+  - LidarDummy.pipeline
+  - CameraDummy.pipeline
   - MapDummy.module
   - LocalizationDummy.module
   - PlanningDummy.module
 
   # perception
   - ObjectRecognition.pipeline
+  - Camera2dDetection.pipeline
 
 components:
-  - component: camera
-    element: SensingDummy.pipeline
+  - component: lidar
+    element: LidarDummy.pipeline
     namespace: sensing
-    compute_unit: dummy_ecu_1
+    compute_unit: perception_ecu_1
+  - component: camera
+    element: CameraDummy.pipeline
+    namespace: sensing
+    compute_unit: perception_ecu_2
   - component: map_loader
     element: MapDummy.module
     namespace: map
@@ -29,6 +35,10 @@ components:
     element: ObjectRecognition.pipeline
     namespace: perception
     compute_unit: main_ecu
+  # - component: camera2d_detection
+  #   element: Camera2dDetection.pipeline
+  #   namespace: perception
+  #   compute_unit: main_ecu
 
   # planner
   - component: planner
@@ -37,8 +47,35 @@ components:
     compute_unit: dummy_ecu_2
 
 connections:
-  - from: camera.output.rois0
-    to: object_recognition.input.rois0
+  - from: lidar.output.pointcloud
+    to: object_recognition.input.concatenated_pointcloud
+
+  # - from: camera.output.camera0/image
+  #   to: camera2d_detection.input.image_raw0
+  # - from: camera.output.camera1/image
+  #   to: camera2d_detection.input.image_raw1
+  # - from: camera.output.camera2/image
+  #   to: camera2d_detection.input.image_raw2
+  # - from: camera.output.camera3/image
+  #   to: camera2d_detection.input.image_raw3
+
+  # - from: camera2d_detection.output.rois0
+  #   to: object_recognition.input.rois0
+  # - from: camera2d_detection.output.rois1
+  #   to: object_recognition.input.rois1
+  # - from: camera2d_detection.output.rois2
+  #   to: object_recognition.input.rois2
+  # - from: camera2d_detection.output.rois3
+  #   to: object_recognition.input.rois3
+
+  # - from: camera.output.camera0/camera_info
+  #   to: object_recognition.input.camera_info0
+  # - from: camera.output.camera1/camera_info
+  #   to: object_recognition.input.camera_info1
+  # - from: camera.output.camera2/camera_info
+  #   to: object_recognition.input.camera_info2
+  # - from: camera.output.camera3/camera_info
+  #   to: object_recognition.input.camera_info3
 
   - from: map_loader.output.vector_map
     to: localizer.input.lanelet_map
@@ -46,5 +83,7 @@ connections:
     to: object_recognition.input.vector_map
   - from: map_loader.output.vector_map
     to: planner.input.lanelet_map
+  - from: map_loader.output.pointcloud_map
+    to: object_recognition.input.pointcloud_map
   - from: object_recognition.output.objects
     to: planner.input.predicted_objects

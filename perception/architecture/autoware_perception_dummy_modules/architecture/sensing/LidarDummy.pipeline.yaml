@@ -1,0 +1,21 @@
+name: LidarDummy.pipeline
+
+depends:
+  - LidarDummyDriver.module
+
+nodes:
+  - node: lidar_top
+    element: LidarDummyDriver.module
+
+external_interfaces:
+  input: []
+  output:
+    - name: pointcloud
+
+connections:
+  - from: lidar_top.output.pointcloud
+    to: output.pointcloud
+
+parameters: []
+
+configurations: []

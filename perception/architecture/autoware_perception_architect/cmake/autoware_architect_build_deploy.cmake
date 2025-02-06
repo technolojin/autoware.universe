@@ -27,8 +27,4 @@ macro(autoware_architect_build_deploy project_name deployment_file)
 
   # add dependencies to trigger the build.py script when building the project
   add_dependencies(${project_name} run_build_py_${deployment_file})
-
-  # Display warning message in the terminal
-  message(WARNING "Running build.py script from autoware_perception_architect package. Check the log file at ${LOG_FILE} for details.")
-
 endmacro()

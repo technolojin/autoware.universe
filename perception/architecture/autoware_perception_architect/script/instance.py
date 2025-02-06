@@ -472,7 +472,7 @@ class Instance:
             "events": (self.event_list),
         }
         # debug
-        print(data)
+        # print(data)
 
         return data
 

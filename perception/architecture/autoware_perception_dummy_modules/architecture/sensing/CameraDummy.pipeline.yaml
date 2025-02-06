@@ -1,0 +1,48 @@
+name: CameraDummy.pipeline
+
+depends:
+  - CameraDummyDriver.module
+
+nodes:
+  - node: camera_0
+    element: CameraDummyDriver.module
+  - node: camera_1
+    element: CameraDummyDriver.module
+  - node: camera_2
+    element: CameraDummyDriver.module
+  - node: camera_3
+    element: CameraDummyDriver.module
+
+external_interfaces:
+  input: []
+  output:
+    - name: camera0/image
+    - name: camera0/camera_info
+    - name: camera1/image
+    - name: camera1/camera_info
+    - name: camera2/image
+    - name: camera2/camera_info
+    - name: camera3/image
+    - name: camera3/camera_info
+
+connections:
+  - from: camera_0.output.image
+    to: output.camera0/image
+  - from: camera_0.output.camera_info
+    to: output.camera0/camera_info
+  - from: camera_1.output.image
+    to: output.camera1/image
+  - from: camera_1.output.camera_info
+    to: output.camera1/camera_info
+  - from: camera_2.output.image
+    to: output.camera2/image
+  - from: camera_2.output.camera_info
+    to: output.camera2/camera_info
+  - from: camera_3.output.image
+    to: output.camera3/image
+  - from: camera_3.output.camera_info
+    to: output.camera3/camera_info
+
+parameters: []
+
+configurations: []

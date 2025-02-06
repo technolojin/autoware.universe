@@ -1,6 +1,10 @@
 name: Catalog.architecture
 
 depends:
+
+  # dummy
+  - CameraDummy.pipeline
+
   # segmentation
   - VoxelBasedCompareMapFilter.module
   - ScanGroundFilter.module
@@ -25,12 +29,15 @@ depends:
   - ObjectDetection.pipeline
   - ObjectTracking.pipeline
   - ObjectPrediction.pipeline
+  - Camera2dDetection.pipeline
 
 components:
-  - component: voxel_based_compare_map_filter
-    element: VoxelBasedCompareMapFilter.module
-    namespace: perception
-    compute_unit: main_ecu
+  # dummy
+  - component: camera
+    element: CameraDummy.pipeline
+    namespace: sensing
+    compute_unit: perception_ecu_2
+
   - component: scan_ground_filter
     element: ScanGroundFilter.module
     namespace: perception
@@ -46,42 +53,12 @@ components:
     namespace: perception
     compute_unit: main_ecu
 
-  - component: decorative_tracker_merger
-    element: DecorativeTrackerMerger.module
-    namespace: perception
-    compute_unit: main_ecu
-
-  - component: multi_object_tracker
-    element: MultiObjectTracker.module
-    namespace: perception
-    compute_unit: main_ecu
-
   # pipeline
-  # - component: camera_lidar_fusion
-  #   element: CameraLidarFusion.pipeline
-  #   namespace: perception
-  #   compute_unit: main_ecu
-  # - component: clustering
-  #   element: LidarClustering.pipeline
-  #   namespace: perception
-  #   compute_unit: main_ecu
-  # - component: centerpoint
-  #   element: LidarCenterpoint.pipeline
-  #   namespace: perception
-  #   compute_unit: main_ecu
-  - component: object_detection
-    element: ObjectDetection.pipeline
+  - component: camera_2d_detection
+    element: Camera2dDetection.pipeline
     namespace: perception
-    compute_unit: main_ecu
-  - component: object_tracking
-    element: ObjectTracking.pipeline
-    namespace: perception
-    compute_unit: main_ecu
-  - component: object_prediction
-    element: ObjectPrediction.pipeline
-    namespace: perception
-    compute_unit: main_ecu
+    compute_unit: perception_ecu_2
 
 connections:
-  - from: pointpainting_fusion.output.objects
-    to: multi_object_tracker.input.lidar_pointpainting
+  - from: camera.output.camera0/image
+    to: camera_2d_detection.input.image_raw0
