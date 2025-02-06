@@ -1,0 +1,41 @@
+name: ObjectTracking.pipeline
+
+depends:
+  - MultiObjectTracker.module
+  - RadarObjectTracker.module
+  - DecorativeTrackerMerger.module
+
+nodes:
+  - node: multi_object_tracker
+    element: MultiObjectTracker.module
+  - node: radar_object_tracker
+    element: RadarObjectTracker.module
+  - node: decorative_tracker_merger
+    element: DecorativeTrackerMerger.module
+
+external_interfaces:
+  input:
+    - name: vector_map
+    - name: detected_objects
+    - name: radar_objects
+  output:
+    - name: objects
+  parameter: []
+
+connections:
+  - from: input.detected_objects
+    to: multi_object_tracker.input.detected_objects
+  - from: input.radar_objects
+    to: radar_object_tracker.input.input
+  - from: input.vector_map
+    to: radar_object_tracker.input.vector_map
+  - from: multi_object_tracker.output.objects
+    to: decorative_tracker_merger.input.main_object
+  - from: radar_object_tracker.output.output
+    to: decorative_tracker_merger.input.sub_object
+  - from: decorative_tracker_merger.output.merged_object
+    to: output.objects
+
+parameters: []
+
+configurations: []

@@ -1,0 +1,115 @@
+name: ObjectRecognition.pipeline
+
+depends:
+  - ObjectDetection.pipeline
+  - ObjectTracking.pipeline
+  - ObjectPrediction.pipeline
+
+nodes:
+  - node: detection
+    element: ObjectDetection.pipeline
+  - node: tracking
+    element: ObjectTracking.pipeline
+  - node: prediction
+    element: ObjectPrediction.pipeline
+
+external_interfaces:
+  input:
+    # map
+    - name: pointcloud_map
+    - name: vector_map
+    - name: traffic_lights
+    # lidar
+    - name: concatenated_pointcloud
+    - name: obstacle_pointcloud
+    # camera
+    - name: rois0
+    - name: rois1
+    - name: rois2
+    - name: rois3
+    - name: rois4
+    - name: rois5
+    - name: rois6
+    - name: rois7
+    - name: camera_info0
+    - name: camera_info1
+    - name: camera_info2
+    - name: camera_info3
+    - name: camera_info4
+    - name: camera_info5
+    - name: camera_info6
+    - name: camera_info7
+    # radar
+    - name: radar_objects
+  output:
+    - name: objects
+  parameter: []
+
+connections:
+  # detection
+  - from: input.concatenated_pointcloud
+    to: detection.input.pointcloud
+  - from: input.pointcloud_map
+    to: detection.input.pointcloud_map
+  - from: input.vector_map
+    to: detection.input.vector_map
+  - from: input.obstacle_pointcloud
+    to: detection.input.obstacle_pointcloud
+  - from: input.rois0
+    to: detection.input.rois0
+  - from: input.rois1
+    to: detection.input.rois1
+  - from: input.rois2
+    to: detection.input.rois2
+  - from: input.rois3
+    to: detection.input.rois3
+  - from: input.rois4
+    to: detection.input.rois4
+  - from: input.rois5
+    to: detection.input.rois5
+  - from: input.rois6
+    to: detection.input.rois6
+  - from: input.rois7
+    to: detection.input.rois7
+  - from: input.camera_info0
+    to: detection.input.camera_info0
+  - from: input.camera_info1
+    to: detection.input.camera_info1
+  - from: input.camera_info2
+    to: detection.input.camera_info2
+  - from: input.camera_info3
+    to: detection.input.camera_info3
+  - from: input.camera_info4
+    to: detection.input.camera_info4
+  - from: input.camera_info5
+    to: detection.input.camera_info5
+  - from: input.camera_info6
+    to: detection.input.camera_info6
+  - from: input.camera_info7
+    to: detection.input.camera_info7
+  - from: input.radar_objects
+    to: detection.input.radar_objects
+
+  # tracking
+  - from: input.vector_map
+    to: tracking.input.vector_map
+  - from: detection.output.detected_objects
+    to: tracking.input.detected_objects
+  - from: detection.output.radar_filtered_objects
+    to: tracking.input.radar_objects
+  # - from: tracking.output.objects
+  #   to: detection.input.tracked_objects
+
+  # prediction
+  - from: tracking.output.objects
+    to: prediction.input.tracked_objects
+  - from: input.vector_map
+    to: prediction.input.vector_map
+  - from: input.traffic_lights
+    to: prediction.input.traffic_lights
+  - from: prediction.output.objects
+    to: output.objects
+
+parameters: []
+
+configurations: []

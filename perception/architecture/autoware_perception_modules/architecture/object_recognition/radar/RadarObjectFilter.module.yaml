@@ -1,0 +1,34 @@
+# module information
+name: RadarObjectFilter.module
+
+launch:
+  package: autoware_radar_object_filter
+  plugin: autoware::radar_object_filter::RadarObjectFilterNode
+  executable: radar_object_filter_node
+  node_output: screen
+
+# interface
+inputs:
+  - name: ros_transform
+    message_type: tf2_msgs/msg/TFMessage
+    global: /tf
+  - name: objects
+    message_type: autoware_perception_msgs/msg/DetectedObjects
+outputs:
+  - name: filtered_objects
+    message_type: autoware_perception_msgs/msg/DetectedObjects
+    qos:
+      reliability: reliable
+      durability: transient_local
+parameters: []
+
+# configurations
+configurations: []
+
+# processes
+processes:
+  - name: filter
+    trigger_conditions:
+      - on_input: objects
+    outcomes:
+      - to_output: filtered_objects

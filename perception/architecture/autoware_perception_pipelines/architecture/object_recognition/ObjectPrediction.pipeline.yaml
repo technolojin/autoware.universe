@@ -1,0 +1,31 @@
+name: ObjectPrediction.pipeline
+
+depends:
+  - MapBasedPrediction.module
+
+nodes:
+  - node: map_based_prediction
+    element: MapBasedPrediction.module
+
+external_interfaces:
+  input:
+    - name: vector_map
+    - name: traffic_lights
+    - name: tracked_objects
+  output:
+    - name: objects
+  parameter: []
+
+connections:
+  - from: input.vector_map
+    to: map_based_prediction.input.vector_map_topic
+  - from: input.tracked_objects
+    to: map_based_prediction.input.input_topic
+  - from: input.traffic_lights
+    to: map_based_prediction.input.traffic_signals_topic
+  - from: map_based_prediction.output.output_topic
+    to: output.objects
+
+parameters: []
+
+configurations: []

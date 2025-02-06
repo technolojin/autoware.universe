@@ -1,0 +1,9 @@
+name: x2_gen2.deployment
+
+architecture: X2Gen2.architecture
+
+# vehicle specific parameters, such as sensor calibration, vehicle dimensions
+vehicle_parameters: []
+
+# environment specific parameters, such as map data
+environment_parameters: []

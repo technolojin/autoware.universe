@@ -1,0 +1,50 @@
+name: X2Gen2.architecture
+
+depends:
+  # dummy
+  - SensingDummy.pipeline
+  - MapDummy.module
+  - LocalizationDummy.module
+  - PlanningDummy.module
+
+  # perception
+  - ObjectRecognition.pipeline
+
+components:
+  - component: camera
+    element: SensingDummy.pipeline
+    namespace: sensing
+    compute_unit: dummy_ecu_1
+  - component: map_loader
+    element: MapDummy.module
+    namespace: map
+    compute_unit: dummy_ecu_1
+  - component: localizer
+    element: LocalizationDummy.module
+    namespace: localization
+    compute_unit: dummy_ecu_1
+
+  # perception
+  - component: object_recognition
+    element: ObjectRecognition.pipeline
+    namespace: perception
+    compute_unit: main_ecu
+
+  # planner
+  - component: planner
+    element: PlanningDummy.module
+    namespace: planning
+    compute_unit: dummy_ecu_2
+
+connections:
+  - from: camera.output.rois0
+    to: object_recognition.input.rois0
+
+  - from: map_loader.output.vector_map
+    to: localizer.input.lanelet_map
+  - from: map_loader.output.vector_map
+    to: object_recognition.input.vector_map
+  - from: map_loader.output.vector_map
+    to: planner.input.lanelet_map
+  - from: object_recognition.output.objects
+    to: planner.input.predicted_objects

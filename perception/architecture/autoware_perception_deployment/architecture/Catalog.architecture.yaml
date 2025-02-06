@@ -23,6 +23,8 @@ depends:
   - LidarClustering.pipeline
   - LidarCenterpoint.pipeline
   - ObjectDetection.pipeline
+  - ObjectTracking.pipeline
+  - ObjectPrediction.pipeline
 
 components:
   - component: voxel_based_compare_map_filter
@@ -69,6 +71,14 @@ components:
   #   compute_unit: main_ecu
   - component: object_detection
     element: ObjectDetection.pipeline
+    namespace: perception
+    compute_unit: main_ecu
+  - component: object_tracking
+    element: ObjectTracking.pipeline
+    namespace: perception
+    compute_unit: main_ecu
+  - component: object_prediction
+    element: ObjectPrediction.pipeline
     namespace: perception
     compute_unit: main_ecu
 

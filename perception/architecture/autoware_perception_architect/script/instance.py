@@ -275,26 +275,28 @@ class Instance:
         for child in self.children:
             if child.name == name:
                 return child
-        raise ValueError(f"Child not found: child name {name}, instance of {self.name}")
+        raise ValueError(f"Child not found: child name '{name}', instance of '{self.name}'")
 
     def get_in_port(self, name: str):
         for in_port in self.in_ports:
             if in_port.name == name:
                 return in_port
-        raise ValueError(f"In port not found: in-port name {name}, instance of {self.name}")
+        raise ValueError(f"In port not found: in-port name '{name}', instance of '{self.name}'")
 
     def get_out_port(self, name: str):
         for out_port in self.out_ports:
             if out_port.name == name:
                 return out_port
-        raise ValueError(f"Out port not found: out-port name {name}, instance of {self.name}")
+        raise ValueError(f"Out port not found: out-port name '{name}', instance of '{self.name}'")
 
     def set_in_port(self, in_port: awa_cls.InPort):
         # check the external input is defined
         external_input_list = self.element.config_yaml.get("external_interfaces").get("input")
         external_input_list = [ext_input.get("name") for ext_input in external_input_list]
         if in_port.name not in external_input_list:
-            raise ValueError(f"External input not found: {in_port.name} in {external_input_list}")
+            raise ValueError(
+                f"External input not found: '{in_port.name}' in '{external_input_list}'"
+            )
 
         # check if there is a port with the same name
         for port in self.in_ports:
@@ -302,7 +304,7 @@ class Instance:
                 # check if the message type is the same
                 if port.msg_type != in_port.msg_type:
                     raise ValueError(
-                        f"Message type mismatch: {port.full_name} {port.msg_type} != {in_port.msg_type}"
+                        f"Message type mismatch: '{port.full_name}' {port.msg_type} != {in_port.msg_type}"
                     )
                 # same port name is found, update reference
                 port.set_references(in_port.reference)
@@ -316,7 +318,7 @@ class Instance:
         external_output_list = [ext_output.get("name") for ext_output in external_output_list]
         if out_port.name not in external_output_list:
             raise ValueError(
-                f"External output not found: {out_port.name} in {external_output_list}"
+                f"External output not found: '{out_port.name}' in {external_output_list}"
             )
 
         # check if there is a port with the same name
@@ -325,7 +327,7 @@ class Instance:
                 # check if the message type is the same
                 if port.msg_type != out_port.msg_type:
                     raise ValueError(
-                        f"Message type mismatch: {port.full_name} {port.msg_type} != {out_port.msg_type}"
+                        f"Message type mismatch: '{port.full_name}' {port.msg_type} != {out_port.msg_type}"
                     )
                 # same port name is found, update reference
                 port.set_references(out_port.reference)
