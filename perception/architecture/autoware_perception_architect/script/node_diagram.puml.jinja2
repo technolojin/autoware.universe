@@ -1,0 +1,145 @@
+@startuml
+
+title Architecture Diagram {{ name }}
+
+' topic part
+skinparam NoteFontSize 6
+
+' logic part
+skinparam RectangleFontSize 6
+skinparam ControlFontSize 6
+
+' graph visual
+skinparam componentStyle rectangle
+left to right direction
+skinparam dpi 64
+
+<style>
+port{FontSize 9}
+arrow{
+    FontSize 5
+    Fontcolor #000066
+}
+node {BackgroundColor #dddddd}
+</style>
+
+{% macro build_instance_graph(instance) -%}
+    {% if instance.element_type == "module" -%}
+    node {{ instance.name }} as {{ instance.id }} {
+        {# PORTS -#}
+        {% for in_port in instance.in_ports -%}
+            portin "input/{{ in_port.name }} \n #{{in_port.event.type}}\n @{{in_port.event.frequency}}" as {{ in_port.id }}
+        {% endfor -%}
+        {% for out_port in instance.out_ports -%}
+            portout "output/{{ out_port.name }}" as {{ out_port.id }}
+        {% endfor -%}
+        {# MESSAGE INFO -#}
+        {% for out_port in instance.out_ports -%}
+            {# if the port is global, cloud -#}
+            {% if out_port.is_global -%}
+                cloud "{{ "/" + "/".join(out_port.topic) }}\n @{{out_port.event.frequency}} Hz" as {{ out_port.id }}_cloud
+                {{ out_port.id }} -d-> {{ out_port.id }}_cloud
+            {% else %}
+                note as {{ out_port.id }}_note
+                    topic: {{ "/" + "/".join(out_port.topic) }}
+                    type: {{ out_port.msg_type }}
+                    freq: {{ out_port.event.frequency}} Hz
+                    warn: {{ out_port.event.warn_rate }} Hz
+                    error: {{ out_port.event.error_rate }} s
+                end note
+            {{ out_port.id }}_note - {{ out_port.id }}
+            {% endif -%}
+        {% endfor -%}
+    }
+    {# GLOBAL TOPIC #}
+    {% for in_port in instance.in_ports -%}
+        {# if subscribing global topic, cloud -#}
+        {% if in_port.is_global -%}
+            cloud "{{ "/" + "/".join(in_port.topic) }}" as {{ in_port.id }}_cloud
+            {{ in_port.id }}_cloud -d-> {{ in_port.id }}
+        {% endif -%}
+    {% endfor -%}
+
+    {% elif instance.element_type == "pipeline" -%}
+    frame {{ instance.name }} as {{ instance.id }} {
+        {% for in_port in instance.in_ports -%}
+            portin "input/{{ in_port.name }}" as {{ in_port.id }}
+        {% endfor -%}
+        {% for out_port in instance.out_ports -%}
+            portout "output/{{ out_port.name }}" as {{ out_port.id }}
+        {% endfor -%}
+        {% for child in instance.children -%}
+            {{ build_instance_graph(child) }}
+        {% endfor -%}
+        {% for link in instance.links -%}
+            {{ link.from_port.id }} -d-> {{ link.to_port.id }}
+        {% endfor -%}
+    }
+    {% endif -%}
+{% endmacro -%}
+
+{% macro build_logic_graph(instance) -%}
+    {% if instance.element_type == "module" -%}
+    node {{ instance.name }} as {{ instance.id }} {
+        rectangle "logic graph" as {{ instance.id }}_logic {
+        {% for event in instance.events -%}
+            {% if event.type == "periodic" -%}
+                control "{{event.name}}\n #{{event.type}}\n @{{event.frequency}}" as {{ event.id }}
+            {% else -%}
+                process "{{event.name}}\n #{{event.type}}\n @{{event.frequency}}" as {{ event.id }}
+            {% endif -%}
+            {% for event_trigger in event.triggers -%}
+                {{ event_trigger.id }} -d-> {{ event.id }}
+            {% endfor -%}
+        {% endfor -%}
+        {% for out_port in instance.out_ports -%}
+            {% for output_trigger in out_port.event.triggers -%}
+                {{ output_trigger.id }} -d-> {{ out_port.event.id }}
+            {% endfor -%}
+        {% endfor -%}
+        {% for in_port in instance.in_ports -%}
+            {% for input_trigger in in_port.event.triggers -%}
+                {{ input_trigger.id }} -[hidden]-> {{ in_port.event.id }}
+            {% endfor -%}
+        {% endfor -%}
+        }
+    }
+    {% elif instance.element_type == "pipeline" -%}
+    frame {{ instance.name }} as {{ instance.id }} {
+        {% for child in instance.children -%}
+            {{ build_logic_graph(child) }}
+        {% endfor -%}
+    }
+    {% endif -%}
+{% endmacro -%}
+
+
+{# instances -#}
+{% for child in children -%}
+{# card "{{ child.compute_unit}}"{ #}
+folder "{{ child.namespace[0] }}" {
+    {{ build_instance_graph(child) }}
+}
+{# } #}
+{% endfor -%}
+
+{# links -#}
+{% for link in links -%}
+{{ link.from_port.id }} -d-> {{ link.to_port.id }}
+{% endfor -%}
+
+{# events -#}
+{# {% for child in children -%}
+folder "{{ child.namespace[0] }}" {
+    {{ build_logic_graph(child) }}
+}
+{% endfor -%} #}
+
+{# only for the diagram shape -#}
+{% for i in range(children|length) -%}
+    {% for j in range(i + 1, children|length) -%}
+        {{ children[i].id }} -[hidden]d- {{ children[j].id }}
+    {% endfor -%}
+{% endfor -%}
+
+@enduml

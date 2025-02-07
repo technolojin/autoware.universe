@@ -9,6 +9,7 @@ depends:
   - PlanningDummy.module
 
   # perception
+  - ObjectSegmentation.pipeline
   - ObjectRecognition.pipeline
   - Camera2dDetection.pipeline
 
@@ -31,14 +32,18 @@ components:
     compute_unit: dummy_ecu_1
 
   # perception
+  - component: object_segmentation
+    element: ObjectSegmentation.pipeline
+    namespace: perception
+    compute_unit: main_ecu
   - component: object_recognition
     element: ObjectRecognition.pipeline
     namespace: perception
     compute_unit: main_ecu
-  # - component: camera2d_detection
-  #   element: Camera2dDetection.pipeline
-  #   namespace: perception
-  #   compute_unit: main_ecu
+  - component: object_recognition/detection
+    element: Camera2dDetection.pipeline
+    namespace: perception
+    compute_unit: perception_ecu_2
 
   # planner
   - component: planner
@@ -47,35 +52,63 @@ components:
     compute_unit: dummy_ecu_2
 
 connections:
-  - from: lidar.output.pointcloud
+  - from: lidar.output.concatenated/pointcloud
     to: object_recognition.input.concatenated_pointcloud
+  - from: lidar.output.concatenated/pointcloud
+    to: object_segmentation.input.concatenated_pointcloud
+  - from: object_segmentation.output.pointcloud
+    to: object_recognition.input.obstacle_pointcloud
 
-  # - from: camera.output.camera0/image
-  #   to: camera2d_detection.input.image_raw0
-  # - from: camera.output.camera1/image
-  #   to: camera2d_detection.input.image_raw1
-  # - from: camera.output.camera2/image
-  #   to: camera2d_detection.input.image_raw2
-  # - from: camera.output.camera3/image
-  #   to: camera2d_detection.input.image_raw3
+  - from: camera.output.camera0/image
+    to: object_recognition/detection.input.image_raw0
+  - from: camera.output.camera1/image
+    to: object_recognition/detection.input.image_raw1
+  - from: camera.output.camera2/image
+    to: object_recognition/detection.input.image_raw2
+  - from: camera.output.camera3/image
+    to: object_recognition/detection.input.image_raw3
+  - from: camera.output.camera4/image
+    to: object_recognition/detection.input.image_raw4
+  - from: camera.output.camera5/image
+    to: object_recognition/detection.input.image_raw5
+  - from: camera.output.camera6/image
+    to: object_recognition/detection.input.image_raw6
+  - from: camera.output.camera7/image
+    to: object_recognition/detection.input.image_raw7
 
-  # - from: camera2d_detection.output.rois0
-  #   to: object_recognition.input.rois0
-  # - from: camera2d_detection.output.rois1
-  #   to: object_recognition.input.rois1
-  # - from: camera2d_detection.output.rois2
-  #   to: object_recognition.input.rois2
-  # - from: camera2d_detection.output.rois3
-  #   to: object_recognition.input.rois3
+  - from: object_recognition/detection.output.rois0
+    to: object_recognition.input.rois0
+  - from: object_recognition/detection.output.rois1
+    to: object_recognition.input.rois1
+  - from: object_recognition/detection.output.rois2
+    to: object_recognition.input.rois2
+  - from: object_recognition/detection.output.rois3
+    to: object_recognition.input.rois3
+  - from: object_recognition/detection.output.rois4
+    to: object_recognition.input.rois4
+  - from: object_recognition/detection.output.rois5
+    to: object_recognition.input.rois5
+  - from: object_recognition/detection.output.rois6
+    to: object_recognition.input.rois6
+  - from: object_recognition/detection.output.rois7
+    to: object_recognition.input.rois7
 
-  # - from: camera.output.camera0/camera_info
-  #   to: object_recognition.input.camera_info0
-  # - from: camera.output.camera1/camera_info
-  #   to: object_recognition.input.camera_info1
-  # - from: camera.output.camera2/camera_info
-  #   to: object_recognition.input.camera_info2
-  # - from: camera.output.camera3/camera_info
-  #   to: object_recognition.input.camera_info3
+  - from: camera.output.camera0/camera_info
+    to: object_recognition.input.camera_info0
+  - from: camera.output.camera1/camera_info
+    to: object_recognition.input.camera_info1
+  - from: camera.output.camera2/camera_info
+    to: object_recognition.input.camera_info2
+  - from: camera.output.camera3/camera_info
+    to: object_recognition.input.camera_info3
+  - from: camera.output.camera4/camera_info
+    to: object_recognition.input.camera_info4
+  - from: camera.output.camera5/camera_info
+    to: object_recognition.input.camera_info5
+  - from: camera.output.camera6/camera_info
+    to: object_recognition.input.camera_info6
+  - from: camera.output.camera7/camera_info
+    to: object_recognition.input.camera_info7
 
   - from: map_loader.output.vector_map
     to: localizer.input.lanelet_map

@@ -1,0 +1,32 @@
+# module information
+name: CropBoxFilter.module
+
+launch:
+  package: autoware_pointcloud_preprocessor
+  plugin: autoware::pointcloud_preprocessor::CropBoxFilterComponent
+  executable: crop_box_filter_node
+  node_output: screen
+  use_container: true
+  container_name: pointcloud_container
+
+# interface
+inputs:
+  - name: input
+    message_type: sensor_msgs/msg/PointCloud2
+outputs:
+  - name: output
+    message_type: sensor_msgs/msg/PointCloud2
+    qos:
+      reliability: reliable
+      durability: transient_local
+parameters: []
+# configurations
+configurations: []
+
+# processes
+processes:
+  - name: filter
+    trigger_conditions:
+      - on_input: input
+    outcomes:
+      - to_output: output

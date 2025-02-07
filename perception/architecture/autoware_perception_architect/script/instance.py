@@ -35,7 +35,7 @@ class Instance:
         self.namespace.append(name)
         # create namespace string, FOR ERROR MESSAGE ONLY
         self.namespace_str: str = "/" + "/".join(self.namespace)
-        self.id = "__".join(self.namespace) + "__" + name
+        self.id = ("__".join(self.namespace) + "__" + name).replace("/", "__")
 
         self.compute_unit: str = compute_unit
         self.layer: int = layer
@@ -671,26 +671,34 @@ class Deployment:
 
         # load the template file
         script_dir = os.path.dirname(__file__)
-        template_path = os.path.join(script_dir, "node-diagram.puml.jinja2")
-        with open(template_path, "r") as f:
-            plantuml_template = f.read()
+        node_template_path = os.path.join(script_dir, "node_diagram.puml.jinja2")
+        logic_template_path = os.path.join(script_dir, "logic_diagram.puml.jinja2")
 
         # Collect data from the architecture instance
         # data = collect_instance_data(self.architecture_instance)
         data = self.architecture_instance.collect_instance_data()
+
+        # draw node diagram
+        self.generate_plantuml(data, node_template_path, self.name + "_node_graph")
+        self.generate_plantuml(data, logic_template_path, self.name + "_logic_graph")
+
+    def generate_plantuml(self, data, template_path, prefix):
+        # load the template file
+        script_dir = os.path.dirname(__file__)
+        with open(template_path, "r") as f:
+            plantuml_template = f.read()
 
         # Render the Jinja2 template with the collected data
         template = jinja2.Template(plantuml_template)
         plantuml_output = template.render(data)
 
         # write the plantuml file
-        plantuml_file = os.path.join(self.visualization_dir, self.name + ".architecture.puml")
+        plantuml_file = os.path.join(self.visualization_dir, prefix + ".puml")
         if os.path.exists(plantuml_file):
             os.remove(plantuml_file)
         if not os.path.exists(self.visualization_dir):
             os.makedirs(self.visualization_dir, exist_ok=True)
         with open(plantuml_file, "w") as f:
-            # f.write("\n".join(lines))
             f.write(plantuml_output)
 
     def generate_system_monitor(self):

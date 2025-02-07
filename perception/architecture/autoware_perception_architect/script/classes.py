@@ -307,7 +307,7 @@ class Event:
     def __init__(self, name: str, namespace: List[str]):
         self.name = name
         self.namespace = namespace
-        self.id = "__".join(namespace) + "__" + name
+        self.id = ("__".join(namespace) + "__" + name).replace("/", "__")
         self.type_list = [
             "on_input",
             "on_trigger",
@@ -579,7 +579,7 @@ class Process:
         self.namespace = namespace
         self.config_yaml = config_yaml
         self.event: EventChain = EventChain(name, namespace)
-        self.id = "__".join(namespace) + "__process__" + name
+        self.id = ("__".join(namespace) + "__process__" + name).replace("/", "__")
 
     def set_condition(self, process_list, on_input_list):
         trigger_condition_config = self.config_yaml.get("trigger_conditions")
@@ -651,7 +651,7 @@ class InPort(Port):
     def __init__(self, name, msg_type, namespace: List[str] = []):
         super().__init__(name, msg_type, namespace)
         self.full_name = "/" + "/".join(namespace) + "/input/" + name
-        self.id = "__".join(namespace) + "__input_" + name.replace("/", "__")
+        self.id = ("__".join(namespace) + "__input_" + name).replace("/", "__")
         # to enable/disable connection checker
         self.is_required = True
         # reference port
@@ -672,7 +672,7 @@ class OutPort(Port):
     def __init__(self, name, msg_type, namespace: List[str] = []):
         super().__init__(name, msg_type, namespace)
         self.full_name = "/" + "/".join(namespace) + "/output/" + name
-        self.id = "__".join(namespace) + "__output_" + name.replace("/", "__")
+        self.id = ("__".join(namespace) + "__output_" + name).replace("/", "__")
         # for topic monitor
         self.frequency = 0.0
         self.is_monitored = False

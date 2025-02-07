@@ -1,0 +1,31 @@
+name: ObjectSegmentation.pipeline
+
+depends:
+  - CropBoxFilter.module
+  - ScanGroundFilter.module
+
+nodes:
+  - node: crop_box_filter
+    element: CropBoxFilter.module
+  - node: common_ground_filter
+    element: ScanGroundFilter.module
+
+external_interfaces:
+  input:
+    # lidar
+    - name: concatenated_pointcloud
+  output:
+    - name: pointcloud
+  parameter: []
+
+connections:
+  - from: input.concatenated_pointcloud
+    to: crop_box_filter.input.input
+  - from: crop_box_filter.output.output
+    to: common_ground_filter.input.pointcloud
+  - from: common_ground_filter.output.pointcloud
+    to: output.pointcloud
+
+parameters: []
+
+configurations: []

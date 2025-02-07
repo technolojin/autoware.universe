@@ -32,9 +32,9 @@ components:
     compute_unit: dummy_ecu_2
 
 connections:
-  - from: sensor_pipeline_a.output.pointcloud
+  - from: sensor_pipeline_a.output.concatenated/pointcloud
     to: object_recognition.input.pointcloud
-  - from: sensor_pipeline_a.output.pointcloud
+  - from: sensor_pipeline_a.output.concatenated/pointcloud
     to: localizer.input.pointcloud
   - from: map_loader.output.vector_map
     to: localizer.input.lanelet_map

@@ -10,11 +10,11 @@ nodes:
 external_interfaces:
   input: []
   output:
-    - name: pointcloud
+    - name: concatenated/pointcloud
 
 connections:
   - from: lidar_top.output.pointcloud
-    to: output.pointcloud
+    to: output.concatenated/pointcloud
 
 parameters: []
 
