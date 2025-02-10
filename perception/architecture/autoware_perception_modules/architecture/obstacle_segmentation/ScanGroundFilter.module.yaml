@@ -20,8 +20,8 @@ outputs:
   - name: pointcloud
     message_type: sensor_msgs/msg/PointCloud2
     qos:
-      reliability: reliable
-      durability: transient_local
+      reliability: best_effort
+      durability: volatile
 parameters:
   - name: ground_segmentation_param_file
     default: config/scan_ground_filter.param.yaml

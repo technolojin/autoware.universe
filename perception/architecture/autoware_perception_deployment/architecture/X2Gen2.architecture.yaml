@@ -12,6 +12,7 @@ depends:
   - ObjectSegmentation.pipeline
   - ObjectRecognition.pipeline
   - Camera2dDetection.pipeline
+  - OccupancyGridMap.pipeline
 
 components:
   - component: lidar
@@ -32,6 +33,10 @@ components:
     compute_unit: dummy_ecu_1
 
   # perception
+  - component: object_recognition/detection
+    element: Camera2dDetection.pipeline
+    namespace: perception
+    compute_unit: perception_ecu_2
   - component: object_segmentation
     element: ObjectSegmentation.pipeline
     namespace: perception
@@ -40,10 +45,10 @@ components:
     element: ObjectRecognition.pipeline
     namespace: perception
     compute_unit: main_ecu
-  - component: object_recognition/detection
-    element: Camera2dDetection.pipeline
+  - component: occupancy_grid_map
+    element: OccupancyGridMap.pipeline
     namespace: perception
-    compute_unit: perception_ecu_2
+    compute_unit: main_ecu
 
   # planner
   - component: planner
@@ -109,6 +114,13 @@ connections:
     to: object_recognition.input.camera_info6
   - from: camera.output.camera7/camera_info
     to: object_recognition.input.camera_info7
+
+  - from: lidar.output.concatenated/pointcloud
+    to: occupancy_grid_map.input.concatenated_pointcloud
+  - from: object_segmentation.output.pointcloud
+    to: occupancy_grid_map.input.obstacle_pointcloud
+  - from: occupancy_grid_map.output.map
+    to: planner.input.occupancy_grid_map
 
   - from: map_loader.output.vector_map
     to: localizer.input.lanelet_map

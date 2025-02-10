@@ -10,6 +10,9 @@ inputs: []
 outputs:
   - name: image
     message_type: sensor_msgs/msg/Image
+    qos:
+      reliability: best_effort
+      durability: volatile
   - name: compressed_image
     message_type: sensor_msgs/msg/CompressedImage
   - name: camera_info

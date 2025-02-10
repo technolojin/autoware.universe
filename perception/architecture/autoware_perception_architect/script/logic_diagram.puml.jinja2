@@ -35,7 +35,7 @@ node {BackgroundColor #dddddd}
             portout "output/{{ out_port.name }}" as {{ out_port.id }}
         {% endfor -%}
     }
-    {# GLOBAL TOPIC #}
+    {# GLOBAL TOPIC -#}
     {% for in_port in instance.in_ports -%}
         {# if subscribing global topic, cloud -#}
         {% if in_port.is_global -%}
@@ -43,10 +43,9 @@ node {BackgroundColor #dddddd}
             {{ in_port.id }}_cloud -d-> {{ in_port.id }}
         {% endif -%}
     {% endfor -%}
-
     {% elif instance.element_type == "pipeline" -%}
         {% for child in instance.children -%}
-            {{ build_instance_graph(child) }}
+            {{ build_instance_graph(child) -}}
         {% endfor -%}
     {% endif -%}
 {% endmacro -%}
@@ -77,22 +76,20 @@ node {BackgroundColor #dddddd}
     }
     {% elif instance.element_type == "pipeline" -%}
         {% for child in instance.children -%}
-            {{ build_logic_graph(child) }}
+            {{ build_logic_graph(child) -}}
         {% endfor -%}
     {% endif -%}
 {% endmacro -%}
 
 
-
-
 {% for child in children -%}
 {# instances -#}
-{{ build_instance_graph(child) }}
+{{ build_instance_graph(child) -}}
 {% endfor -%}
 
 {% for child in children -%}
 {# events -#}
-{{ build_logic_graph(child) }}
+{{ build_logic_graph(child) -}}
 {% endfor -%}
 
 @enduml

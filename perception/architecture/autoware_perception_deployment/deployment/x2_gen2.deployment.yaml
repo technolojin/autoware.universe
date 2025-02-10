@@ -3,7 +3,10 @@ name: x2_gen2.deployment
 architecture: X2Gen2.architecture
 
 # vehicle specific parameters, such as sensor calibration, vehicle dimensions
-vehicle_parameters: []
+vehicle_parameters:
+  - vehicle_id: j6_gen2_03
 
 # environment specific parameters, such as map data
-environment_parameters: []
+environment_parameters:
+  - map_path: $HOME/autoware_map/odaiba_rinkai
+  - map_pcd_path: $HOME/autoware_map/odaiba_rinkai/pointcloud_map.pcd

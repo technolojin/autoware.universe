@@ -304,7 +304,7 @@ class ArchitectureList:
 
 # classes for deployment
 class Event:
-    def __init__(self, name: str, namespace: List[str]):
+    def __init__(self, name: str, namespace: List[str], is_process_event=False):
         self.name = name
         self.namespace = namespace
         self.id = ("__".join(namespace) + "__" + name).replace("/", "__")
@@ -321,6 +321,7 @@ class Event:
         # once: fulfill the condition if the input is received once
         # periodic: periodically activate this event
         self.type: str = None
+        self.process_event: bool = is_process_event
 
         self.triggers: List["Event"] = []  # children triggers
         self.actions: List["Event"] = []  # event to trigger when this event is activated
@@ -505,8 +506,8 @@ class Event:
 
 
 class EventChain(Event):
-    def __init__(self, name: str, namespace: List[str] = []):
-        super().__init__(name, namespace)
+    def __init__(self, name: str, namespace: List[str] = [], is_process_event=True):
+        super().__init__(name, namespace, is_process_event)
         self.chain_list = [
             "and",
             "or",
@@ -584,6 +585,7 @@ class Process:
     def set_condition(self, process_list, on_input_list):
         trigger_condition_config = self.config_yaml.get("trigger_conditions")
 
+        # debug
         # print(f"Process {self.name} trigger condition: {trigger_condition_config}")
         self.event.set_chain(trigger_condition_config, process_list, on_input_list)
 

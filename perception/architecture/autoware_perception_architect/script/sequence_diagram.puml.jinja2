@@ -1,0 +1,68 @@
+@startuml
+
+title Architecture Diagram {{ name }}
+
+skinparam dpi 128
+
+{% macro build_logic_graph(instance) -%}
+    {% if instance.element_type == "module" -%}
+        {# EVENTS -#}
+        {% for event in instance.events -%}
+            {% if event.type == "periodic" -%}
+                control "{{'\\n/'.join(instance.namespace)}}\n\n<<{{event.name}}>>" as {{ event.id }}
+            {% else -%}
+                participant "{{'\\n/'.join(instance.namespace)}}\n\n<<{{event.name}}>>" as {{ event.id }}
+            {% endif -%}
+        {% endfor -%}
+    {% elif instance.element_type == "pipeline" -%}
+        {% for child in instance.children -%}
+            {{ build_logic_graph(child) -}}
+        {% endfor -%}
+    {% endif -%}
+{% endmacro -%}
+
+
+{% macro event_connection(root_name, event_origin, connection_name, event_target) -%}
+    {# {% set connection_name = connection_name + "  " + event_target.name -%} -#}
+    {# check the type and run the connection build -#}
+    {% if (event_target.type == "on_input" or event_target.type == "to_output") and event_target.process_event == False -%}
+        {% set connection_name = event_target.name -%}
+        {# recursive return -#}
+        {% for trigger in event_target.triggers -%}
+            {{ event_connection(root_name, event_origin, connection_name, trigger) -}}
+        {% endfor -%}
+    {% else -%}
+        {# render connection -#}
+        {{ event_target.id }} --> {{ event_origin.id }} : {{event_target.namespace[-1]}} to {{root_name}}\n {{connection_name}}
+    {% endif -%}
+{% endmacro -%}
+
+{% macro build_connection_graph(instance) -%}
+    {% if instance.element_type == "module" -%}
+        {# EVENTS -#}
+        {% for event in instance.events -%}
+            {% if event.process_event == True -%}
+                {% for event_trigger in event.triggers -%}
+                    {{ event_connection(instance.name, event, event_trigger.name, event_trigger) -}}
+                {% endfor -%}
+            {% endif -%}
+        {% endfor -%}
+    {% elif instance.element_type == "pipeline" -%}
+        {% for child in instance.children -%}
+            {{ build_connection_graph(child) -}}
+        {% endfor -%}
+    {% endif -%}
+{% endmacro -%}
+
+
+{% for child in children -%}
+{# events -#}
+{{ build_logic_graph(child) }}
+{% endfor -%}
+
+{% for child in children -%}
+{# event connections -#}
+{{ build_connection_graph(child) }}
+{% endfor -%}
+
+@enduml

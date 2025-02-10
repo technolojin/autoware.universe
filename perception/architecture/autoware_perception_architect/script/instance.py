@@ -265,7 +265,6 @@ class Instance:
             process.set_outcomes(process_event_list, to_output_events)
 
         # set the process events
-        # self.event_list = [process.get_event_list() for process in self.processes]
         process_event_list = []
         for process in self.processes:
             process_event_list.extend(process.get_event_list())
@@ -673,18 +672,18 @@ class Deployment:
         script_dir = os.path.dirname(__file__)
         node_template_path = os.path.join(script_dir, "node_diagram.puml.jinja2")
         logic_template_path = os.path.join(script_dir, "logic_diagram.puml.jinja2")
+        sequence_template_path = os.path.join(script_dir, "sequence_diagram.puml.jinja2")
 
         # Collect data from the architecture instance
-        # data = collect_instance_data(self.architecture_instance)
         data = self.architecture_instance.collect_instance_data()
 
         # draw node diagram
         self.generate_plantuml(data, node_template_path, self.name + "_node_graph")
         self.generate_plantuml(data, logic_template_path, self.name + "_logic_graph")
+        self.generate_plantuml(data, sequence_template_path, self.name + "_sequence_graph")
 
     def generate_plantuml(self, data, template_path, prefix):
         # load the template file
-        script_dir = os.path.dirname(__file__)
         with open(template_path, "r") as f:
             plantuml_template = f.read()
 
