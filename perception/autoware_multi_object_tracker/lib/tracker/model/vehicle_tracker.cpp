@@ -140,18 +140,6 @@ bool VehicleTracker::predict(const rclcpp::Time & time)
   return true;
 }
 
-types::DynamicObject VehicleTracker::getUpdatingObject(
-  const types::DynamicObject & object, const geometry_msgs::msg::Transform & self_transform)
-{
-  types::DynamicObject updating_object = object;
-
-  // get offset measurement
-  shapes::getNearestCornerOrSurface(self_transform, updating_object);
-  shapes::calcAnchorPointOffset(object_, object, tracking_offset_, updating_object);
-
-  return updating_object;
-}
-
 bool VehicleTracker::measureWithPose(const types::DynamicObject & object)
 {
   // current (predicted) state
@@ -239,9 +227,7 @@ bool VehicleTracker::measureWithShape(const types::DynamicObject & object)
   return true;
 }
 
-bool VehicleTracker::measure(
-  const types::DynamicObject & object, const rclcpp::Time & time,
-  const geometry_msgs::msg::Transform & self_transform)
+bool VehicleTracker::measure(const types::DynamicObject & object, const rclcpp::Time & time)
 {
   // keep the latest input object
   object_ = object;
@@ -257,7 +243,8 @@ bool VehicleTracker::measure(
   }
 
   // update object
-  const types::DynamicObject updating_object = getUpdatingObject(object, self_transform);
+  types::DynamicObject updating_object = object;
+  shapes::calcAnchorPointOffset(object_, object, tracking_offset_, updating_object);
   measureWithPose(updating_object);
   measureWithShape(updating_object);
 

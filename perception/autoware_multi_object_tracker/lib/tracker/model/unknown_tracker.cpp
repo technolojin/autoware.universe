@@ -121,12 +121,6 @@ bool UnknownTracker::predict(const rclcpp::Time & time)
   return motion_model_.predictState(time);
 }
 
-types::DynamicObject UnknownTracker::getUpdatingObject(
-  const types::DynamicObject & object, const geometry_msgs::msg::Transform & /*self_transform*/)
-{
-  return object;
-}
-
 bool UnknownTracker::measureWithPose(const types::DynamicObject & object)
 {
   // update motion model
@@ -146,9 +140,7 @@ bool UnknownTracker::measureWithPose(const types::DynamicObject & object)
   return is_updated;
 }
 
-bool UnknownTracker::measure(
-  const types::DynamicObject & object, const rclcpp::Time & time,
-  const geometry_msgs::msg::Transform & self_transform)
+bool UnknownTracker::measure(const types::DynamicObject & object, const rclcpp::Time & time)
 {
   // keep the latest input object
   object_ = object;
@@ -164,8 +156,7 @@ bool UnknownTracker::measure(
   }
 
   // update object
-  const types::DynamicObject updating_object = getUpdatingObject(object, self_transform);
-  measureWithPose(updating_object);
+  measureWithPose(object);
 
   return true;
 }
