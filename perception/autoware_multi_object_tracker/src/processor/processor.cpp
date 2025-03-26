@@ -188,16 +188,16 @@ void TrackerProcessor::removeOverlappedTracker(const rclcpp::Time & time)
       // Check the Intersection over Union (IoU) between the two objects
       constexpr double min_union_iou_area = 1e-2;
       const auto iou = shapes::get2dIoU(object1, object2, min_union_iou_area);
-      
+
       // check if object1 should be removed
-      if (canRemoveOverlappedTarget(*(*itr1), *(*itr2), iou)){
+      if (canRemoveOverlappedTarget(*(*itr1), *(*itr2), iou) && (*itr2)->isConfident()) {
         auto erase_itr = itr1;
         --itr1;
         list_tracker_.erase(erase_itr);
         break;
       }
       // check if object2 should be removed
-      if (canRemoveOverlappedTarget(*(*itr2), *(*itr1), iou)){
+      if (canRemoveOverlappedTarget(*(*itr2), *(*itr1), iou) && (*itr1)->isConfident()) {
         auto erase_itr = itr2;
         --itr2;
         list_tracker_.erase(erase_itr);
@@ -206,26 +206,27 @@ void TrackerProcessor::removeOverlappedTracker(const rclcpp::Time & time)
   }
 }
 
-bool TrackerProcessor::canRemoveOverlappedTarget(const Tracker & target, const Tracker & other, const double iou) const
+bool TrackerProcessor::canRemoveOverlappedTarget(
+  const Tracker & target, const Tracker & other, const double iou) const
 {
   const auto & label_target = target.getHighestProbLabel();
   const auto & label_other = other.getHighestProbLabel();
 
   // target is not UNKNOWN
-  if (label_target != Label::UNKNOWN){
+  if (label_target != Label::UNKNOWN) {
     // if other is unknown, do not remove target
-    if (label_other == Label::UNKNOWN){
+    if (label_other == Label::UNKNOWN) {
       return false;
     }
     // both are not UNKNOWN, remove the younger one
-    if (iou > config_.min_known_object_removal_iou){
+    if (iou > config_.min_known_object_removal_iou) {
       return target.getTotalMeasurementCount() < other.getTotalMeasurementCount();
     }
   }
   // target is UNKNOWN, check the IoU
-  if (iou > config_.min_unknown_object_removal_iou){
+  if (iou > config_.min_unknown_object_removal_iou) {
     // if other is unknown, remove the younger one
-    if (label_other == Label::UNKNOWN){
+    if (label_other == Label::UNKNOWN) {
       return target.getTotalMeasurementCount() < other.getTotalMeasurementCount();
     }
     // if other is not unknown, remove the target
@@ -233,7 +234,6 @@ bool TrackerProcessor::canRemoveOverlappedTarget(const Tracker & target, const T
   }
   return false;
 }
-
 
 void TrackerProcessor::getTrackedObjects(
   const rclcpp::Time & time, autoware_perception_msgs::msg::TrackedObjects & tracked_objects) const
