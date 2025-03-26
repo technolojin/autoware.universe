@@ -188,50 +188,52 @@ void TrackerProcessor::removeOverlappedTracker(const rclcpp::Time & time)
       // Check the Intersection over Union (IoU) between the two objects
       constexpr double min_union_iou_area = 1e-2;
       const auto iou = shapes::get2dIoU(object1, object2, min_union_iou_area);
-      const auto & label1 = (*itr1)->getHighestProbLabel();
-      const auto & label2 = (*itr2)->getHighestProbLabel();
-      bool should_delete_tracker1 = false;
-      bool should_delete_tracker2 = false;
-
-      // If both trackers are UNKNOWN, delete the younger tracker
-      // If one side of the tracker is UNKNOWN, delete UNKNOWN objects
-      if (label1 == Label::UNKNOWN || label2 == Label::UNKNOWN) {
-        if (iou > config_.min_unknown_object_removal_iou) {
-          if (label1 == Label::UNKNOWN && label2 == Label::UNKNOWN) {
-            if ((*itr1)->getTotalMeasurementCount() < (*itr2)->getTotalMeasurementCount()) {
-              should_delete_tracker1 = true;
-            } else {
-              should_delete_tracker2 = true;
-            }
-          } else if (label1 == Label::UNKNOWN) {
-            should_delete_tracker1 = true;
-          } else if (label2 == Label::UNKNOWN) {
-            should_delete_tracker2 = true;
-          }
-        }
-      } else {  // If neither object is UNKNOWN, delete the younger tracker
-        if (iou > config_.min_known_object_removal_iou) {
-          if ((*itr1)->getTotalMeasurementCount() < (*itr2)->getTotalMeasurementCount()) {
-            should_delete_tracker1 = true;
-          } else {
-            should_delete_tracker2 = true;
-          }
-        }
-      }
-
-      // Delete the tracker
-      if (should_delete_tracker1) {
-        itr1 = list_tracker_.erase(itr1);
+      
+      // check if object1 should be removed
+      if (canRemoveOverlappedTarget(*(*itr1), *(*itr2), iou)){
+        auto erase_itr = itr1;
         --itr1;
+        list_tracker_.erase(erase_itr);
         break;
       }
-      if (should_delete_tracker2) {
-        itr2 = list_tracker_.erase(itr2);
+      // check if object2 should be removed
+      if (canRemoveOverlappedTarget(*(*itr2), *(*itr1), iou)){
+        auto erase_itr = itr2;
         --itr2;
+        list_tracker_.erase(erase_itr);
       }
     }
   }
 }
+
+bool TrackerProcessor::canRemoveOverlappedTarget(const Tracker & target, const Tracker & other, const double iou) const
+{
+  const auto & label_target = target.getHighestProbLabel();
+  const auto & label_other = other.getHighestProbLabel();
+
+  // target is not UNKNOWN
+  if (label_target != Label::UNKNOWN){
+    // if other is unknown, do not remove target
+    if (label_other == Label::UNKNOWN){
+      return false;
+    }
+    // both are not UNKNOWN, remove the younger one
+    if (iou > config_.min_known_object_removal_iou){
+      return target.getTotalMeasurementCount() < other.getTotalMeasurementCount();
+    }
+  }
+  // target is UNKNOWN, check the IoU
+  if (iou > config_.min_unknown_object_removal_iou){
+    // if other is unknown, remove the younger one
+    if (label_other == Label::UNKNOWN){
+      return target.getTotalMeasurementCount() < other.getTotalMeasurementCount();
+    }
+    // if other is not unknown, remove the target
+    return true;
+  }
+  return false;
+}
+
 
 void TrackerProcessor::getTrackedObjects(
   const rclcpp::Time & time, autoware_perception_msgs::msg::TrackedObjects & tracked_objects) const
