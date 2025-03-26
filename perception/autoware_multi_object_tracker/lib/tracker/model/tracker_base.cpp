@@ -249,6 +249,8 @@ bool Tracker::isConfident() const
   }
 
   // check covariance ellipses size, if the size is too large, the tracker is not confident
+  // TODO: consider the velocity covariance
+  //       one of solution is extrapolate the tracker and check the position covariance
   double major_axis_sq = 0.0;
   double minor_axis_sq = 0.0;
   getPositionCovarianceEigenSq(major_axis_sq, minor_axis_sq);
@@ -256,17 +258,20 @@ bool Tracker::isConfident() const
   // if the ellipse size is small or the existence probability is high, the tracker is confident
   if (major_axis_sq < 0.25 || (getTotalExistenceProbability() > 0.7 && major_axis_sq < 1.6)) {
     // debug message
-    std::cout << "Tracker is confident " << getUuidString().substr(0, 6) << " "
-              << getTotalExistenceProbability() << ", axis_sq " << major_axis_sq << " x "
-              << minor_axis_sq << std::endl;
+    // if (major_axis_sq > 0.5 || minor_axis_sq > 0.5)
+    {
+      std::cout << "Tracker is confident " << getUuidString().substr(0, 6) << " "
+                << getTotalExistenceProbability() << ", axis_sq " << major_axis_sq << " x "
+                << minor_axis_sq << std::endl;
+    }
     return true;
   }
-  // debug message
-  {
-    std::cout << "Tracker is not confident " << getUuidString().substr(0, 6) << " "
-              << getTotalExistenceProbability() << " , axis_sq " << major_axis_sq << " x "
-              << minor_axis_sq << std::endl;
-  }
+  // // debug message
+  // {
+  //   std::cout << "Tracker is not confident " << getUuidString().substr(0, 6) << " "
+  //             << getTotalExistenceProbability() << " , axis_sq " << major_axis_sq << " x "
+  //             << minor_axis_sq << std::endl;
+  // }
   return false;
 }
 
@@ -302,10 +307,13 @@ bool Tracker::isExpired(const rclcpp::Time & now) const
   double minor_axis_sq = 0.0;
   getPositionCovarianceEigenSq(major_axis_sq, minor_axis_sq);
 
-  if (elapsed_time > 0.18 && (major_axis_sq > 1.6 || minor_axis_sq > 0.6) && existence_probability < 0.5) {
+  if (
+    elapsed_time > 0.18 && (major_axis_sq > 1.6 || minor_axis_sq > 0.6) &&
+    existence_probability < 0.5) {
     // debug message
-    std::cout << "Tracker is expired " << elapsed_time << ", existence_probability " << existence_probability << " , axis_sq " << major_axis_sq << " x "
-              << minor_axis_sq << std::endl;
+    std::cout << "Tracker is expired " << getUuidString().substr(0, 6) << " " << elapsed_time
+              << ", existence_probability " << existence_probability << " , axis_sq "
+              << major_axis_sq << " x " << minor_axis_sq << std::endl;
     return true;
   }
 
