@@ -190,14 +190,14 @@ void TrackerProcessor::removeOverlappedTracker(const rclcpp::Time & time)
       const auto iou = shapes::get2dIoU(object1, object2, min_union_iou_area);
 
       // check if object1 should be removed
-      if (canRemoveOverlappedTarget(*(*itr1), *(*itr2), iou) && (*itr2)->isConfident()) {
+      if (canRemoveOverlappedTarget(*(*itr1), *(*itr2), iou)) {
         auto erase_itr = itr1;
         --itr1;
         list_tracker_.erase(erase_itr);
         break;
       }
       // check if object2 should be removed
-      if (canRemoveOverlappedTarget(*(*itr2), *(*itr1), iou) && (*itr1)->isConfident()) {
+      if (canRemoveOverlappedTarget(*(*itr2), *(*itr1), iou)) {
         auto erase_itr = itr2;
         --itr2;
         list_tracker_.erase(erase_itr);
@@ -209,27 +209,50 @@ void TrackerProcessor::removeOverlappedTracker(const rclcpp::Time & time)
 bool TrackerProcessor::canRemoveOverlappedTarget(
   const Tracker & target, const Tracker & other, const double iou) const
 {
-  const auto & label_target = target.getHighestProbLabel();
-  const auto & label_other = other.getHighestProbLabel();
+  // if the other is not confident, do not remove the target
+  if (!other.isConfident()) {
+    return false;
+  }
 
-  // target is not UNKNOWN
-  if (label_target != Label::UNKNOWN) {
-    // if other is unknown, do not remove target
-    if (label_other == Label::UNKNOWN) {
+  // 1. compare known class probability
+  const float target_known_prob = target.getKnownObjectProbability();
+  const float other_known_prob = other.getKnownObjectProbability();
+  constexpr float min_known_prob = 0.2;
+
+  // the target class is known
+  if (target_known_prob >= min_known_prob) {
+    // if other class is unknown, do not remove target
+    if (other_known_prob < min_known_prob) {
       return false;
     }
-    // both are not UNKNOWN, remove the younger one
+    // both are known class, check the IoU
     if (iou > config_.min_known_object_removal_iou) {
-      return target.getTotalMeasurementCount() < other.getTotalMeasurementCount();
+      // compare probability vector, prioritize lower index of the probability vector
+      std::vector<float> target_existence_prob, other_existence_prob;
+      constexpr float prob_buffer = 0.4;
+      if (!target.getExistenceProbabilityVector(target_existence_prob)) {
+        return false;
+      }
+      if (!other.getExistenceProbabilityVector(other_existence_prob)) {
+        return false;
+      }
+      for (size_t i = 0; i < target_existence_prob.size(); ++i) {
+        if (target_existence_prob[i] + prob_buffer < other_existence_prob[i]) {
+          return true;
+        }
+      }
+
+      // compare the covariance size
+      return target.getPositionCovarianceSizeSq() > other.getPositionCovarianceSizeSq();
     }
   }
-  // target is UNKNOWN, check the IoU
+  // the target class is unknown, check the IoU
   if (iou > config_.min_unknown_object_removal_iou) {
-    // if other is unknown, remove the younger one
-    if (label_other == Label::UNKNOWN) {
-      return target.getTotalMeasurementCount() < other.getTotalMeasurementCount();
+    if (other_known_prob < min_known_prob) {
+      // both are unknown, remove the larger uncertainty one
+      return target.getPositionCovarianceSizeSq() > other.getPositionCovarianceSizeSq();
     }
-    // if other is not unknown, remove the target
+    // if the other class is known, remove the target
     return true;
   }
   return false;
