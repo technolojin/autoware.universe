@@ -56,6 +56,9 @@ Tracker::Tracker(const rclcpp::Time & time, const types::DynamicObject & detecte
   std::generate(uuid_msg.uuid.begin(), uuid_msg.uuid.end(), bit_eng);
   object_.uuid = uuid_msg;
 
+  // Tracker knows the object's orientation
+  object_.kinematics.orientation_availability = types::OrientationAvailability::AVAILABLE;
+
   // Initialize existence probabilities
   existence_probabilities_.resize(types::max_channel_size, 0.001);
   total_existence_probability_ = 0.001;
