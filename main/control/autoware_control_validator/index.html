@@ -14289,6 +14289,7 @@ The listed features below does not always correspond to the latest implementatio
 </tbody>
 </table>
 <ul>
+<li><strong>Lateral jerk</strong> : invalid when the lateral jerk exceeds the configured threshold. The validation uses the vehicle's velocity and steering angle rate to calculate the resulting lateral jerk. The calculation assumes constant velocity (acceleration is zero).</li>
 <li><strong>Deviation check between reference trajectory and predicted trajectory</strong> : invalid when the largest deviation between the predicted trajectory and reference trajectory is greater than the given threshold.</li>
 </ul>
 <p><img alt="trajectory_deviation" src="image/trajectory_deviation.drawio.svg"></p>
@@ -14395,6 +14396,12 @@ The listed features below does not always correspond to the latest implementatio
 <td align="left">double</td>
 <td align="left">invalid threshold of the max distance deviation between the predicted path and the reference trajectory [m]</td>
 <td align="left">1.0</td>
+</tr>
+<tr>
+<td align="left"><code>thresholds.lateral_jerk</code></td>
+<td align="left">double</td>
+<td align="left">invalid threshold of the lateral jerk for steering rate validation [m/s^3]</td>
+<td align="left">10.0</td>
 </tr>
 <tr>
 <td align="left"><code>thresholds.rolling_back_velocity</code></td>

@@ -14227,6 +14227,13 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#time-buffer-and-distance-hysteresis" class="md-nav__link">
+    Time buffer and distance hysteresis
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -14293,9 +14300,15 @@
 
 <div><h1 id="collision-detector">Collision Detector<a class="headerlink" href="#collision-detector" title="Permanent link">#</a></h1>
 <h2 id="purpose">Purpose<a class="headerlink" href="#purpose" title="Permanent link">#</a></h2>
-<p>This module subscribes required data (ego-pose, obstacles, etc), and publishes diagnostics if an object is within a specific distance.</p>
+<p>This module publishes an <code>ERROR</code> diagnostic if a collision is detected with the current ego footprint.</p>
 <h2 id="inner-workings-algorithms">Inner-workings / Algorithms<a class="headerlink" href="#inner-workings-algorithms" title="Permanent link">#</a></h2>
 <h3 id="flow-chart">Flow chart<a class="headerlink" href="#flow-chart" title="Permanent link">#</a></h3>
+<ol>
+<li>Check input data.</li>
+<li>Filter dynamic objects.</li>
+<li>Find nearest object and its distance to ego.</li>
+<li>Publish an <code>ERROR</code> diagnostic depending on the recent collision detection results.</li>
+</ol>
 <h3 id="algorithms">Algorithms<a class="headerlink" href="#algorithms" title="Permanent link">#</a></h3>
 <h3 id="check-data">Check data<a class="headerlink" href="#check-data" title="Permanent link">#</a></h3>
 <p>Check that <code>collision_detector</code> receives no ground pointcloud, dynamic objects.</p>
@@ -14332,7 +14345,13 @@
 </ol>
 <h3 id="get-distance-to-nearest-object">Get distance to nearest object<a class="headerlink" href="#get-distance-to-nearest-object" title="Permanent link">#</a></h3>
 <p>Calculate distance between ego vehicle and the nearest object.
-In this function, it calculates the minimum distance between the polygon of ego vehicle and all points in pointclouds and the polygons of dynamic objects.</p>
+In this function, it calculates the minimum distance between the polygon of ego vehicle and all points in pointclouds and the polygons of dynamic objects.
+If the minimum distance is lower than the <code>collision_distance</code> parameter, then a collision is detected.</p>
+<h3 id="time-buffer-and-distance-hysteresis">Time buffer and distance hysteresis<a class="headerlink" href="#time-buffer-and-distance-hysteresis" title="Permanent link">#</a></h3>
+<p>Before publishing an <code>ERROR</code> diagnostic, a collision must be detected for at least a duration set by the parameter <code>time_buffer.on</code>.
+Once an <code>ERROR</code> diagnostic is published, the <code>time_buffer.off_distance_hysteresis</code> parameter is used to make the ego footprint larger,
+making it easier to detect a collision.
+To stop publishing the <code>ERROR</code> diagnostic, no collision must be detected for at least a duration set by the parameter <code>time_buffer.off</code>.</p>
 <h2 id="inputs-outputs">Inputs / Outputs<a class="headerlink" href="#inputs-outputs" title="Permanent link">#</a></h2>
 <h3 id="input">Input<a class="headerlink" href="#input" title="Permanent link">#</a></h3>
 <table>
@@ -14380,6 +14399,11 @@ In this function, it calculates the minimum distance between the polygon of ego 
 <td><code>/diagnostics</code></td>
 <td><code>diagnostic_msgs::msg::DiagnosticArray</code></td>
 <td>Diagnostics</td>
+</tr>
+<tr>
+<td><code>~/debug_markers</code></td>
+<td><code>visualization_msgs::msg::MarkerArray</code></td>
+<td>Debug markers</td>
 </tr>
 </tbody>
 </table>
@@ -14429,6 +14453,30 @@ In this function, it calculates the minimum distance between the polygon of ego 
 <td align="left"><code>object of bool values</code></td>
 <td align="left">Specifies which object types to filter. Only objects with <code>true</code> value will be filtered.</td>
 <td align="left"><code>{unknown: true, others: false}</code></td>
+</tr>
+<tr>
+<td align="left"><code>ignore_behind_rear_axle</code></td>
+<td align="left"><code>bool</code></td>
+<td align="left">If true, collisions detected behind the rear axle of the ego vehicle are ignored</td>
+<td align="left"><code>true</code></td>
+</tr>
+<tr>
+<td align="left"><code>time_buffer.on</code></td>
+<td align="left"><code>double</code></td>
+<td align="left">[s] minimum consecutive detection time before triggering the ERROR diagnostic</td>
+<td align="left">0.2</td>
+</tr>
+<tr>
+<td align="left"><code>time_buffer.off</code></td>
+<td align="left"><code>double</code></td>
+<td align="left">[s] minimum consecutive time without collision detection (including the hysteresis) before releasing the ERROR diagnostic</td>
+<td align="left">5.0</td>
+</tr>
+<tr>
+<td align="left"><code>time_buffer.off_distance_hysteresis</code></td>
+<td align="left"><code>double</code></td>
+<td align="left">[m] extra distance used to detect collisions once the diagnostic is triggered</td>
+<td align="left">1.0</td>
 </tr>
 </tbody>
 </table>
