@@ -215,7 +215,7 @@ void DecorativeTrackerMergerNode::mainObjectsCallback(
   stop_watch_ptr_->toc("delay_main_objects", true);
   diagnostics_interface_ptr_->clear();
 
-  // check if main objects is empty and duration
+  // diag: check if main objects is empty, measure duration if empty
   if (main_objects->objects.empty() && is_empty_previous_main_objects_) {
     is_empty_previous_main_objects_ = true;
   } else if (main_objects->objects.empty() && !is_empty_previous_main_objects_) {
@@ -225,7 +225,7 @@ void DecorativeTrackerMergerNode::mainObjectsCallback(
     is_empty_previous_main_objects_ = false;
   }
 
-  /* transform to target merge coordinate */
+  // 0. transform to target merge coordinate
   TrackedObjects transformed_objects;
   if (!autoware::object_recognition_utils::transformObjects(
         *main_objects, merge_frame_id_, tf_buffer_, transformed_objects)) {
@@ -233,6 +233,18 @@ void DecorativeTrackerMergerNode::mainObjectsCallback(
   }
   TrackedObjects::ConstSharedPtr transformed_main_objects =
     std::make_shared<TrackedObjects>(transformed_objects);
+
+
+  // 1. copy main object to tracks
+
+  // 2. interpolate sub objects to sync main objects
+
+  // 3. associate sub objects to the main tracks
+
+  // 4. add unassociated sub objects to tracks
+
+  // 5. publish tracks
+
 
   // try to merge sub object
   if (!sub_objects_buffer_.empty()) {
@@ -266,6 +278,9 @@ void DecorativeTrackerMergerNode::mainObjectsCallback(
   this->decorativeMerger(main_sensor_type_, transformed_main_objects);
   const auto & tracked_objects = getTrackedObjects(transformed_main_objects->header);
   merged_object_pub_->publish(tracked_objects);
+
+
+
 
   // update diagnostics
   updateDiagnostics();
