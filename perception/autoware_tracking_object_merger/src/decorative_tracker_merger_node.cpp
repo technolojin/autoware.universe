@@ -215,6 +215,14 @@ void DecorativeTrackerMergerNode::mainObjectsCallback(
   stop_watch_ptr_->toc("delay_main_objects", true);
   diagnostics_interface_ptr_->clear();
 
+  // Add debug logging for frame IDs
+  RCLCPP_INFO(
+    this->get_logger(),
+    "Main objects frame_id: '%s', base_link_frame: '%s', merge_frame: '%s'",
+    main_objects->header.frame_id.c_str(),
+    base_link_frame_id_.c_str(),
+    merge_frame_id_.c_str());
+
   // diag: check if main objects is empty, measure duration if empty
   if (main_objects->objects.empty() && is_empty_previous_main_objects_) {
     is_empty_previous_main_objects_ = true;
@@ -229,6 +237,7 @@ void DecorativeTrackerMergerNode::mainObjectsCallback(
   TrackedObjects transformed_objects;
   if (!autoware::object_recognition_utils::transformObjects(
         *main_objects, merge_frame_id_, tf_buffer_, transformed_objects)) {
+    RCLCPP_WARN(this->get_logger(), "Failed to transform main objects");
     return;
   }
   TrackedObjects::ConstSharedPtr transformed_main_objects =
@@ -298,6 +307,14 @@ void DecorativeTrackerMergerNode::subObjectsCallback(const TrackedObjects::Const
   stop_watch_ptr_->toc("delay_sub_objects", true);
   diagnostics_interface_ptr_->clear();
 
+  // Add debug logging for frame IDs
+  RCLCPP_INFO(
+    this->get_logger(),
+    "Sub objects frame_id: '%s', base_link_frame: '%s', merge_frame: '%s'",
+    msg->header.frame_id.c_str(),
+    base_link_frame_id_.c_str(),
+    merge_frame_id_.c_str());
+
   // check if sub objects is empty
   if (msg->objects.empty()) {
     return;
@@ -305,10 +322,11 @@ void DecorativeTrackerMergerNode::subObjectsCallback(const TrackedObjects::Const
 
   // filter by object velocity
   constexpr double velocity_min = 1.0; // [m/s]
-  constexpr double velocity_max = 130.0 / 3.6; // [m/s]
+  constexpr double velocity_max = 150.0 / 3.6; // [m/s]
   const double velocity_min_sq = velocity_min * velocity_min;
   const double velocity_max_sq = velocity_max * velocity_max;
   TrackedObjects velocity_filtered_objects;
+  velocity_filtered_objects.header = msg->header;  // Preserve header
   for (const auto & object : msg->objects) {
     const auto & twist = object.kinematics.twist_with_covariance.twist;
     const auto & velocity_sq = twist.linear.x * twist.linear.x + twist.linear.y * twist.linear.y;
@@ -318,20 +336,33 @@ void DecorativeTrackerMergerNode::subObjectsCallback(const TrackedObjects::Const
     velocity_filtered_objects.objects.push_back(object);
   }
 
+  RCLCPP_INFO(
+    this->get_logger(),
+    "After velocity filtering: frame_id='%s', objects=%zu",
+    velocity_filtered_objects.header.frame_id.c_str(),
+    velocity_filtered_objects.objects.size());
+
+  if (velocity_filtered_objects.objects.empty()) {
+    return;
+  }
+
+  // First transform to base_link for distance filtering
+  TrackedObjects base_link_objects;
+  if (!autoware::object_recognition_utils::transformObjects(
+    velocity_filtered_objects, base_link_frame_id_, tf_buffer_, base_link_objects)) {
+    RCLCPP_WARN(this->get_logger(), "Failed to transform sub objects to base link for distance filtering");
+    return;
+  }
+
   // filter by distance from base link
-  constexpr double distance_min = 50.0; // [m]
+  constexpr double distance_min = 30.0; // [m]
   constexpr double distance_max = 500.0; // [m]
   const double distance_min_sq = distance_min * distance_min;
   const double distance_max_sq = distance_max * distance_max;
-  // transform to base link if the object frame is not base link
-  if (velocity_filtered_objects.header.frame_id != base_link_frame_id_) {
-    autoware::object_recognition_utils::transformObjects(
-      velocity_filtered_objects, base_link_frame_id_, tf_buffer_, velocity_filtered_objects);
-  }
 
-  // filter by distance
   TrackedObjects distance_filtered_objects;
-  for (const auto & object : velocity_filtered_objects.objects) {
+  distance_filtered_objects.header = base_link_objects.header;  // Keep base_link frame for distance check
+  for (const auto & object : base_link_objects.objects) {
     const auto & position = object.kinematics.pose_with_covariance.pose.position;
     const auto object_sq_distance = position.x * position.x + position.y * position.y;
     if (object_sq_distance < distance_min_sq || object_sq_distance > distance_max_sq) {
@@ -340,12 +371,24 @@ void DecorativeTrackerMergerNode::subObjectsCallback(const TrackedObjects::Const
     distance_filtered_objects.objects.push_back(object);
   }
 
-  // transform to target merge coordinate
+  RCLCPP_INFO(
+    this->get_logger(),
+    "After distance filtering: frame_id='%s', objects=%zu",
+    distance_filtered_objects.header.frame_id.c_str(),
+    distance_filtered_objects.objects.size());
+
+  if (distance_filtered_objects.objects.empty()) {
+    return;
+  }
+
+  // transform back to map frame for final processing
   TrackedObjects map_transformed_objects;
   if (!autoware::object_recognition_utils::transformObjects(
         distance_filtered_objects, merge_frame_id_, tf_buffer_, map_transformed_objects)) {
+    RCLCPP_WARN(this->get_logger(), "Failed to transform sub objects to merge frame");
     return;
   }
+
   TrackedObjects::ConstSharedPtr transformed_sub_objects =
     std::make_shared<TrackedObjects>(map_transformed_objects);
 
