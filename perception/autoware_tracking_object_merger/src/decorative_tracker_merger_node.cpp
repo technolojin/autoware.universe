@@ -256,13 +256,16 @@ void DecorativeTrackerMergerNode::mainObjectsCallback(
     // get delay compensated sub objects
     const auto interpolated_sub_objects = interpolateObjectState(
       closest_time_sub_objects, closest_time_sub_objects_later, transformed_main_objects->header);
+
+    // merge sub objects only if interpolated_sub_objects is not null
     if (interpolated_sub_objects.has_value()) {
       // 3. associate sub objects to the main tracks
       // 4. add unassociated sub objects to tracks
-      const auto interp_sub_objs = interpolated_sub_objects.value();
-      debug_object_pub_->publish(interp_sub_objs);
       this->decorativeMerger(
         sub_sensor_type_, std::make_shared<TrackedObjects>(interpolated_sub_objects.value()));
+
+      // debug
+      debug_object_pub_->publish(interpolated_sub_objects.value());
     } else {
       RCLCPP_DEBUG(this->get_logger(), "interpolated_sub_objects is null");
     }
@@ -295,18 +298,59 @@ void DecorativeTrackerMergerNode::subObjectsCallback(const TrackedObjects::Const
   stop_watch_ptr_->toc("delay_sub_objects", true);
   diagnostics_interface_ptr_->clear();
 
-  /* transform to target merge coordinate */
-  TrackedObjects transformed_objects;
+  // check if sub objects is empty
+  if (msg->objects.empty()) {
+    return;
+  }
+
+  // filter by object velocity
+  constexpr double velocity_min = 1.0; // [m/s]
+  constexpr double velocity_max = 130.0 / 3.6; // [m/s]
+  const double velocity_min_sq = velocity_min * velocity_min;
+  const double velocity_max_sq = velocity_max * velocity_max;
+  TrackedObjects velocity_filtered_objects;
+  for (const auto & object : msg->objects) {
+    const auto & twist = object.kinematics.twist_with_covariance.twist;
+    const auto & velocity_sq = twist.linear.x * twist.linear.x + twist.linear.y * twist.linear.y;
+    if (velocity_sq < velocity_min_sq || velocity_sq > velocity_max_sq) {
+      continue;
+    }
+    velocity_filtered_objects.objects.push_back(object);
+  }
+
+  // filter by distance from base link
+  constexpr double distance_min = 50.0; // [m]
+  constexpr double distance_max = 500.0; // [m]
+  const double distance_min_sq = distance_min * distance_min;
+  const double distance_max_sq = distance_max * distance_max;
+  // transform to base link if the object frame is not base link
+  if (velocity_filtered_objects.header.frame_id != base_link_frame_id_) {
+    autoware::object_recognition_utils::transformObjects(
+      velocity_filtered_objects, base_link_frame_id_, tf_buffer_, velocity_filtered_objects);
+  }
+
+  // filter by distance
+  TrackedObjects distance_filtered_objects;
+  for (const auto & object : velocity_filtered_objects.objects) {
+    const auto & position = object.kinematics.pose_with_covariance.pose.position;
+    const auto object_sq_distance = position.x * position.x + position.y * position.y;
+    if (object_sq_distance < distance_min_sq || object_sq_distance > distance_max_sq) {
+      continue;
+    }
+    distance_filtered_objects.objects.push_back(object);
+  }
+
+  // transform to target merge coordinate
+  TrackedObjects map_transformed_objects;
   if (!autoware::object_recognition_utils::transformObjects(
-        *msg, merge_frame_id_, tf_buffer_, transformed_objects)) {
+        distance_filtered_objects, merge_frame_id_, tf_buffer_, map_transformed_objects)) {
     return;
   }
   TrackedObjects::ConstSharedPtr transformed_sub_objects =
-    std::make_shared<TrackedObjects>(transformed_objects);
+    std::make_shared<TrackedObjects>(map_transformed_objects);
 
   sub_objects_buffer_.push_back(transformed_sub_objects);
   // remove old sub objects
-  // const auto now = get_clock()->now();
   const auto now = rclcpp::Time(transformed_sub_objects->header.stamp);
   const auto remove_itr = std::remove_if(
     sub_objects_buffer_.begin(), sub_objects_buffer_.end(), [now, this](const auto & sub_object) {
@@ -345,8 +389,6 @@ bool DecorativeTrackerMergerNode::decorativeMerger(
   for (auto & object : inner_tracker_objects_) {
     object.predict(current_time);
   }
-
-  // TODO(yoshiri): pre-association
 
   // associate inner objects and input objects
   /* global nearest neighbor */
