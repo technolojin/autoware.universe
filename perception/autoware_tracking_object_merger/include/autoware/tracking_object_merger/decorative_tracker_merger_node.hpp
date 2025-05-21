@@ -60,6 +60,9 @@ private:
 
   void mainObjectsCallback(
     const autoware_perception_msgs::msg::TrackedObjects::ConstSharedPtr & main_objects);
+  bool filterSubObjects(
+    const autoware_perception_msgs::msg::TrackedObjects & objects,
+    autoware_perception_msgs::msg::TrackedObjects & filtered_objects);
   void subObjectsCallback(
     const autoware_perception_msgs::msg::TrackedObjects::ConstSharedPtr & msg);
 
