@@ -201,6 +201,85 @@ void DecorativeTrackerMergerNode::set3dDataAssociation(
     can_assign_matrix, max_dist_matrix, max_rad_matrix, min_iou_matrix, max_velocity_diff_matrix);
 }
 
+bool DecorativeTrackerMergerNode::isVelocityInRange(const geometry_msgs::msg::Twist & twist) const 
+{
+  const double velocity_sq = twist.linear.x * twist.linear.x + twist.linear.y * twist.linear.y;
+  return velocity_sq >= kMinVelocitySq && velocity_sq <= kMaxVelocitySq;
+}
+
+bool DecorativeTrackerMergerNode::isDistanceInRange(const geometry_msgs::msg::Point & position) const 
+{
+  const double distance_sq = position.x * position.x + position.y * position.y;
+  return distance_sq >= kMinDistanceSq && distance_sq <= kMaxDistanceSq;
+}
+
+bool DecorativeTrackerMergerNode::transformToFrame(
+  const TrackedObjects & input_objects, const std::string & target_frame,
+  TrackedObjects & output_objects) const 
+{
+  if (!autoware::object_recognition_utils::transformObjects(
+        input_objects, target_frame, tf_buffer_, output_objects)) {
+    RCLCPP_WARN(
+      this->get_logger(),
+      "Failed to transform objects from %s to %s frame", input_objects.header.frame_id.c_str(),
+      target_frame.c_str());
+    return false;
+  }
+  return true;
+}
+
+bool DecorativeTrackerMergerNode::filterSubObjects(
+  const TrackedObjects & objects, TrackedObjects & filtered_objects)
+{
+  if (objects.objects.empty()) {
+    return false;
+  }
+
+  filtered_objects.header = objects.header;
+  filtered_objects.objects.clear();
+
+  // Filter objects by velocity
+  TrackedObjects velocity_filtered;
+  velocity_filtered.header = objects.header;
+  velocity_filtered.objects.reserve(objects.objects.size());
+  
+  for (const auto & object : objects.objects) {
+    if (isVelocityInRange(object.kinematics.twist_with_covariance.twist)) {
+      velocity_filtered.objects.push_back(object);
+    }
+  }
+
+  if (velocity_filtered.objects.empty()) {
+    return false;
+  }
+
+  // Transform to base_link frame for distance filtering if needed
+  TrackedObjects objects_in_base_link = velocity_filtered;
+  if (objects.header.frame_id != base_link_frame_id_) {
+    if (!transformToFrame(velocity_filtered, base_link_frame_id_, objects_in_base_link)) {
+      return false;
+    }
+  }
+
+  // Filter objects by distance from base_link
+  TrackedObjects distance_filtered;
+  distance_filtered.header = objects_in_base_link.header;
+  distance_filtered.objects.reserve(objects_in_base_link.objects.size());
+
+  for (const auto & object : objects_in_base_link.objects) {
+    if (isDistanceInRange(object.kinematics.pose_with_covariance.pose.position)) {
+      distance_filtered.objects.push_back(object);
+    }
+  }
+
+  if (distance_filtered.objects.empty()) {
+    return false;
+  }
+
+  // Transform filtered objects to merge frame for final processing
+  return transformToFrame(distance_filtered, merge_frame_id_, filtered_objects);
+}
+
 /**
  * @brief callback function for main objects
  *
@@ -286,77 +365,6 @@ void DecorativeTrackerMergerNode::mainObjectsCallback(
   processing_time_publisher_->publish<autoware_internal_debug_msgs::msg::Float64Stamped>(
     "debug/processing_time_ms", stop_watch_ptr_->toc("processing_time", true));
   diagnostics_interface_ptr_->publish(tracked_objects.header.stamp);
-}
-
-bool DecorativeTrackerMergerNode::filterSubObjects(
-  const TrackedObjects & objects, TrackedObjects & filtered_objects)
-{
-  // check if objects is empty
-  if (objects.objects.empty()) {
-    return false;
-  }
-  filtered_objects.header = objects.header;
-  filtered_objects.objects.clear();
-
-  const auto header = objects.header;
-
-  // filter by object velocity
-  constexpr double velocity_min = 1.0;          // [m/s]
-  constexpr double velocity_max = 150.0 / 3.6;  // [m/s]
-  const double velocity_min_sq = velocity_min * velocity_min;
-  const double velocity_max_sq = velocity_max * velocity_max;
-  TrackedObjects velocity_filtered_objects;
-  velocity_filtered_objects.header = header;
-  // filter by object velocity
-  for (const auto & object : objects.objects) {
-    const auto & twist = object.kinematics.twist_with_covariance.twist;
-    const auto & velocity_sq = twist.linear.x * twist.linear.x + twist.linear.y * twist.linear.y;
-    if (velocity_sq < velocity_min_sq || velocity_sq > velocity_max_sq) {
-      continue;
-    }
-    velocity_filtered_objects.objects.push_back(object);
-  }
-  // skip further processing if velocity_filtered_objects is empty
-  if (velocity_filtered_objects.objects.empty()) {
-    return false;
-  }
-
-  // filter by distance from base link
-  constexpr double distance_min = 30.0;   // [m]
-  constexpr double distance_max = 500.0;  // [m]
-  const double distance_min_sq = distance_min * distance_min;
-  const double distance_max_sq = distance_max * distance_max;
-  // if the object frame is not base_link, transform to base_link
-  if (header.frame_id != base_link_frame_id_) {
-    TrackedObjects transformed_objects;
-    if (!autoware::object_recognition_utils::transformObjects(
-          velocity_filtered_objects, base_link_frame_id_, tf_buffer_, velocity_filtered_objects)) {
-      RCLCPP_WARN(this->get_logger(), "Failed to transform sub objects to base link frame");
-      return false;
-    }
-  }
-  TrackedObjects distance_filtered_objects;
-  distance_filtered_objects.header = velocity_filtered_objects.header;
-  for (const auto & object : velocity_filtered_objects.objects) {
-    const auto & position = object.kinematics.pose_with_covariance.pose.position;
-    const auto object_sq_distance = position.x * position.x + position.y * position.y;
-    if (object_sq_distance < distance_min_sq || object_sq_distance > distance_max_sq) {
-      continue;
-    }
-    distance_filtered_objects.objects.push_back(object);
-  }
-  if (distance_filtered_objects.objects.empty()) {
-    return false;
-  }
-
-  // transform back to map frame for final processing
-  if (!autoware::object_recognition_utils::transformObjects(
-        distance_filtered_objects, merge_frame_id_, tf_buffer_, filtered_objects)) {
-    RCLCPP_WARN(this->get_logger(), "Failed to transform sub objects to merge frame");
-    return false;
-  }
-
-  return true;
 }
 
 /**
