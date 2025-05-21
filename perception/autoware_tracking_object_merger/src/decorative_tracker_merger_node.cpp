@@ -307,14 +307,6 @@ void DecorativeTrackerMergerNode::subObjectsCallback(const TrackedObjects::Const
   stop_watch_ptr_->toc("delay_sub_objects", true);
   diagnostics_interface_ptr_->clear();
 
-  // Add debug logging for frame IDs
-  RCLCPP_INFO(
-    this->get_logger(),
-    "Sub objects frame_id: '%s', base_link_frame: '%s', merge_frame: '%s'",
-    msg->header.frame_id.c_str(),
-    base_link_frame_id_.c_str(),
-    merge_frame_id_.c_str());
-
   // check if sub objects is empty
   if (msg->objects.empty()) {
     return;
@@ -335,13 +327,6 @@ void DecorativeTrackerMergerNode::subObjectsCallback(const TrackedObjects::Const
     }
     velocity_filtered_objects.objects.push_back(object);
   }
-
-  RCLCPP_INFO(
-    this->get_logger(),
-    "After velocity filtering: frame_id='%s', objects=%zu",
-    velocity_filtered_objects.header.frame_id.c_str(),
-    velocity_filtered_objects.objects.size());
-
   if (velocity_filtered_objects.objects.empty()) {
     return;
   }
@@ -370,13 +355,6 @@ void DecorativeTrackerMergerNode::subObjectsCallback(const TrackedObjects::Const
     }
     distance_filtered_objects.objects.push_back(object);
   }
-
-  RCLCPP_INFO(
-    this->get_logger(),
-    "After distance filtering: frame_id='%s', objects=%zu",
-    distance_filtered_objects.header.frame_id.c_str(),
-    distance_filtered_objects.objects.size());
-
   if (distance_filtered_objects.objects.empty()) {
     return;
   }
