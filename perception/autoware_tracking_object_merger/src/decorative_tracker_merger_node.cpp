@@ -234,22 +234,15 @@ void DecorativeTrackerMergerNode::mainObjectsCallback(
   TrackedObjects::ConstSharedPtr transformed_main_objects =
     std::make_shared<TrackedObjects>(transformed_objects);
 
-
-  // 1. copy main object to tracks
-
-  // 2. interpolate sub objects to sync main objects
-
-  // 3. associate sub objects to the main tracks
-
-  // 4. add unassociated sub objects to tracks
-
-  // 5. publish tracks
-
-
-  // try to merge sub object
+  // 1. clear tracks and copy main object to tracks
+  inner_tracker_objects_.clear();
+  const auto current_time = rclcpp::Time(transformed_main_objects->header.stamp);
+  for (const auto & object : transformed_main_objects->objects) {
+    inner_tracker_objects_.push_back(createNewTracker(main_sensor_type_, current_time, object));
+  }
+  
   if (!sub_objects_buffer_.empty()) {
-    // get interpolated sub objects
-    // get newest sub objects which timestamp is earlier to main objects
+    // 2. interpolate sub objects to sync main objects
     TrackedObjects::ConstSharedPtr closest_time_sub_objects;
     TrackedObjects::ConstSharedPtr closest_time_sub_objects_later;
     for (const auto & sub_object : sub_objects_buffer_) {
@@ -264,7 +257,8 @@ void DecorativeTrackerMergerNode::mainObjectsCallback(
     const auto interpolated_sub_objects = interpolateObjectState(
       closest_time_sub_objects, closest_time_sub_objects_later, transformed_main_objects->header);
     if (interpolated_sub_objects.has_value()) {
-      // Merge sub objects
+      // 3. associate sub objects to the main tracks
+      // 4. add unassociated sub objects to tracks
       const auto interp_sub_objs = interpolated_sub_objects.value();
       debug_object_pub_->publish(interp_sub_objs);
       this->decorativeMerger(
@@ -274,13 +268,9 @@ void DecorativeTrackerMergerNode::mainObjectsCallback(
     }
   }
 
-  // try to merge main object
-  this->decorativeMerger(main_sensor_type_, transformed_main_objects);
+  // 5. publish tracks
   const auto & tracked_objects = getTrackedObjects(transformed_main_objects->header);
   merged_object_pub_->publish(tracked_objects);
-
-
-
 
   // update diagnostics
   updateDiagnostics();
