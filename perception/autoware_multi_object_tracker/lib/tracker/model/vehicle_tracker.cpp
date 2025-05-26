@@ -215,7 +215,7 @@ bool VehicleTracker::update(
   }
 
   // update object size
-  constexpr double size_gain = 0.4;
+  constexpr double size_gain = 0.1;
   constexpr double size_gain_inv = 1.0 - size_gain;
   auto & object_extension = object_.shape.dimensions;
   object_extension.x =
