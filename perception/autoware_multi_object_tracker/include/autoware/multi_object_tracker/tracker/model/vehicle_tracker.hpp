@@ -51,9 +51,7 @@ public:
   bool measure(
     const types::DynamicObject & object, const rclcpp::Time & time,
     const types::InputChannel & channel_info) override;
-  bool measureWithPose(
-    const types::DynamicObject & object, const types::InputChannel & channel_info);
-  bool measureWithShape(const types::DynamicObject & object);
+  bool update(const types::DynamicObject & object, const types::InputChannel & channel_info);
   bool getTrackedObject(const rclcpp::Time & time, types::DynamicObject & object) const override;
 };
 
