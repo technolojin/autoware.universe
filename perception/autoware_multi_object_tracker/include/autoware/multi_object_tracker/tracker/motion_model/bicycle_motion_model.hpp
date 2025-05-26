@@ -104,7 +104,7 @@ public:
 
   bool adjustPosition(const double & x, const double & y);
 
-  bool limitStates();
+  bool limitStates(bool & is_reversed);
 
   bool updateExtendedState(const double & length);
 

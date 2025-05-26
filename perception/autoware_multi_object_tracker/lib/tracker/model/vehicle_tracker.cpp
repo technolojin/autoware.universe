@@ -182,7 +182,11 @@ bool VehicleTracker::measureWithPose(
       is_updated = motion_model_.updateStatePose(
         x, y, object.pose_covariance);  // update without yaw angle and velocity
     }
-    motion_model_.limitStates();
+    bool is_reversed = false;
+    motion_model_.limitStates(is_reversed);
+    if (is_reversed) {
+      tracking_offset_ = -tracking_offset_;
+    }
   }
 
   // position z
