@@ -154,9 +154,47 @@ bool VehicleTracker::update(
   double anchor_x = 0.0;
   double anchor_y = 0.0;
   {
-    // temporary logic
     delta_x = in_object.pose.position.x - object_.pose.position.x;
     delta_y = in_object.pose.position.y - object_.pose.position.y;
+
+    // size difference
+    const double size_diff_x = in_object.shape.dimensions.x - object_.shape.dimensions.x;
+    const double size_diff_y = in_object.shape.dimensions.y - object_.shape.dimensions.y;
+
+    // yaw difference
+    const double in_object_yaw = tf2::getYaw(in_object.pose.orientation);
+    const double self_object_yaw = tf2::getYaw(object_.pose.orientation);
+    double yaw_diff = in_object_yaw - self_object_yaw;
+    while (yaw_diff > M_PI) yaw_diff -= 2 * M_PI;
+    while (yaw_diff < -M_PI) yaw_diff += 2 * M_PI;
+
+    // if objects are facing opposite direction, rotate input object 180 degrees
+    if (yaw_diff > M_PI_2 || yaw_diff < -M_PI_2) {
+      // rotate input object 180 degrees
+      tf2::Quaternion q;
+      q.setRPY(0, 0, in_object_yaw + M_PI);
+      in_object.pose.orientation = tf2::toMsg(q);
+      // rotate anchor point 180 degrees
+      in_object.anchor_point.x = -in_object.anchor_point.x;
+      in_object.anchor_point.y = -in_object.anchor_point.y;
+    }
+
+    // calculate anchor point
+    if (in_object.anchor_point.x > 1e-6) {
+      anchor_x = -size_diff_x / 2.0;
+    } else if (in_object.anchor_point.x < -1e-6) {
+      anchor_x = size_diff_x / 2.0;
+    } else {
+      anchor_x = 0;
+    }
+    if (in_object.anchor_point.y > 1e-6) {
+      anchor_y = -size_diff_y / 2.0;
+    } else if (in_object.anchor_point.y < -1e-6) {
+      anchor_y = size_diff_y / 2.0;
+    } else {
+      anchor_y = 0;
+    }
+
     // get yaw difference, but normalize to [-pi, pi]
     delta_yaw = tf2::getYaw(in_object.pose.orientation) - tf2::getYaw(object_.pose.orientation);
     while (delta_yaw > M_PI) delta_yaw -= 2 * M_PI;
@@ -254,7 +292,7 @@ bool VehicleTracker::update(
     const double yaw = motion_model_.getStateElement(IDX::YAW);
     const double offset_x_global = anchor_x * std::cos(yaw) - anchor_y * std::sin(yaw);
     const double offset_y_global = anchor_x * std::sin(yaw) + anchor_y * std::cos(yaw);
-    motion_model_.adjustPosition(-size_gain * offset_x_global, -size_gain * offset_y_global);
+    motion_model_.adjustPosition(size_gain * offset_x_global, size_gain * offset_y_global);
   }
 
   // limit motion model states
