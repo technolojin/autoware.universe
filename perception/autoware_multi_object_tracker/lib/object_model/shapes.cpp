@@ -200,16 +200,30 @@ void getNearestCornerOrSurface(
 }
 
 void calcAnchorPointOffset(
-  const types::DynamicObject & this_object, Eigen::Vector2d & tracking_offset,
-  types::DynamicObject & updating_object)
+  const types::DynamicObject & this_object, const double & this_yaw,
+  Eigen::Vector2d & tracking_offset, types::DynamicObject & updating_object)
 {
   // copy value
-  const geometry_msgs::msg::Point anchor_vector = updating_object.anchor_point;
+  geometry_msgs::msg::Point anchor_vector = updating_object.anchor_point;
   // invalid anchor
   if (std::abs(anchor_vector.x) <= 1e-6 && std::abs(anchor_vector.y) <= 1e-6) {
     return;
   }
   double input_yaw = tf2::getYaw(updating_object.pose.orientation);
+
+  // determine if the object is reversed
+  double yaw_diff = this_yaw - input_yaw;
+  while (yaw_diff > M_PI) {
+    yaw_diff -= 2 * M_PI;
+  }
+  while (yaw_diff < -M_PI) {
+    yaw_diff += 2 * M_PI;
+  }
+  if (std::abs(yaw_diff) > M_PI / 2.0) {
+    // reverse the anchor point
+    anchor_vector.x = -anchor_vector.x;
+    anchor_vector.y = -anchor_vector.y;
+  }
 
   // current object width and height
   const double length = this_object.shape.dimensions.x;

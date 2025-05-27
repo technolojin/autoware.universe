@@ -143,7 +143,25 @@ bool VehicleTracker::update(
 {
   types::DynamicObject in_object = object;
 
-  shapes::calcAnchorPointOffset(object_, tracking_offset_, in_object);
+  // get matching point between self object and input object
+  // get delta_x, delta_y, delta_yaw
+  double delta_x = 0.0;
+  double delta_y = 0.0;
+  double delta_yaw = 0.0;
+
+  // anchor: most matching point between self object and input object
+  // base on self object's coordinate
+  double anchor_x = 0.0;
+  double anchor_y = 0.0;
+  {
+    // temporary logic
+    delta_x = in_object.pose.position.x - object_.pose.position.x;
+    delta_y = in_object.pose.position.y - object_.pose.position.y;
+    // get yaw difference, but normalize to [-pi, pi]
+    delta_yaw = tf2::getYaw(in_object.pose.orientation) - tf2::getYaw(object_.pose.orientation);
+    while (delta_yaw > M_PI) delta_yaw -= 2 * M_PI;
+    while (delta_yaw < -M_PI) delta_yaw += 2 * M_PI;
+  }
 
   // get measurement yaw angle to update
   bool is_yaw_available =
@@ -162,12 +180,12 @@ bool VehicleTracker::update(
     }
   }
 
-  // update
+  // update motion model states
   bool is_updated = false;
   {
-    const double x = in_object.pose.position.x;
-    const double y = in_object.pose.position.y;
-    const double yaw = tf2::getYaw(in_object.pose.orientation);
+    const double x = object_.pose.position.x + delta_x;
+    const double y = object_.pose.position.y + delta_y;
+    const double yaw = tf2::getYaw(object_.pose.orientation) + delta_yaw;
     const double vel = in_object.twist.linear.x;
 
     if (is_yaw_available && is_velocity_available) {
@@ -186,11 +204,6 @@ bool VehicleTracker::update(
       is_updated = motion_model_.updateStatePose(
         x, y, in_object.pose_covariance);  // update without yaw angle and velocity
     }
-    bool is_reversed = false;
-    motion_model_.limitStates(is_reversed);
-    if (is_reversed) {
-      tracking_offset_ = -tracking_offset_;
-    }
   }
 
   // position z
@@ -198,6 +211,7 @@ bool VehicleTracker::update(
   object_.pose.position.z =
     (1.0 - z_gain) * object_.pose.position.z + z_gain * in_object.pose.position.z;
 
+  // update shape
   if (in_object.shape.type != autoware_perception_msgs::msg::Shape::BOUNDING_BOX) {
     // do not update shape if the input is not a bounding box
     return false;
@@ -238,15 +252,13 @@ bool VehicleTracker::update(
   {
     // rotate back the offset vector from object coordinate to global coordinate
     const double yaw = motion_model_.getStateElement(IDX::YAW);
-    const double offset_x_global =
-      tracking_offset_.x() * std::cos(yaw) - tracking_offset_.y() * std::sin(yaw);
-    const double offset_y_global =
-      tracking_offset_.x() * std::sin(yaw) + tracking_offset_.y() * std::cos(yaw);
+    const double offset_x_global = anchor_x * std::cos(yaw) - anchor_y * std::sin(yaw);
+    const double offset_y_global = anchor_x * std::sin(yaw) + anchor_y * std::cos(yaw);
     motion_model_.adjustPosition(-size_gain * offset_x_global, -size_gain * offset_y_global);
-    // update offset (object coordinate)
-    tracking_offset_.x() = size_gain_inv * tracking_offset_.x();
-    tracking_offset_.y() = size_gain_inv * tracking_offset_.y();
   }
+
+  // limit motion model states
+  motion_model_.limitStates();
 
   return is_updated;
 }
@@ -263,6 +275,16 @@ bool VehicleTracker::measure(
       "VehicleTracker::measure There is a large gap between predicted time and measurement "
       "time. (%f)",
       dt);
+  }
+
+  // update self object from tracker states
+  {
+    object_.pose.position.x = motion_model_.getStateElement(IDX::X);
+    object_.pose.position.y = motion_model_.getStateElement(IDX::Y);
+    // convert yaw to quaternion
+    tf2::Quaternion q;
+    q.setRPY(0, 0, motion_model_.getStateElement(IDX::YAW));
+    object_.pose.orientation = tf2::toMsg(q);
   }
 
   // update object

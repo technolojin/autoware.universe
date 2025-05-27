@@ -252,20 +252,18 @@ bool BicycleMotionModel::updateStatePoseHeadVel(
   return ekf_.update(Y, C, R);
 }
 
-bool BicycleMotionModel::limitStates(bool & is_reversed)
+bool BicycleMotionModel::limitStates()
 {
   Eigen::MatrixXd X_t(DIM, 1);
   Eigen::MatrixXd P_t(DIM, DIM);
   ekf_.getX(X_t);
   ekf_.getP(P_t);
-  is_reversed = false;
 
   // maximum reverse velocity
   if (motion_params_.max_reverse_vel < 0 && X_t(IDX::VEL) < motion_params_.max_reverse_vel) {
     // rotate the object orientation by 180 degrees
     X_t(IDX::VEL) = -X_t(IDX::VEL);
     X_t(IDX::YAW) = X_t(IDX::YAW) + M_PI;
-    is_reversed = true;
   }
   // maximum velocity
   if (!(-motion_params_.max_vel <= X_t(IDX::VEL) && X_t(IDX::VEL) <= motion_params_.max_vel)) {

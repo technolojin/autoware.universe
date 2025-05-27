@@ -38,8 +38,8 @@ void getNearestCornerOrSurface(
   const geometry_msgs::msg::Transform & self_transform, types::DynamicObject & object);
 
 void calcAnchorPointOffset(
-  const types::DynamicObject & this_object, Eigen::Vector2d & tracking_offset,
-  types::DynamicObject & offset_object);
+  const types::DynamicObject & this_object, const double & this_yaw,
+  Eigen::Vector2d & tracking_offset, types::DynamicObject & offset_object);
 }  // namespace shapes
 }  // namespace autoware::multi_object_tracker
 
