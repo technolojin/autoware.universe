@@ -14080,7 +14080,7 @@ The objects only inside of the vector map will be published.</p>
 <td>If <code>&gt; 0</code>, expands the lanelet polygons used for overlap checks by this margin (in meters). If <code>&lt;= 0</code>, polygon expansion is disabled.</td>
 </tr>
 <tr>
-<td><code>polygon_overlap_filter.enabled</code></td>
+<td><code>lanelet_xy_overlap_filter.enabled</code></td>
 <td><code>bool</code></td>
 <td>If <code>true</code>, enables filtering of objects based on their overlap with lanelet polygons.</td>
 </tr>
@@ -14100,19 +14100,24 @@ The objects only inside of the vector map will be published.</p>
 <td>The minimum speed (in m/s) of an object required for the direction filter to be applied.</td>
 </tr>
 <tr>
-<td><code>use_height_threshold</code></td>
+<td><code>lanelet_object_elevation_filter.enabled</code></td>
 <td><code>bool</code></td>
-<td>If <code>true</code>, enables filtering of objects based on their height relative to the base_link frame.</td>
+<td>If <code>true</code>, enables filtering of objects based on their elevation relative to the nearest lanelet surface.</td>
 </tr>
 <tr>
-<td><code>max_height_threshold</code></td>
+<td><code>max_elevation_threshold</code></td>
 <td><code>double</code></td>
-<td>The maximum allowable height (in meters) of an object relative to the base_link in the map frame.</td>
+<td>The maximum allowable elevation (in meters) of an object relative to the nearest lanelet surface.</td>
 </tr>
 <tr>
-<td><code>min_height_threshold</code></td>
+<td><code>min_elevation_threshold</code></td>
 <td><code>double</code></td>
-<td>The minimum allowable height (in meters) of an object relative to the base_link in the map frame.</td>
+<td>The minimum allowable elevation (in meters) of an object relative to the nearest lanelet surface.</td>
+</tr>
+<tr>
+<td><code>lanelet_extra_margin</code></td>
+<td><code>double</code></td>
+<td>The margin value that will be added to the lanelet boundaries.</td>
 </tr>
 </tbody>
 </table>
