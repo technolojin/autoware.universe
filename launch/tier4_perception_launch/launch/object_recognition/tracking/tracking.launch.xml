@@ -33,6 +33,7 @@
 
     <let name="tracker_merger/input/main_objects" value="$(var multi_object_tracker/output/objects)"/>
     <let name="tracker_merger/input/sub_objects" value="$(var radar_tracker/output/objects)"/>
+    <!-- <let name="tracker_merger/input/sub_objects" value="/sensing/radar/front_center/tracked_objects"/> -->
     <let name="tracker_merger/output/objects" value="$(var output/objects)"/>
 
     <!-- Multi object tracking -->

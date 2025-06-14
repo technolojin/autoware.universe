@@ -206,22 +206,22 @@ void LinearMotionTracker::loadDefaultModelParameters(const std::string & path)
   use_polar_coordinate_in_measurement_noise_ =
     config["default"]["use_polar_coordinate_in_measurement_noise"].as<bool>(
       false);  // default false
-  ekf_params_.q_cov_ax = std::pow(q_stddev_ax, 2.0);
-  ekf_params_.q_cov_ay = std::pow(q_stddev_ay, 2.0);
-  ekf_params_.q_cov_vx = std::pow(q_stddev_vx, 2.0);
-  ekf_params_.q_cov_vy = std::pow(q_stddev_vy, 2.0);
-  ekf_params_.q_cov_x = std::pow(q_stddev_x, 2.0);
-  ekf_params_.q_cov_y = std::pow(q_stddev_y, 2.0);
-  ekf_params_.r_cov_x = std::pow(r_stddev_x, 2.0);
-  ekf_params_.r_cov_y = std::pow(r_stddev_y, 2.0);
-  ekf_params_.r_cov_vx = std::pow(r_stddev_vx, 2.0);
-  ekf_params_.r_cov_vy = std::pow(r_stddev_vy, 2.0);
+  ekf_params_.q_cov_ax = std::pow(q_stddev_ax, 3.0);
+  ekf_params_.q_cov_ay = std::pow(q_stddev_ay, 3.0);
+  ekf_params_.q_cov_vx = std::pow(q_stddev_vx, 3.0);
+  ekf_params_.q_cov_vy = std::pow(q_stddev_vy, 3.0);
+  ekf_params_.q_cov_x = std::pow(q_stddev_x, 3.0);
+  ekf_params_.q_cov_y = std::pow(q_stddev_y, 3.0);
+  ekf_params_.r_cov_x = std::pow(r_stddev_x, 1.5);
+  ekf_params_.r_cov_y = std::pow(r_stddev_y, 1.5);
+  ekf_params_.r_cov_vx = std::pow(r_stddev_vx, 1.5);
+  ekf_params_.r_cov_vy = std::pow(r_stddev_vy, 1.5);
   ekf_params_.p0_cov_x = std::pow(p0_stddev_x, 2.0);
   ekf_params_.p0_cov_y = std::pow(p0_stddev_y, 2.0);
-  ekf_params_.p0_cov_vx = std::pow(p0_stddev_vx, 2.0);
-  ekf_params_.p0_cov_vy = std::pow(p0_stddev_vy, 2.0);
-  ekf_params_.p0_cov_ay = std::pow(p0_stddev_ax, 2.0);
-  ekf_params_.p0_cov_ay = std::pow(p0_stddev_ay, 2.0);
+  ekf_params_.p0_cov_vx = std::pow(p0_stddev_vx, 3.0);
+  ekf_params_.p0_cov_vy = std::pow(p0_stddev_vy, 3.0);
+  ekf_params_.p0_cov_ay = std::pow(p0_stddev_ax, 3.0);
+  ekf_params_.p0_cov_ay = std::pow(p0_stddev_ay, 3.0);
 
   // lpf filter parameters
   filter_tau_ = config["default"]["low_pass_filter"]["time_constant"].as<float>(1.0);  // [s]
