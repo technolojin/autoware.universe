@@ -201,13 +201,14 @@ void DecorativeTrackerMergerNode::set3dDataAssociation(
     can_assign_matrix, max_dist_matrix, max_rad_matrix, min_iou_matrix, max_velocity_diff_matrix);
 }
 
-bool DecorativeTrackerMergerNode::isVelocityInRange(const geometry_msgs::msg::Twist & twist) const 
+bool DecorativeTrackerMergerNode::isVelocityInRange(const geometry_msgs::msg::Twist & twist) const
 {
   const double velocity_sq = twist.linear.x * twist.linear.x + twist.linear.y * twist.linear.y;
   return velocity_sq >= kMinVelocitySq && velocity_sq <= kMaxVelocitySq;
 }
 
-bool DecorativeTrackerMergerNode::isDistanceInRange(const geometry_msgs::msg::Point & position) const 
+bool DecorativeTrackerMergerNode::isDistanceInRange(
+  const geometry_msgs::msg::Point & position) const
 {
   const double distance_sq = position.x * position.x + position.y * position.y;
   return distance_sq >= kMinDistanceSq && distance_sq <= kMaxDistanceSq;
@@ -215,14 +216,13 @@ bool DecorativeTrackerMergerNode::isDistanceInRange(const geometry_msgs::msg::Po
 
 bool DecorativeTrackerMergerNode::transformToFrame(
   const TrackedObjects & input_objects, const std::string & target_frame,
-  TrackedObjects & output_objects) const 
+  TrackedObjects & output_objects) const
 {
   if (!autoware::object_recognition_utils::transformObjects(
         input_objects, target_frame, tf_buffer_, output_objects)) {
     RCLCPP_WARN(
-      this->get_logger(),
-      "Failed to transform objects from %s to %s frame", input_objects.header.frame_id.c_str(),
-      target_frame.c_str());
+      this->get_logger(), "Failed to transform objects from %s to %s frame",
+      input_objects.header.frame_id.c_str(), target_frame.c_str());
     return false;
   }
   return true;
@@ -242,7 +242,7 @@ bool DecorativeTrackerMergerNode::filterSubObjects(
   TrackedObjects velocity_filtered;
   velocity_filtered.header = objects.header;
   velocity_filtered.objects.reserve(objects.objects.size());
-  
+
   for (const auto & object : objects.objects) {
     if (isVelocityInRange(object.kinematics.twist_with_covariance.twist)) {
       velocity_filtered.objects.push_back(object);
