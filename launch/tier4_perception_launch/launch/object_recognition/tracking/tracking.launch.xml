@@ -37,8 +37,8 @@
   <arg name="input/tracker_based_detector/objects" default="/perception/object_recognition/detection/detection_by_tracker/objects"/>
   <arg name="input/radar/channel" default="radar"/>
   <arg name="input/radar/far_objects" default="/perception/object_recognition/detection/radar/far_objects"/>
-  <!-- <arg name="input/radar/objects" default="/perception/object_recognition/detection/radar/far_objects"/> -->
-  <arg name="input/radar/objects" default="/perception/object_recognition/detection/radar/objects"/>
+  <arg name="input/radar/objects" default="/perception/object_recognition/detection/radar/far_objects"/>
+  <arg name="input/radar/tracked_objects" default="/sensing/radar/front_center/tracked_objects"/>
 
   <arg name="output/objects" default="$(var ns)/objects"/>
 
