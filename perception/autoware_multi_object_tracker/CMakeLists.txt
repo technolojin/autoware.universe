@@ -14,6 +14,7 @@ include(CheckCXXCompilerFlag)
 check_cxx_compiler_flag("-mavx2" COMPILER_SUPPORTS_AVX2)
 
 if(COMPILER_SUPPORTS_AVX2)
+# cspell:ignore mfma
     add_compile_options(-mavx2 -mfma -O3)  # Enable AVX2 & FMA
 endif()
 
