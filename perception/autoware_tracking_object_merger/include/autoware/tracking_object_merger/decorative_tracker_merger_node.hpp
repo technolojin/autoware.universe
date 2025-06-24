@@ -94,7 +94,7 @@ private:
 
 private:
   // Constants for object filtering
-  static constexpr double kMinVelocity = 1.0;          // [m/s]
+  static constexpr double kMinVelocity = 5.0;          // [m/s]
   static constexpr double kMaxVelocity = 150.0 / 3.6;  // [m/s]
   static constexpr double kMinVelocitySq = kMinVelocity * kMinVelocity;
   static constexpr double kMaxVelocitySq = kMaxVelocity * kMaxVelocity;
