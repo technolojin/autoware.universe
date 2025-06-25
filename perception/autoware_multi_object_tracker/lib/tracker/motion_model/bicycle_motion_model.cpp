@@ -88,7 +88,6 @@ bool BicycleMotionModel::initialize(
 {
   // initialize state vector X
   StateVec X;
-  // Eigen::MatrixXd X(DIM, 1);
   X << x, y, yaw, vel, slip;
 
   // initialize covariance matrix P

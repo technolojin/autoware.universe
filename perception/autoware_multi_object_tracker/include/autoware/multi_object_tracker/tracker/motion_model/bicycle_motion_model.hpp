@@ -71,7 +71,6 @@ public:
   BicycleMotionModel();
 
   enum IDX { X = 0, Y = 1, YAW = 2, VEL = 3, SLIP = 4 };
-  // const char DIM = 5;
 
   bool initialize(
     const rclcpp::Time & time, const double & x, const double & y, const double & yaw,

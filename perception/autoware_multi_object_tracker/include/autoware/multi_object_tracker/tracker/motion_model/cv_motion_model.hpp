@@ -55,7 +55,6 @@ public:
   CVMotionModel();
 
   enum IDX { X = 0, Y = 1, VX = 2, VY = 3 };
-  // const char DIM = 4;
 
   bool initialize(
     const rclcpp::Time & time, const double & x, const double & y,

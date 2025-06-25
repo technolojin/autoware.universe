@@ -241,12 +241,6 @@ public:
    * @param R covariance matrix for measurement model
    * @return bool to check matrix operations are being performed properly
    */
-  // bool update(const MeasVec & y, const MeasModelMat & C, const MeasMat & R)
-  // {
-  //   const MeasVec y_pred = C * x_;
-  //   return update(y, y_pred, C, R);
-  // }
-
   template <int DynamicMeasurementSize>
   bool update(
     const Eigen::Matrix<Scalar, DynamicMeasurementSize, 1> & y,
