@@ -295,27 +295,47 @@ bool VehicleTracker::measure(
 
 bool VehicleTracker::getTrackedObject(
   const rclcpp::Time & time, types::DynamicObject & object,
-  [[maybe_unused]] const bool to_publish) const
+  const bool to_publish) const
 {
   // try to return cached object
-  if (getCachedObject(time, object)) {
-    return true;
-  }
-  object = object_;
-  object.time = time;
+  if (!getCachedObject(time, object)) {
+    object = object_;
+    object.time = time;
 
-  // predict from motion model
-  auto & pose = object.pose;
-  auto & pose_cov = object.pose_covariance;
-  auto & twist = object.twist;
-  auto & twist_cov = object.twist_covariance;
-  if (!motion_model_.getPredictedState(time, pose, pose_cov, twist, twist_cov)) {
-    RCLCPP_WARN(logger_, "VehicleTracker::getTrackedObject: Failed to get predicted state.");
-    return false;
+    // predict from motion model
+    auto & pose = object.pose;
+    auto & pose_cov = object.pose_covariance;
+    auto & twist = object.twist;
+    auto & twist_cov = object.twist_covariance;
+    if (!motion_model_.getPredictedState(time, pose, pose_cov, twist, twist_cov)) {
+      RCLCPP_WARN(logger_, "VehicleTracker::getTrackedObject: Failed to get predicted state.");
+      return false;
+    }
+
+    // cache object
+    updateCache(object, time);
   }
 
-  // cache object
-  updateCache(object, time);
+  if (to_publish) {
+    // if the twist covariance is very large, weight the twist to zero side
+    using autoware_utils::xyzrpy_covariance_index::XYZRPY_COV_IDX;
+    auto & twist = object.twist;
+    auto & twist_cov = object.twist_covariance;
+
+    const double original_vel_x = twist.linear.x;
+    // const double original_vel_y = twist.linear.y;
+
+    constexpr double twist_cov_comp = 4.0;
+    const double twist_x_gain = twist_cov_comp / (twist_cov[XYZRPY_COV_IDX::X_X] + twist_cov_comp);
+    const double twist_y_gain = twist_cov_comp / (twist_cov[XYZRPY_COV_IDX::Y_Y] + twist_cov_comp);
+    twist.linear.x = twist_x_gain * twist.linear.x;
+    twist.linear.y = twist_y_gain * twist.linear.y;
+
+    RCLCPP_INFO(
+      logger_,
+      "VehicleTracker::getTrackedObject to_publish=true: vel_x=%.3f->%.3f (gain=%.3f), cov_x=%.3f",
+      original_vel_x, twist.linear.x, twist_x_gain, twist_cov[XYZRPY_COV_IDX::X_X]);
+  }
 
   return true;
 }
