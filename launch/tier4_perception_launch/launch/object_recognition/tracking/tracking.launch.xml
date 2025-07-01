@@ -23,6 +23,8 @@
   <let name="use_radar_tracking_fusion" value="false" if="$(eval '&quot;$(var mode)&quot;!=&quot;camera_lidar_radar_fusion&quot;')"/>
   <arg name="use_multi_channel_tracker_merger"/>
   <arg name="use_validator" description="use obstacle_pointcloud based validator"/>
+  <arg name="use_detection_by_tracker" default="true"/>
+  <arg name="use_short_range_detection" default="false"/>
 
   <!-- External interface -->
   <arg name="lidar_detection_model_type" default="centerpoint"/>
@@ -31,6 +33,8 @@
   <arg name="input/lidar_dnn/channel" default="lidar_$(var lidar_detection_model_type)"/>
   <arg name="input/lidar_dnn/objects" default="/perception/object_recognition/detection/$(var lidar_detection_model_type)/objects"/>
   <arg name="input/lidar_dnn_validated/objects" default="/perception/object_recognition/detection/$(var lidar_detection_model_type)/validation/objects"/>
+  <arg name="input/lidar_dnn_short_range/channel" default="lidar_$(var lidar_short_range_detection_model_type)"/>
+  <arg name="input/lidar_dnn_short_range/objects" default="/perception/object_recognition/detection/$(var lidar_short_range_detection_model_type)/objects"/>
   <arg name="input/camera_lidar_rule_detector/channel" default="camera_lidar_fusion"/>
   <arg name="input/camera_lidar_rule_detector/objects" default="/perception/object_recognition/detection/clustering/camera_lidar_fusion/objects"/>
   <arg name="input/tracker_based_detector/channel" default="detection_by_tracker"/>
