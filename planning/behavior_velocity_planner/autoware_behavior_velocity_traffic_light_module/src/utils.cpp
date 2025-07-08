@@ -15,9 +15,13 @@
 #include "utils.hpp"
 
 #include <autoware/behavior_velocity_planner_common/utilization/util.hpp>
+#include <autoware/traffic_light_utils/traffic_light_utils.hpp>
 
 #include <boost/geometry/algorithms/distance.hpp>
 #include <boost/geometry/algorithms/intersection.hpp>
+
+#include <string>
+#include <vector>
 
 namespace autoware::behavior_velocity_planner
 {
@@ -32,8 +36,8 @@ auto getOffsetPoint(const Eigen::Vector2d & src, const Eigen::Vector2d & dst, co
 }
 
 auto findNearestCollisionPoint(
-  const LineString2d & line1, const LineString2d & line2,
-  const Point2d & origin) -> std::optional<Point2d>
+  const LineString2d & line1, const LineString2d & line2, const Point2d & origin)
+  -> std::optional<Point2d>
 {
   std::vector<Point2d> collision_points;
   bg::intersection(line1, line2, collision_points);
@@ -57,8 +61,9 @@ auto findNearestCollisionPoint(
 }
 
 auto createTargetPoint(
-  const tier4_planning_msgs::msg::PathWithLaneId & input, const LineString2d & stop_line,
-  const double offset) -> std::optional<std::pair<size_t, Eigen::Vector2d>>
+  const autoware_internal_planning_msgs::msg::PathWithLaneId & input,
+  const LineString2d & stop_line, const double offset)
+  -> std::optional<std::pair<size_t, Eigen::Vector2d>>
 {
   if (input.points.size() < 2) {
     return std::nullopt;
@@ -122,15 +127,16 @@ auto createTargetPoint(
 }
 
 auto calcStopPointAndInsertIndex(
-  const tier4_planning_msgs::msg::PathWithLaneId & input_path,
-  const lanelet::ConstLineString3d & lanelet_stop_lines, const double & offset,
-  const double & stop_line_extend_length) -> std::optional<std::pair<size_t, Eigen::Vector2d>>
+  const autoware_internal_planning_msgs::msg::PathWithLaneId & input_path,
+  const lanelet::ConstLineString3d & lanelet_stop_lines, const double & offset)
+  -> std::optional<std::pair<size_t, Eigen::Vector2d>>
 {
   LineString2d stop_line;
 
   for (size_t i = 0; i < lanelet_stop_lines.size() - 1; ++i) {
-    stop_line = planning_utils::extendLine(
-      lanelet_stop_lines[i], lanelet_stop_lines[i + 1], stop_line_extend_length);
+    stop_line = planning_utils::extendSegmentToBounds(
+      {lanelet_stop_lines[i].basicPoint2d(), lanelet_stop_lines[i + 1].basicPoint2d()},
+      input_path.left_bound, input_path.right_bound);
 
     // Calculate stop pose and insert index,
     // if there is a collision point between path and stop line
@@ -140,5 +146,41 @@ auto calcStopPointAndInsertIndex(
     }
   }
   return std::nullopt;
+}
+
+bool isTrafficSignalRedStop(
+  const lanelet::ConstLanelet & lanelet,
+  const std::vector<autoware_perception_msgs::msg::TrafficLightElement> & elements)
+{
+  using autoware::traffic_light_utils::hasTrafficLightCircleColor;
+  using autoware::traffic_light_utils::hasTrafficLightShape;
+
+  if (!hasTrafficLightCircleColor(
+        elements, autoware_perception_msgs::msg::TrafficLightElement::RED)) {
+    return false;
+  }
+
+  const std::string turn_direction = lanelet.attributeOr("turn_direction", "else");
+  if (turn_direction == "else") {
+    return true;
+  }
+  if (
+    turn_direction == "right" &&
+    hasTrafficLightShape(
+      elements, autoware_perception_msgs::msg::TrafficLightElement::RIGHT_ARROW)) {
+    return false;
+  }
+  if (
+    turn_direction == "left" &&
+    hasTrafficLightShape(
+      elements, autoware_perception_msgs::msg::TrafficLightElement::LEFT_ARROW)) {
+    return false;
+  }
+  if (
+    turn_direction == "straight" &&
+    hasTrafficLightShape(elements, autoware_perception_msgs::msg::TrafficLightElement::UP_ARROW)) {
+    return false;
+  }
+  return true;
 }
 }  // namespace autoware::behavior_velocity_planner

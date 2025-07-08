@@ -44,9 +44,16 @@
           <remap from="~/input/operation_mode_state" to="/system/operation_mode/state"/>
           <remap from="~/output/current_velocity_limit_mps" to="/planning/scenario_planning/current_max_velocity"/>
         </composable_node>
-        <composable_node pkg="glog_component" plugin="GlogComponent" name="glog_component" namespace=""/>
+        <composable_node pkg="autoware_glog_component" plugin="autoware::glog_component::GlogComponent" name="glog_component" namespace=""/>
       </node_container>
     </group>
+  </group>
+
+  <!-- hazard lights selector -->
+  <group>
+    <include file="$(find-pkg-share autoware_hazard_lights_selector)/launch/hazard_lights_selector.launch.xml">
+      <arg name="hazard_lights_selector_param_path" value="$(var hazard_lights_selector_param_path)"/>
+    </include>
   </group>
 
   <!-- scenarios-->

@@ -20,8 +20,10 @@
 #include <autoware/interpolation/spline_interpolation_points_2d.hpp>
 #include <autoware/motion_utils/trajectory/trajectory.hpp>
 #include <autoware_lanelet2_extension/regulatory_elements/road_marking.hpp>  // for lanelet::autoware::RoadMarking
+#include <autoware_lanelet2_extension/utility/message_conversion.hpp>
 #include <autoware_lanelet2_extension/utility/query.hpp>
 #include <autoware_lanelet2_extension/utility/utilities.hpp>
+#include <autoware_utils/geometry/geometry.hpp>
 
 #include <boost/geometry/algorithms/intersection.hpp>
 #include <boost/geometry/algorithms/within.hpp>
@@ -31,11 +33,18 @@
 #include <lanelet2_core/geometry/Polygon.h>
 #include <lanelet2_core/primitives/Point.h>
 
-namespace autoware::universe_utils
+#include <algorithm>
+#include <list>
+#include <set>
+#include <string>
+#include <utility>
+#include <vector>
+
+namespace autoware_utils_geometry
 {
 
 template <>
-inline geometry_msgs::msg::Point getPoint(const lanelet::ConstPoint3d & p)
+inline geometry_msgs::msg::Point get_point(const lanelet::ConstPoint3d & p)
 {
   geometry_msgs::msg::Point point;
   point.x = p.x();
@@ -44,7 +53,7 @@ inline geometry_msgs::msg::Point getPoint(const lanelet::ConstPoint3d & p)
   return point;
 }
 
-}  // namespace autoware::universe_utils
+}  // namespace autoware_utils_geometry
 
 namespace
 {
@@ -65,7 +74,7 @@ lanelet::ConstLanelets getPrevLanelets(
 
 // end inclusive
 lanelet::ConstLanelet generatePathLanelet(
-  const tier4_planning_msgs::msg::PathWithLaneId & path, const size_t start_idx,
+  const autoware_internal_planning_msgs::msg::PathWithLaneId & path, const size_t start_idx,
   const size_t end_idx, const double width, const double interval)
 {
   lanelet::Points3d lefts;
@@ -74,7 +83,7 @@ lanelet::ConstLanelet generatePathLanelet(
   for (size_t i = start_idx; i <= end_idx; ++i) {
     const auto & p = path.points.at(i).point.pose;
     const auto & p_prev = path.points.at(prev_idx).point.pose;
-    if (i != start_idx && autoware::universe_utils::calcDistance2d(p_prev, p) < interval) {
+    if (i != start_idx && autoware_utils::calc_distance2d(p_prev, p) < interval) {
       continue;
     }
     prev_idx = i;
@@ -96,7 +105,7 @@ lanelet::ConstLanelet generatePathLanelet(
 }
 
 std::optional<std::pair<size_t, const lanelet::CompoundPolygon3d &>> getFirstPointInsidePolygons(
-  const tier4_planning_msgs::msg::PathWithLaneId & path,
+  const autoware_internal_planning_msgs::msg::PathWithLaneId & path,
   const std::pair<size_t, size_t> lane_interval,
   const std::vector<lanelet::CompoundPolygon3d> & polygons, const bool search_forward = true)
 {
@@ -255,9 +264,12 @@ Result<IntersectionModule::BasicData, InternalError> IntersectionModule::prepare
   const auto lanelets_on_path =
     planning_utils::getLaneletsOnPath(*path, lanelet_map_ptr, current_pose);
   // see the doc for struct PathLanelets
+  const auto closest_idx_ip = autoware::motion_utils::findFirstNearestIndexWithSoftConstraints(
+    path_ip.points, current_pose, planner_data_->ego_nearest_dist_threshold,
+    planner_data_->ego_nearest_yaw_threshold);
   const auto path_lanelets_opt = generatePathLanelets(
     lanelets_on_path, interpolated_path_info, first_conflicting_area, conflicting_area,
-    first_attention_area_opt, intersection_lanelets.attention_area(), closest_idx);
+    first_attention_area_opt, intersection_lanelets.attention_area(), closest_idx_ip);
   if (!path_lanelets_opt.has_value()) {
     return make_err<IntersectionModule::BasicData, InternalError>(
       "failed to generate PathLanelets");
@@ -277,7 +289,7 @@ Result<IntersectionModule::BasicData, InternalError> IntersectionModule::prepare
       const bool approached_assigned_lane =
         autoware::motion_utils::calcSignedArcLength(
           path->points, closest_idx,
-          autoware::universe_utils::createPoint(
+          autoware_utils::create_point(
             assigned_lane_begin_point.x(), assigned_lane_begin_point.y(),
             assigned_lane_begin_point.z())) <
         planner_param_.collision_detection.yield_on_green_traffic_light
@@ -315,8 +327,8 @@ std::optional<size_t> IntersectionModule::getStopLineIndexFromMap(
 
   const auto p_start = stopline.front().front();
   const auto p_end = stopline.front().back();
-  const LineString2d extended_stopline =
-    planning_utils::extendLine(p_start, p_end, planner_data_->stop_line_extend_length);
+  const LineString2d extended_stopline = planning_utils::extendSegmentToBounds(
+    {p_start.basicPoint2d(), p_end.basicPoint2d()}, path.left_bound, path.right_bound);
 
   for (size_t i = lane_interval.first; i < lane_interval.second; i++) {
     const auto & p_front = path.points.at(i).point.pose.position;
@@ -348,7 +360,7 @@ std::optional<IntersectionStopLines> IntersectionModule::generateIntersectionSto
   const lanelet::ConstLanelet & first_attention_lane,
   const std::optional<lanelet::CompoundPolygon3d> & second_attention_area_opt,
   const InterpolatedPathInfo & interpolated_path_info,
-  tier4_planning_msgs::msg::PathWithLaneId * original_path) const
+  autoware_internal_planning_msgs::msg::PathWithLaneId * original_path) const
 {
   const bool use_stuck_stopline = planner_param_.stuck_vehicle.use_stuck_stopline;
   const double stopline_margin = planner_param_.common.default_stopline_margin;
@@ -381,8 +393,8 @@ std::optional<IntersectionStopLines> IntersectionModule::generateIntersectionSto
   std::optional<size_t> first_footprint_attention_centerline_ip_opt = std::nullopt;
   for (auto i = std::get<0>(lane_interval_ip); i < std::get<1>(lane_interval_ip); ++i) {
     const auto & base_pose = path_ip.points.at(i).point.pose;
-    const auto path_footprint = autoware::universe_utils::transformVector(
-      local_footprint, autoware::universe_utils::pose2transform(base_pose));
+    const auto path_footprint =
+      autoware_utils::transform_vector(local_footprint, autoware_utils::pose2transform(base_pose));
     if (bg::intersects(path_footprint, first_attention_lane_centerline.basicLineString())) {
       // NOTE: maybe consideration of braking dist is necessary
       first_footprint_attention_centerline_ip_opt = i;
@@ -417,14 +429,22 @@ std::optional<IntersectionStopLines> IntersectionModule::generateIntersectionSto
     path_ip.points, current_pose, planner_data_->ego_nearest_dist_threshold,
     planner_data_->ego_nearest_yaw_threshold);
 
+  const double velocity = planner_data_->current_velocity->twist.linear.x;
+  const double acceleration = planner_data_->current_acceleration->accel.accel.linear.x;
+  const double braking_dist = planning_utils::calcJudgeLineDistWithJerkLimit(
+    velocity, acceleration, max_accel, max_jerk, delay_response_time);
+
+  // collision_stopline
+  const size_t collision_stopline_ip = closest_idx_ip + std::ceil(braking_dist / ds);
+
   // (3) occlusion peeking stop line position on interpolated path
   int occlusion_peeking_line_ip_int = static_cast<int>(default_stopline_ip);
   bool occlusion_peeking_line_valid = true;
   // NOTE: if footprints[0] is already inside the attention area, invalid
   {
     const auto & base_pose0 = path_ip.points.at(default_stopline_ip).point.pose;
-    const auto path_footprint0 = autoware::universe_utils::transformVector(
-      local_footprint, autoware::universe_utils::pose2transform(base_pose0));
+    const auto path_footprint0 =
+      autoware_utils::transform_vector(local_footprint, autoware_utils::pose2transform(base_pose0));
     if (bg::intersects(
           path_footprint0, lanelet::utils::to2D(first_attention_area).basicPolygon())) {
       occlusion_peeking_line_valid = false;
@@ -442,10 +462,6 @@ std::optional<IntersectionStopLines> IntersectionModule::generateIntersectionSto
   const bool first_attention_stopline_valid = true;
 
   // (5) 1st pass judge line position on interpolated path
-  const double velocity = planner_data_->current_velocity->twist.linear.x;
-  const double acceleration = planner_data_->current_acceleration->accel.accel.linear.x;
-  const double braking_dist = planning_utils::calcJudgeLineDistWithJerkLimit(
-    velocity, acceleration, max_accel, max_jerk, delay_response_time);
   int first_pass_judge_ip_int =
     static_cast<int>(first_footprint_inside_1st_attention_ip) - std::ceil(braking_dist / ds);
   const auto first_pass_judge_line_ip = static_cast<size_t>(
@@ -503,17 +519,39 @@ std::optional<IntersectionStopLines> IntersectionModule::generateIntersectionSto
     second_pass_judge_line_valid = true;
   }
 
+  // (9) the position where ego footprint most approaches the opposite boundary of
+  const std::string turn_direction = assigned_lanelet.attributeOr("turn_direction", "else");
+  const auto compute_lane_end_azimuth = [](const lanelet::ConstLanelet & lane) {
+    const auto & centerline = lane.centerline();
+    const auto & p1 = centerline[(centerline.size() - 2)];
+    const auto & p2 = centerline.back();
+    return autoware_utils_geometry::calc_azimuth_angle(
+      lanelet::utils::conversion::toGeomMsgPt(p1), lanelet::utils::conversion::toGeomMsgPt(p2));
+  };
+  const double merging_angle_diff = autoware_utils_math::normalize_radian(
+    compute_lane_end_azimuth(assigned_lanelet) - compute_lane_end_azimuth(first_attention_lane));
+  const bool is_merging = std::fabs(merging_angle_diff) <
+                          planner_param_.conservative_merging.merging_judge_angle_threshold;
+  const std::optional<size_t> maximum_footprint_overshoot_line_opt =
+    is_merging ? util::find_maximum_footprint_overshoot_position(
+                   interpolated_path_info, local_footprint, first_attention_lane,
+                   planner_param_.conservative_merging.minimum_lateral_distance_threshold,
+                   turn_direction, first_footprint_inside_1st_attention_ip)
+               : std::nullopt;
+  const auto maximum_footprint_overshoot_line_ip = maximum_footprint_overshoot_line_opt.value_or(0);
   struct IntersectionStopLinesTemp
   {
     size_t closest_idx{0};
     size_t stuck_stopline{0};
     size_t default_stopline{0};
+    size_t collision_stopline{0};
     size_t first_attention_stopline{0};
     size_t second_attention_stopline{0};
     size_t occlusion_peeking_stopline{0};
     size_t first_pass_judge_line{0};
     size_t second_pass_judge_line{0};
     size_t occlusion_wo_tl_pass_judge_line{0};
+    size_t most_footprint_overshoot_line{0};
   };
 
   IntersectionStopLinesTemp intersection_stoplines_temp;
@@ -521,13 +559,16 @@ std::optional<IntersectionStopLines> IntersectionModule::generateIntersectionSto
     {&closest_idx_ip, &intersection_stoplines_temp.closest_idx},
     {&stuck_stopline_ip, &intersection_stoplines_temp.stuck_stopline},
     {&default_stopline_ip, &intersection_stoplines_temp.default_stopline},
+    {&collision_stopline_ip, &intersection_stoplines_temp.collision_stopline},
     {&first_attention_stopline_ip, &intersection_stoplines_temp.first_attention_stopline},
     {&second_attention_stopline_ip, &intersection_stoplines_temp.second_attention_stopline},
     {&occlusion_peeking_line_ip, &intersection_stoplines_temp.occlusion_peeking_stopline},
     {&first_pass_judge_line_ip, &intersection_stoplines_temp.first_pass_judge_line},
     {&second_pass_judge_line_ip, &intersection_stoplines_temp.second_pass_judge_line},
     {&occlusion_wo_tl_pass_judge_line_ip,
-     &intersection_stoplines_temp.occlusion_wo_tl_pass_judge_line}};
+     &intersection_stoplines_temp.occlusion_wo_tl_pass_judge_line},
+    {&maximum_footprint_overshoot_line_ip,
+     &intersection_stoplines_temp.most_footprint_overshoot_line}};
   stoplines.sort(
     [](const auto & it1, const auto & it2) { return *(std::get<0>(it1)) < *(std::get<0>(it2)); });
   for (const auto & [stop_idx_ip, stop_idx] : stoplines) {
@@ -549,6 +590,7 @@ std::optional<IntersectionStopLines> IntersectionModule::generateIntersectionSto
 
   IntersectionStopLines intersection_stoplines;
   intersection_stoplines.closest_idx = intersection_stoplines_temp.closest_idx;
+  intersection_stoplines.collision_stopline = intersection_stoplines_temp.collision_stopline;
   if (stuck_stopline_valid) {
     intersection_stoplines.stuck_stopline = intersection_stoplines_temp.stuck_stopline;
   }
@@ -570,6 +612,10 @@ std::optional<IntersectionStopLines> IntersectionModule::generateIntersectionSto
   if (second_pass_judge_line_valid) {
     intersection_stoplines.second_pass_judge_line =
       intersection_stoplines_temp.second_pass_judge_line;
+  }
+  if (maximum_footprint_overshoot_line_opt) {
+    intersection_stoplines.maximum_footprint_overshoot_line =
+      intersection_stoplines_temp.most_footprint_overshoot_line;
   }
   intersection_stoplines.first_pass_judge_line = intersection_stoplines_temp.first_pass_judge_line;
   intersection_stoplines.occlusion_wo_tl_pass_judge_line =
@@ -938,7 +984,7 @@ std::vector<lanelet::ConstLineString3d> IntersectionModule::generateDetectionLan
   if (detection_lanelets.empty()) {
     // NOTE(soblin): due to the above filtering detection_lanelets may be empty or do not contain
     // conflicting_detection_lanelets
-    // OK to return empty detction_divsions
+    // OK to return empty detection_divisions
     return detection_divisions;
   }
 

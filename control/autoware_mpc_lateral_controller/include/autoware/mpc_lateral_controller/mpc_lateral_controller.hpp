@@ -22,16 +22,17 @@
 #include "autoware/trajectory_follower_base/lateral_controller_base.hpp"
 #include "rclcpp/rclcpp.hpp"
 
+#include <autoware/trajectory_follower_base/control_horizon.hpp>
 #include <diagnostic_updater/diagnostic_updater.hpp>
 
 #include "autoware_control_msgs/msg/lateral.hpp"
+#include "autoware_internal_debug_msgs/msg/float32_multi_array_stamped.hpp"
+#include "autoware_internal_debug_msgs/msg/float32_stamped.hpp"
 #include "autoware_planning_msgs/msg/trajectory.hpp"
 #include "autoware_vehicle_msgs/msg/steering_report.hpp"
 #include "geometry_msgs/msg/pose.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav_msgs/msg/odometry.hpp"
-#include "tier4_debug_msgs/msg/float32_multi_array_stamped.hpp"
-#include "tier4_debug_msgs/msg/float32_stamped.hpp"
 
 #include <deque>
 #include <memory>
@@ -44,11 +45,12 @@ namespace autoware::motion::control::mpc_lateral_controller
 
 namespace trajectory_follower = ::autoware::motion::control::trajectory_follower;
 using autoware_control_msgs::msg::Lateral;
+using autoware_internal_debug_msgs::msg::Float32MultiArrayStamped;
+using autoware_internal_debug_msgs::msg::Float32Stamped;
 using autoware_planning_msgs::msg::Trajectory;
 using autoware_vehicle_msgs::msg::SteeringReport;
 using nav_msgs::msg::Odometry;
-using tier4_debug_msgs::msg::Float32MultiArrayStamped;
-using tier4_debug_msgs::msg::Float32Stamped;
+using trajectory_follower::LateralHorizon;
 
 class MpcLateralController : public trajectory_follower::LateralControllerBase
 {
@@ -94,7 +96,7 @@ private:
   bool m_keep_steer_control_until_converged;
 
   // MPC solver checker.
-  bool m_is_mpc_solved{true};
+  ResultWithReason m_mpc_solved_status{true};
 
   // trajectory buffer for detecting new trajectory
   std::deque<Trajectory> m_trajectory_buffer;
@@ -205,7 +207,7 @@ private:
    * @brief Check if the received data is valid.
    * @return True if the data is valid, false otherwise.
    */
-  bool checkData() const;
+  [[nodiscard]] bool checkData() const;
 
   /**
    * @brief Create the control command.
@@ -213,6 +215,14 @@ private:
    * @return Created control command.
    */
   Lateral createCtrlCmdMsg(const Lateral & ctrl_cmd);
+
+  /**
+   * @brief Create the control command horizon message.
+   * @param ctrl_cmd_horizon Control command horizon to be created.
+   * @return Created control command horizon.
+   */
+  [[nodiscard]] LateralHorizon createCtrlCmdHorizonMsg(
+    const LateralHorizon & ctrl_cmd_horizon) const;
 
   /**
    * @brief Publish the predicted future trajectory.
@@ -230,39 +240,39 @@ private:
    * @brief Get the stop control command.
    * @return Stop control command.
    */
-  Lateral getStopControlCommand() const;
+  [[nodiscard]] Lateral getStopControlCommand() const;
 
   /**
    * @brief Get the control command applied before initialization.
    * @return Initial control command.
    */
-  Lateral getInitialControlCommand() const;
+  [[nodiscard]] Lateral getInitialControlCommand() const;
 
   /**
    * @brief Check if the ego car is in a stopped state.
    * @return True if the ego car is stopped, false otherwise.
    */
-  bool isStoppedState() const;
+  [[nodiscard]] bool isStoppedState() const;
 
   /**
    * @brief Check if the trajectory has a valid value.
    * @param traj Trajectory to be checked.
    * @return True if the trajectory is valid, false otherwise.
    */
-  bool isValidTrajectory(const Trajectory & traj) const;
+  [[nodiscard]] bool isValidTrajectory(const Trajectory & traj) const;
 
   /**
    * @brief Check if the trajectory shape has changed.
    * @return True if the trajectory shape has changed, false otherwise.
    */
-  bool isTrajectoryShapeChanged() const;
+  [[nodiscard]] bool isTrajectoryShapeChanged() const;
 
   /**
    * @brief Check if the steering control is converged and stable now.
    * @param cmd Steering control command to be checked.
    * @return True if the steering control is converged and stable, false otherwise.
    */
-  bool isSteerConverged(const Lateral & cmd) const;
+  [[nodiscard]] bool isSteerConverged(const Lateral & cmd) const;
 
   rclcpp::Node::OnSetParametersCallbackHandle::SharedPtr m_set_param_res;
 
@@ -281,15 +291,21 @@ private:
     const std::vector<rclcpp::Parameter> & parameters);
 
   template <typename... Args>
-  inline void info_throttle(Args &&... args)
+  inline void info_throttle(Args &&... args) const
   {
-    RCLCPP_INFO_THROTTLE(logger_, *clock_, 5000, args...);
+    RCLCPP_INFO_THROTTLE(logger_, *clock_, 5000, "%s", args...);
   }
 
   template <typename... Args>
-  inline void warn_throttle(Args &&... args)
+  inline void debug_throttle(Args &&... args) const
   {
-    RCLCPP_WARN_THROTTLE(logger_, *clock_, 5000, args...);
+    RCLCPP_DEBUG_THROTTLE(logger_, *clock_, 5000, "%s", args...);
+  }
+
+  template <typename... Args>
+  inline void warn_throttle(Args &&... args) const
+  {
+    RCLCPP_WARN_THROTTLE(logger_, *clock_, 5000, "%s", args...);
   }
 };
 }  // namespace autoware::motion::control::mpc_lateral_controller

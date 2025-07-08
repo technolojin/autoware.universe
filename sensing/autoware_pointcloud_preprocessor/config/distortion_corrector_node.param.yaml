@@ -3,4 +3,6 @@
     base_frame: base_link
     use_imu: true
     use_3d_distortion_correction: false
-    has_static_tf_only: true
+    update_azimuth_and_distance: false
+    processing_time_threshold_sec: 0.01
+    timestamp_mismatch_fraction_threshold: 0.01

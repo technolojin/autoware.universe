@@ -22,6 +22,8 @@
 
 #include <tf2/convert.h>
 
+#include <string>
+
 namespace tf2
 {
 void fromMsg(const geometry_msgs::msg::PoseStamped & msg, tf2::Stamped<tf2::Transform> & out)
@@ -382,6 +384,29 @@ std::optional<geometry_msgs::msg::Point> intersect(
   intersect_point.x = t * p1.x + (1.0 - t) * p2.x;
   intersect_point.y = t * p1.y + (1.0 - t) * p2.y;
   intersect_point.z = t * p1.z + (1.0 - t) * p2.z;
+  return intersect_point;
+}
+
+std::optional<Point2d> intersect(
+  const Point2d & p1, const Point2d & p2, const Point2d & p3, const Point2d & p4)
+{
+  // calculate intersection point
+  const double det = (p1.x() - p2.x()) * (p4.y() - p3.y()) - (p4.x() - p3.x()) * (p1.y() - p2.y());
+  if (det == 0.0) {
+    return std::nullopt;
+  }
+
+  const double t =
+    ((p4.y() - p3.y()) * (p4.x() - p2.x()) + (p3.x() - p4.x()) * (p4.y() - p2.y())) / det;
+  const double s =
+    ((p2.y() - p1.y()) * (p4.x() - p2.x()) + (p1.x() - p2.x()) * (p4.y() - p2.y())) / det;
+  if (t < 0 || 1 < t || s < 0 || 1 < s) {
+    return std::nullopt;
+  }
+
+  Point2d intersect_point;
+  intersect_point.x() = t * p1.x() + (1.0 - t) * p2.x();
+  intersect_point.y() = t * p1.y() + (1.0 - t) * p2.y();
   return intersect_point;
 }
 

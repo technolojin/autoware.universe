@@ -69,9 +69,9 @@ protected:
 
   // TODO(atsushi421): Temporary Implementation: Remove this interface when all the filter nodes
   // conform to new API
-  virtual void faster_filter(
+  void faster_filter(
     const PointCloud2ConstPtr & input, const IndicesPtr & indices, PointCloud2 & output,
-    const TransformInfo & transform_info);
+    const TransformInfo & transform_info) override;
 
 private:
   float voxel_size_x_;
@@ -82,7 +82,7 @@ private:
   OnSetParametersCallbackHandle::SharedPtr set_param_res_;
 
   /** \brief Parameter service callback */
-  rcl_interfaces::msg::SetParametersResult paramCallback(const std::vector<rclcpp::Parameter> & p);
+  rcl_interfaces::msg::SetParametersResult param_callback(const std::vector<rclcpp::Parameter> & p);
 
 public:
   PCL_MAKE_ALIGNED_OPERATOR_NEW

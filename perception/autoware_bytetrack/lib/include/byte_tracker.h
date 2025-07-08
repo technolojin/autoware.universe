@@ -40,6 +40,7 @@
 
 #include "strack.h"
 
+#include <limits>
 #include <vector>
 
 struct ByteTrackObject
@@ -53,8 +54,8 @@ class ByteTracker
 {
 public:
   ByteTracker(
-    int track_buffer = 30, float track_thresh = 0.5, float high_thresh = 0.6,
-    float match_thresh = 0.8);
+    int track_buffer = 30, double classification_decay_constant = 0.95, float track_thresh = 0.5,
+    float high_thresh = 0.6, float match_thresh = 0.8);
   ~ByteTracker();
 
   std::vector<STrack> update(const std::vector<ByteTrackObject> & objects);
@@ -83,10 +84,11 @@ private:
 
   double lapjv(
     const std::vector<std::vector<float>> & cost, std::vector<int> & rowsol,
-    std::vector<int> & colsol, bool extend_cost = false, float cost_limit = LONG_MAX,
-    bool return_cost = true);
+    std::vector<int> & colsol, bool extend_cost = false,
+    float cost_limit = std::numeric_limits<float>::max(), bool return_cost = true);
 
 private:
+  double classification_decay_constant;
   float track_thresh;
   float high_thresh;
   float match_thresh;

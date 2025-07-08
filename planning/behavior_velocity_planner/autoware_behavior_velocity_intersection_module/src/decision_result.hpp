@@ -90,10 +90,8 @@ struct PeekingTowardOcclusion
   //! if intersection_occlusion is disapproved externally through RTC, it indicates
   //! "is_forcefully_occluded"
   bool is_actually_occlusion_cleared{false};
-  bool temporal_stop_before_attention_required{false};
   size_t closest_idx{0};
   size_t collision_stopline_idx{0};
-  size_t first_attention_stopline_idx{0};
   size_t occlusion_stopline_idx{0};
   //! if null, it is dynamic occlusion and shows up intersection_occlusion(dyn). if valid, it
   //! contains the remaining time to release the static occlusion stuck and shows up
@@ -108,10 +106,8 @@ struct PeekingTowardOcclusion
 struct OccludedCollisionStop
 {
   bool is_actually_occlusion_cleared{false};
-  bool temporal_stop_before_attention_required{false};
   size_t closest_idx{0};
   size_t collision_stopline_idx{0};
-  size_t first_attention_stopline_idx{0};
   size_t occlusion_stopline_idx{0};
   //! if null, it is dynamic occlusion and shows up intersection_occlusion(dyn). if valid, it
   //! contains the remaining time to release the static occlusion stuck
@@ -128,7 +124,7 @@ struct OccludedAbsenceTrafficLight
   bool collision_detected{false};
   bool temporal_stop_before_attention_required{false};
   size_t closest_idx{0};
-  size_t first_attention_area_stopline_idx{0};
+  size_t occlusion_stopline_idx{0};
   size_t peeking_limit_line_idx{0};
   std::string occlusion_report;
 };
@@ -170,7 +166,8 @@ using DecisionResult = std::variant<
   FullyPrioritized              //! only detect vehicles violating traffic rules
   >;
 
-std::string formatDecisionResult(const DecisionResult & decision_result);
+std::string formatDecisionResult(
+  const DecisionResult & decision_result, const bool int_activated, const bool int_occ_activated);
 
 }  // namespace autoware::behavior_velocity_planner
 

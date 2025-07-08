@@ -10,7 +10,18 @@ ament_auto_add_library(${PROJECT_NAME} SHARED
   src
 )
 
-ament_auto_package(INSTALL_TO_SHARE config)
+if(BUILD_TESTING)
+  find_package(ament_lint_auto REQUIRED)
+  ament_lint_auto_find_test_dependencies()
+  ament_add_ros_isolated_gtest(test_${PROJECT_NAME}
+    test/test_crosswalk.cpp
+    test/test_node_interface.cpp
+    test/test_planning_factor.cpp
+  )
+  target_link_libraries(test_${PROJECT_NAME} ${PROJECT_NAME})
+endif()
+
+ament_auto_package(INSTALL_TO_SHARE config test/test_config)
 
 install(PROGRAMS
   scripts/time_to_collision_plotter.py

@@ -75,6 +75,21 @@ If the time to collision is bellow the `ttc.threshold` parameter value, we decid
 In the debug visualization, the ttc (in seconds) is displayed on top of its corresponding trajectory point.
 The color of the text is red if the collision should be avoided and green otherwise.
 
+#### Validation using the lanelet map
+
+When parameter `object.validate_predicted_paths_on_lanelets` is set to `true`,
+an additional check is performed before considering a collision between the out of lane area and a predicted path.
+
+First, the possible sequences of lanelets followed by the predicted path are calculated such that:
+
+- each lanelet in the sequence follows the previous one (according to the lanelet map);
+- the sequence fully contains the predicted path.
+
+Then, for a collision to be considered, one of the ["other lanelets"](#2-other-lanelets) overlapped by the out of lane area must be inside the calculated sequence.
+
+This feature allows the module to ignore collisions caused by nonsensical predicted paths, or by predicted paths that "merge" into the ego lane and that should be handled by other modules.
+Indeed, lanelets that merge into the ego lane (i.e., precede a trajectory lanelet) are not included in the "other lanelets".
+
 ### 6. Calculate the stop or slowdown point
 
 First, the minimum stopping distance of the ego vehicle is calculated based on the jerk and deceleration constraints set by the velocity smoother parameters.
@@ -90,6 +105,10 @@ In case no pose is found, we fallback to using the pose before the detected coll
 Whether it is decided to slow down or stop is determined by the distance between the ego vehicle and the trajectory point to avoid.
 If this distance is bellow the `actions.slowdown.threshold`, a velocity of `actions.slowdown.velocity` will be used.
 If the distance is bellow the `actions.stop.threshold`, a velocity of `0`m/s will be used.
+
+In addition, if parameter `action.use_map_stop_lines` is set to `true`,
+then the stop point may be moved to the earliest stop line preceding the stop point where ego can comfortably stop.
+Stop lines are defined in the vector map and must be attached to one of the lanelet followed by the ego trajectory.
 
 ![avoid_collision](./docs/ttcs_avoid.png)
 
@@ -117,15 +136,17 @@ Otherwise, the stop or slowdown pose will only be discarded after no out of lane
 | -------------- | ------ | ------------------------------------------------------------------------------------------------------ |
 | `threshold`    | double | [s] consider objects with an estimated time to collision bellow this value while ego is on the overlap |
 
-| Parameter /objects                      | Type   | Description                                                                     |
-| --------------------------------------- | ------ | ------------------------------------------------------------------------------- |
-| `minimum_velocity`                      | double | [m/s] ignore objects with a velocity lower than this value                      |
-| `predicted_path_min_confidence`         | double | [-] minimum confidence required for a predicted path to be considered           |
-| `cut_predicted_paths_beyond_red_lights` | bool   | [-] if true, predicted paths are cut beyond the stop line of red traffic lights |
-| `ignore_behind_ego`                     | bool   | [-] if true, objects behind the ego vehicle are ignored                         |
+| Parameter /objects                      | Type   | Description                                                                                                                                              |
+| --------------------------------------- | ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `minimum_velocity`                      | double | [m/s] ignore objects with a velocity lower than this value                                                                                               |
+| `predicted_path_min_confidence`         | double | [-] minimum confidence required for a predicted path to be considered                                                                                    |
+| `cut_predicted_paths_beyond_red_lights` | bool   | [-] if true, predicted paths are cut beyond the stop line of red traffic lights                                                                          |
+| `ignore_behind_ego`                     | bool   | [-] if true, objects behind the ego vehicle are ignored                                                                                                  |
+| `validate_predicted_paths_on_lanelets`  | bool   | [-] if true, an out of lane collision is only considered if the predicted path fully follows a sequence of lanelets that include the out of lane lanelet |
 
 | Parameter /action              | Type   | Description                                                           |
 | ------------------------------ | ------ | --------------------------------------------------------------------- |
+| `use_map_stop_lines`           | bool   | [-] if true, try to stop at stop lines defined in the vector map      |
 | `precision`                    | double | [m] precision when inserting a stop pose in the trajectory            |
 | `longitudinal_distance_buffer` | double | [m] safety distance buffer to keep in front of the ego vehicle        |
 | `lateral_distance_buffer`      | double | [m] safety distance buffer to keep on the side of the ego vehicle     |

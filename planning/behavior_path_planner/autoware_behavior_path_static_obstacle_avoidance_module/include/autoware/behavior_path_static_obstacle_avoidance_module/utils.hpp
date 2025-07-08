@@ -20,6 +20,8 @@
 #include "autoware/behavior_path_static_obstacle_avoidance_module/data_structs.hpp"
 
 #include <memory>
+#include <string>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -54,7 +56,8 @@ double calcShiftLength(
   const bool & is_object_on_right, const double & overhang_dist, const double & avoid_margin);
 
 bool isWithinLanes(
-  const lanelet::ConstLanelets & lanelets, const std::shared_ptr<const PlannerData> & planner_data);
+  const std::optional<lanelet::ConstLanelet> & closest_lanelet,
+  const std::shared_ptr<const PlannerData> & planner_data);
 
 /**
  * @brief check if the ego has to shift driving position.
@@ -167,7 +170,7 @@ lanelet::ConstLanelets getExtendLanes(
  */
 void insertDecelPoint(
   const Point & p_src, const double offset, const double velocity, PathWithLaneId & path,
-  std::optional<Pose> & p_out);
+  PoseWithDetailOpt & p_out);
 
 /**
  * @brief update envelope polygon based on object position reliability.
@@ -191,6 +194,17 @@ void fillObjectMovingTime(
   const std::shared_ptr<AvoidanceParameters> & parameters);
 
 /**
+ * @brief update classification unstable objects.
+ * @param current detected object.
+ * @param unknown type object first seen time map.
+ * @param unstable classification time.
+ */
+void updateClassificationUnstableObjects(
+  ObjectData & object_data,
+  std::unordered_map<std::string, rclcpp::Time> & unknown_type_object_first_seen_time_map,
+  const double unstable_classification_time);
+
+/**
  * @brief check whether ego has to avoid the objects.
  * @param current detected object.
  * @param previous stopped objects.
@@ -208,15 +222,14 @@ void updateClipObject(ObjectDataArray & clip_objects, AvoidancePlanningData & da
 
 /**
  * @brief compensate lost objects until a certain time elapses.
- * @param previous stopped object.
  * @param avoidance planning data.
+ * @param previous stopped object.
  * @param current time.
  * @param avoidance parameters which includes duration of compensation.
  */
 void compensateLostTargetObjects(
-  ObjectDataArray & stored_objects, AvoidancePlanningData & data, const rclcpp::Time & now,
-  const std::shared_ptr<const PlannerData> & planner_data,
-  const std::shared_ptr<AvoidanceParameters> & parameters);
+  AvoidancePlanningData & data, const ObjectDataArray & stored_objects,
+  const std::shared_ptr<const PlannerData> & planner_data);
 
 void filterTargetObjects(
   ObjectDataArray & objects, AvoidancePlanningData & data, const double forward_detection_range,
@@ -261,12 +274,12 @@ DrivableLanes generateExpandedDrivableLanes(
 double calcDistanceToReturnDeadLine(
   const lanelet::ConstLanelets & lanelets, const PathWithLaneId & path,
   const std::shared_ptr<const PlannerData> & planner_data,
-  const std::shared_ptr<AvoidanceParameters> & parameters);
+  const std::shared_ptr<AvoidanceParameters> & parameters,
+  const std::optional<double> distance_to_red_traffic, const bool is_allowed_goal_modification);
 
 double calcDistanceToAvoidStartLine(
-  const lanelet::ConstLanelets & lanelets, const PathWithLaneId & path,
-  const std::shared_ptr<const PlannerData> & planner_data,
-  const std::shared_ptr<AvoidanceParameters> & parameters);
+  const lanelet::ConstLanelets & lanelets, const std::shared_ptr<AvoidanceParameters> & parameters,
+  const std::optional<double> distance_to_red_traffic);
 
 /**
  * @brief calculate error eclipse radius based on object pose covariance.
@@ -274,6 +287,10 @@ double calcDistanceToAvoidStartLine(
  * @return error eclipse long radius.
  */
 double calcErrorEclipseLongRadius(const PoseWithCovariance & pose);
+
+void updateStoredObjects(
+  ObjectDataArray & stored_objects, const ObjectDataArray & current_objects,
+  const rclcpp::Time & now, const std::shared_ptr<AvoidanceParameters> & parameters);
 
 }  // namespace autoware::behavior_path_planner::utils::static_obstacle_avoidance
 

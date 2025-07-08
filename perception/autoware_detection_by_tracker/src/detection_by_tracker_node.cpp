@@ -17,13 +17,14 @@
 #include "detection_by_tracker_node.hpp"
 
 #include "autoware/object_recognition_utils/object_recognition_utils.hpp"
-#include "autoware/universe_utils/geometry/geometry.hpp"
-#include "autoware/universe_utils/math/unit_conversion.hpp"
+#include "autoware_utils/geometry/geometry.hpp"
+#include "autoware_utils/math/unit_conversion.hpp"
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
 #include <chrono>
+#include <limits>
 #include <memory>
 #include <optional>
 #include <string>
@@ -62,7 +63,7 @@ boost::optional<autoware::shape_estimation::ReferenceYawInfo> getReferenceYawInf
   const bool is_vehicle =
     Label::CAR == label || Label::TRUCK == label || Label::BUS == label || Label::TRAILER == label;
   if (is_vehicle) {
-    return autoware::shape_estimation::ReferenceYawInfo{yaw, autoware::universe_utils::deg2rad(30)};
+    return autoware::shape_estimation::ReferenceYawInfo{yaw, autoware_utils::deg2rad(30)};
   } else {
     return boost::none;
   }
@@ -116,10 +117,10 @@ DetectionByTracker::DetectionByTracker(const rclcpp::NodeOptions & node_options)
 
   shape_estimator_ = std::make_shared<autoware::shape_estimation::ShapeEstimator>(true, true);
   cluster_ = std::make_shared<autoware::euclidean_cluster::VoxelGridBasedEuclideanCluster>(
-    false, 10, 10000, 0.7, 0.3, 0);
+    false, 10, 10000, 0.7, 0.3, 0, std::numeric_limits<int>::max(), std::numeric_limits<int>::max(),
+    10000);
   debugger_ = std::make_shared<Debugger>(this);
-  published_time_publisher_ =
-    std::make_unique<autoware::universe_utils::PublishedTimePublisher>(this);
+  published_time_publisher_ = std::make_unique<autoware_utils::PublishedTimePublisher>(this);
 }
 
 void DetectionByTracker::setMaxSearchRange()
@@ -225,7 +226,7 @@ void DetectionByTracker::divideUnderSegmentedObjects(
 
     for (const auto & initial_object : in_cluster_objects.feature_objects) {
       // search near object
-      const float distance = autoware::universe_utils::calcDistance2d(
+      const float distance = autoware_utils::calc_distance2d(
         tracked_object.kinematics.pose_with_covariance.pose,
         initial_object.object.kinematics.pose_with_covariance.pose);
       if (max_search_range < distance) {
@@ -273,12 +274,18 @@ float DetectionByTracker::optimizeUnderSegmentedObject(
   float cluster_range = initial_cluster_range;
   constexpr float initial_voxel_size = initial_cluster_range / 2.0f;
   float voxel_size = initial_voxel_size;
+  // set clustering parameters to max values to keep the original behavior here
+  constexpr int min_voxel_cluster_size_for_filtering = std::numeric_limits<int>::max();
+  constexpr int max_points_per_voxel_in_large_cluster = std::numeric_limits<int>::max();
+  constexpr int max_voxel_cluster_for_output = 10000;
 
   const auto & label = target_object.classification.front().label;
 
   // initialize clustering parameters
   autoware::euclidean_cluster::VoxelGridBasedEuclideanCluster cluster(
-    false, 4, 10000, initial_cluster_range, initial_voxel_size, 0);
+    false, 4, 10000, initial_cluster_range, initial_voxel_size, 0,
+    min_voxel_cluster_size_for_filtering, max_points_per_voxel_in_large_cluster,
+    max_voxel_cluster_for_output);
 
   // convert to pcl
   pcl::PointCloud<pcl::PointXYZ>::Ptr pcl_cluster(new pcl::PointCloud<pcl::PointXYZ>);
@@ -287,6 +294,7 @@ float DetectionByTracker::optimizeUnderSegmentedObject(
   // iterate to find best fit divided object
   float highest_iou = 0.0;
   tier4_perception_msgs::msg::DetectedObjectWithFeature highest_iou_object;
+  boost::optional<geometry_msgs::msg::Pose> ref_pose = boost::none;
   for (int iter_count = 0; iter_count < iter_max_count;
        ++iter_count, cluster_range *= iter_rate, voxel_size *= iter_rate) {
     // divide under segmented cluster
@@ -304,7 +312,7 @@ float DetectionByTracker::optimizeUnderSegmentedObject(
         label, divided_cluster,
         getReferenceYawInfo(
           label, tf2::getYaw(target_object.kinematics.pose_with_covariance.pose.orientation)),
-        getReferenceShapeSizeInfo(label, target_object.shape),
+        getReferenceShapeSizeInfo(label, target_object.shape), ref_pose,
         highest_iou_object_in_current_iter.object.shape,
         highest_iou_object_in_current_iter.object.kinematics.pose_with_covariance.pose);
       if (!is_shape_estimated) {
@@ -361,7 +369,7 @@ void DetectionByTracker::mergeOverSegmentedObjects(
 
     pcl::PointCloud<pcl::PointXYZ> pcl_merged_cluster;
     for (const auto & initial_object : in_cluster_objects.feature_objects) {
-      const float distance = autoware::universe_utils::calcDistance2d(
+      const float distance = autoware_utils::calc_distance2d(
         tracked_object.kinematics.pose_with_covariance.pose,
         initial_object.object.kinematics.pose_with_covariance.pose);
 
@@ -393,7 +401,8 @@ void DetectionByTracker::mergeOverSegmentedObjects(
       label, pcl_merged_cluster,
       getReferenceYawInfo(
         label, tf2::getYaw(tracked_object.kinematics.pose_with_covariance.pose.orientation)),
-      getReferenceShapeSizeInfo(label, tracked_object.shape), feature_object.object.shape,
+      getReferenceShapeSizeInfo(label, tracked_object.shape),
+      tracked_object.kinematics.pose_with_covariance.pose, feature_object.object.shape,
       feature_object.object.kinematics.pose_with_covariance.pose);
     if (!is_shape_estimated) {
       out_no_found_tracked_objects.objects.push_back(tracked_object);

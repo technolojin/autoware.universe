@@ -17,8 +17,8 @@
 #include "autoware/behavior_path_static_obstacle_avoidance_module/helper.hpp"
 #include "autoware/behavior_path_static_obstacle_avoidance_module/type_alias.hpp"
 #include "autoware/behavior_path_static_obstacle_avoidance_module/utils.hpp"
-#include "autoware/universe_utils/math/unit_conversion.hpp"
 #include "autoware_test_utils/autoware_test_utils.hpp"
+#include "autoware_utils/math/unit_conversion.hpp"
 
 #include <autoware_perception_msgs/msg/object_classification.hpp>
 #include <autoware_perception_msgs/msg/shape.hpp>
@@ -26,18 +26,20 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <limits>
+#include <memory>
+
 namespace autoware::behavior_path_planner::utils::static_obstacle_avoidance
 {
 
 using autoware::behavior_path_planner::AvoidanceParameters;
 using autoware::behavior_path_planner::ObjectData;
-using autoware::behavior_path_planner::helper::static_obstacle_avoidance::AvoidanceHelper;
 using autoware::route_handler::Direction;
-using autoware::universe_utils::createPoint;
-using autoware::universe_utils::createQuaternionFromRPY;
-using autoware::universe_utils::createVector3;
-using autoware::universe_utils::deg2rad;
-using autoware::universe_utils::generateUUID;
+using autoware_utils::create_point;
+using autoware_utils::create_quaternion_from_rpy;
+using autoware_utils::create_vector3;
+using autoware_utils::deg2rad;
+using autoware_utils::generate_uuid;
 
 constexpr double epsilon = 1e-6;
 
@@ -60,9 +62,9 @@ auto get_planner_data() -> std::shared_ptr<PlannerData>
   // set odometry.
   Odometry odometry;
   odometry.pose.pose = geometry_msgs::build<geometry_msgs::msg::Pose>()
-                         .position(createPoint(0.0, 0.0, 0.0))
-                         .orientation(createQuaternionFromRPY(0.0, 0.0, 0.0));
-  odometry.twist.twist.linear = createVector3(0.0, 0.0, 0.0);
+                         .position(create_point(0.0, 0.0, 0.0))
+                         .orientation(create_quaternion_from_rpy(0.0, 0.0, 0.0));
+  odometry.twist.twist.linear = create_vector3(0.0, 0.0, 0.0);
 
   planner_data.self_odometry = std::make_shared<Odometry>(odometry);
 
@@ -93,7 +95,8 @@ auto get_parameters() -> std::shared_ptr<AvoidanceParameters>
   parameters.max_prepare_time = 3.0;
   parameters.nominal_avoidance_speed = 8.0;
   parameters.velocity_map = {1.0, 3.0, 10.0};
-  parameters.lateral_min_jerk_map = {0.1, 1.0, 10.0};
+  parameters.avoid_lateral_min_jerk_map = {0.1, 1.0, 10.0};
+  parameters.return_lateral_min_jerk_map = {0.1, 1.0, 10.0};
   parameters.lateral_max_jerk_map = {0.4, 1.5, 15.0};
   parameters.lateral_max_accel_map = {0.7, 0.8, 0.9};
 
@@ -186,8 +189,8 @@ TEST(TestUtils, getObjectBehavior)
     object_data.direction = Direction::LEFT;
     object_data.object.kinematics.initial_pose_with_covariance.pose =
       geometry_msgs::build<geometry_msgs::msg::Pose>()
-        .position(createPoint(0.0, 0.1, 0.0))
-        .orientation(createQuaternionFromRPY(0.0, 0.0, 0.0));
+        .position(create_point(0.0, 0.1, 0.0))
+        .orientation(create_quaternion_from_rpy(0.0, 0.0, 0.0));
 
     EXPECT_EQ(
       filtering_utils::getObjectBehavior(object_data, parameters), ObjectData::Behavior::NONE);
@@ -199,8 +202,8 @@ TEST(TestUtils, getObjectBehavior)
     object_data.direction = Direction::RIGHT;
     object_data.object.kinematics.initial_pose_with_covariance.pose =
       geometry_msgs::build<geometry_msgs::msg::Pose>()
-        .position(createPoint(0.0, -0.1, 0.0))
-        .orientation(createQuaternionFromRPY(0.0, 0.0, deg2rad(170)));
+        .position(create_point(0.0, -0.1, 0.0))
+        .orientation(create_quaternion_from_rpy(0.0, 0.0, deg2rad(170)));
 
     EXPECT_EQ(
       filtering_utils::getObjectBehavior(object_data, parameters), ObjectData::Behavior::NONE);
@@ -212,8 +215,8 @@ TEST(TestUtils, getObjectBehavior)
     object_data.direction = Direction::LEFT;
     object_data.object.kinematics.initial_pose_with_covariance.pose =
       geometry_msgs::build<geometry_msgs::msg::Pose>()
-        .position(createPoint(0.0, 0.1, 0.0))
-        .orientation(createQuaternionFromRPY(0.0, 0.0, deg2rad(30)));
+        .position(create_point(0.0, 0.1, 0.0))
+        .orientation(create_quaternion_from_rpy(0.0, 0.0, deg2rad(30)));
 
     EXPECT_EQ(
       filtering_utils::getObjectBehavior(object_data, parameters), ObjectData::Behavior::DEVIATING);
@@ -225,8 +228,8 @@ TEST(TestUtils, getObjectBehavior)
     object_data.direction = Direction::RIGHT;
     object_data.object.kinematics.initial_pose_with_covariance.pose =
       geometry_msgs::build<geometry_msgs::msg::Pose>()
-        .position(createPoint(0.0, -0.1, 0.0))
-        .orientation(createQuaternionFromRPY(0.0, 0.0, deg2rad(30)));
+        .position(create_point(0.0, -0.1, 0.0))
+        .orientation(create_quaternion_from_rpy(0.0, 0.0, deg2rad(30)));
 
     EXPECT_EQ(
       filtering_utils::getObjectBehavior(object_data, parameters), ObjectData::Behavior::MERGING);
@@ -238,8 +241,8 @@ TEST(TestUtils, getObjectBehavior)
     object_data.direction = Direction::LEFT;
     object_data.object.kinematics.initial_pose_with_covariance.pose =
       geometry_msgs::build<geometry_msgs::msg::Pose>()
-        .position(createPoint(0.0, 0.1, 0.0))
-        .orientation(createQuaternionFromRPY(0.0, 0.0, deg2rad(-150)));
+        .position(create_point(0.0, 0.1, 0.0))
+        .orientation(create_quaternion_from_rpy(0.0, 0.0, deg2rad(-150)));
 
     EXPECT_EQ(
       filtering_utils::getObjectBehavior(object_data, parameters), ObjectData::Behavior::DEVIATING);
@@ -251,8 +254,8 @@ TEST(TestUtils, getObjectBehavior)
     object_data.direction = Direction::RIGHT;
     object_data.object.kinematics.initial_pose_with_covariance.pose =
       geometry_msgs::build<geometry_msgs::msg::Pose>()
-        .position(createPoint(0.0, -0.1, 0.0))
-        .orientation(createQuaternionFromRPY(0.0, 0.0, deg2rad(-150)));
+        .position(create_point(0.0, -0.1, 0.0))
+        .orientation(create_quaternion_from_rpy(0.0, 0.0, deg2rad(-150)));
 
     EXPECT_EQ(
       filtering_utils::getObjectBehavior(object_data, parameters), ObjectData::Behavior::MERGING);
@@ -264,8 +267,8 @@ TEST(TestUtils, getObjectBehavior)
     object_data.direction = Direction::LEFT;
     object_data.object.kinematics.initial_pose_with_covariance.pose =
       geometry_msgs::build<geometry_msgs::msg::Pose>()
-        .position(createPoint(0.0, 0.1, 0.0))
-        .orientation(createQuaternionFromRPY(0.0, 0.0, deg2rad(-30)));
+        .position(create_point(0.0, 0.1, 0.0))
+        .orientation(create_quaternion_from_rpy(0.0, 0.0, deg2rad(-30)));
 
     EXPECT_EQ(
       filtering_utils::getObjectBehavior(object_data, parameters), ObjectData::Behavior::MERGING);
@@ -277,8 +280,8 @@ TEST(TestUtils, getObjectBehavior)
     object_data.direction = Direction::RIGHT;
     object_data.object.kinematics.initial_pose_with_covariance.pose =
       geometry_msgs::build<geometry_msgs::msg::Pose>()
-        .position(createPoint(0.0, -0.1, 0.0))
-        .orientation(createQuaternionFromRPY(0.0, 0.0, deg2rad(-30)));
+        .position(create_point(0.0, -0.1, 0.0))
+        .orientation(create_quaternion_from_rpy(0.0, 0.0, deg2rad(-30)));
 
     EXPECT_EQ(
       filtering_utils::getObjectBehavior(object_data, parameters), ObjectData::Behavior::DEVIATING);
@@ -290,8 +293,8 @@ TEST(TestUtils, getObjectBehavior)
     object_data.direction = Direction::LEFT;
     object_data.object.kinematics.initial_pose_with_covariance.pose =
       geometry_msgs::build<geometry_msgs::msg::Pose>()
-        .position(createPoint(0.0, 0.1, 0.0))
-        .orientation(createQuaternionFromRPY(0.0, 0.0, deg2rad(150)));
+        .position(create_point(0.0, 0.1, 0.0))
+        .orientation(create_quaternion_from_rpy(0.0, 0.0, deg2rad(150)));
 
     EXPECT_EQ(
       filtering_utils::getObjectBehavior(object_data, parameters), ObjectData::Behavior::MERGING);
@@ -303,8 +306,8 @@ TEST(TestUtils, getObjectBehavior)
     object_data.direction = Direction::RIGHT;
     object_data.object.kinematics.initial_pose_with_covariance.pose =
       geometry_msgs::build<geometry_msgs::msg::Pose>()
-        .position(createPoint(0.0, -0.1, 0.0))
-        .orientation(createQuaternionFromRPY(0.0, 0.0, deg2rad(150)));
+        .position(create_point(0.0, -0.1, 0.0))
+        .orientation(create_quaternion_from_rpy(0.0, 0.0, deg2rad(150)));
 
     EXPECT_EQ(
       filtering_utils::getObjectBehavior(object_data, parameters), ObjectData::Behavior::DEVIATING);
@@ -319,8 +322,8 @@ TEST(TestUtils, isNoNeedAvoidanceBehavior)
     50L, 1.0, 20.0, 0.0, 0.0, std::numeric_limits<size_t>::max());
 
   const auto object_pose = geometry_msgs::build<geometry_msgs::msg::Pose>()
-                             .position(createPoint(0.0, 0.0, 0.0))
-                             .orientation(createQuaternionFromRPY(0.0, 0.0, deg2rad(45)));
+                             .position(create_point(0.0, 0.0, 0.0))
+                             .orientation(create_quaternion_from_rpy(0.0, 0.0, deg2rad(45)));
 
   const auto nearest_path_pose =
     path.points.at(autoware::motion_utils::findNearestIndex(path.points, object_pose.position))
@@ -329,10 +332,10 @@ TEST(TestUtils, isNoNeedAvoidanceBehavior)
   const auto shape = autoware_perception_msgs::build<Shape>()
                        .type(Shape::BOUNDING_BOX)
                        .footprint(geometry_msgs::msg::Polygon{})
-                       .dimensions(createVector3(2.8284271247461901, 1.41421356237309505, 2.0));
+                       .dimensions(create_vector3(2.8284271247461901, 1.41421356237309505, 2.0));
 
-  auto object_data =
-    create_test_object(object_pose, createVector3(0.0, 0.0, 0.0), shape, ObjectClassification::CAR);
+  auto object_data = create_test_object(
+    object_pose, create_vector3(0.0, 0.0, 0.0), shape, ObjectClassification::CAR);
 
   // object is NOT avoidable. but there is possibility that the ego has to avoid it.
   {
@@ -345,8 +348,8 @@ TEST(TestUtils, isNoNeedAvoidanceBehavior)
   {
     object_data.object.kinematics.initial_pose_with_covariance.pose =
       geometry_msgs::build<geometry_msgs::msg::Pose>()
-        .position(createPoint(2.5, 3.6, 0.0))
-        .orientation(createQuaternionFromRPY(0.0, 0.0, deg2rad(45)));
+        .position(create_point(2.5, 3.6, 0.0))
+        .orientation(create_quaternion_from_rpy(0.0, 0.0, deg2rad(45)));
     object_data.direction = Direction::LEFT;
     object_data.avoid_margin = 2.0;
     object_data.envelope_poly = createEnvelopePolygon(object_data, nearest_path_pose, 0.0);
@@ -360,8 +363,8 @@ TEST(TestUtils, isNoNeedAvoidanceBehavior)
   {
     object_data.object.kinematics.initial_pose_with_covariance.pose =
       geometry_msgs::build<geometry_msgs::msg::Pose>()
-        .position(createPoint(2.5, 3.4, 0.0))
-        .orientation(createQuaternionFromRPY(0.0, 0.0, deg2rad(45)));
+        .position(create_point(2.5, 3.4, 0.0))
+        .orientation(create_quaternion_from_rpy(0.0, 0.0, deg2rad(45)));
     object_data.direction = Direction::LEFT;
     object_data.avoid_margin = 2.0;
     object_data.envelope_poly = createEnvelopePolygon(object_data, nearest_path_pose, 0.0);
@@ -375,8 +378,8 @@ TEST(TestUtils, isNoNeedAvoidanceBehavior)
   {
     object_data.object.kinematics.initial_pose_with_covariance.pose =
       geometry_msgs::build<geometry_msgs::msg::Pose>()
-        .position(createPoint(2.5, 2.9, 0.0))
-        .orientation(createQuaternionFromRPY(0.0, 0.0, deg2rad(45)));
+        .position(create_point(2.5, 2.9, 0.0))
+        .orientation(create_quaternion_from_rpy(0.0, 0.0, deg2rad(45)));
     object_data.direction = Direction::LEFT;
     object_data.avoid_margin = 2.0;
     object_data.envelope_poly = createEnvelopePolygon(object_data, nearest_path_pose, 0.0);
@@ -515,7 +518,7 @@ TEST(TestUtils, isSatisfiedWithCommonCondition)
         .probability(1.0));
 
     EXPECT_FALSE(filtering_utils::isSatisfiedWithCommonCondition(
-      object_data, path, forward_detection_range, 4.0, createPoint(0.0, 0.0, 0.0), false,
+      object_data, path, forward_detection_range, 4.0, create_point(0.0, 0.0, 0.0), false,
       parameters));
     EXPECT_EQ(object_data.info, ObjectInfo::IS_NOT_TARGET_OBJECT);
   }
@@ -529,7 +532,7 @@ TEST(TestUtils, isSatisfiedWithCommonCondition)
         .probability(1.0));
 
     EXPECT_FALSE(filtering_utils::isSatisfiedWithCommonCondition(
-      object_data, path, forward_detection_range, 4.0, createPoint(0.0, 0.0, 0.0), false,
+      object_data, path, forward_detection_range, 4.0, create_point(0.0, 0.0, 0.0), false,
       parameters));
     EXPECT_EQ(object_data.info, ObjectInfo::IS_NOT_TARGET_OBJECT);
   }
@@ -544,7 +547,7 @@ TEST(TestUtils, isSatisfiedWithCommonCondition)
     object_data.move_time = 0.6;
 
     EXPECT_FALSE(filtering_utils::isSatisfiedWithCommonCondition(
-      object_data, path, forward_detection_range, 4.0, createPoint(0.0, 0.0, 0.0), false,
+      object_data, path, forward_detection_range, 4.0, create_point(0.0, 0.0, 0.0), false,
       parameters));
     EXPECT_EQ(object_data.info, ObjectInfo::MOVING_OBJECT);
   }
@@ -552,8 +555,8 @@ TEST(TestUtils, isSatisfiedWithCommonCondition)
   // object behind the ego.
   {
     const auto object_pose = geometry_msgs::build<geometry_msgs::msg::Pose>()
-                               .position(createPoint(2.5, 1.0, 0.0))
-                               .orientation(createQuaternionFromRPY(0.0, 0.0, deg2rad(45)));
+                               .position(create_point(2.5, 1.0, 0.0))
+                               .orientation(create_quaternion_from_rpy(0.0, 0.0, deg2rad(45)));
 
     ObjectData object_data;
     object_data.object.shape.type = autoware_perception_msgs::msg::Shape::BOUNDING_BOX;
@@ -575,7 +578,7 @@ TEST(TestUtils, isSatisfiedWithCommonCondition)
     object_data.envelope_poly = createEnvelopePolygon(object_data, pose, margin);
 
     EXPECT_FALSE(filtering_utils::isSatisfiedWithCommonCondition(
-      object_data, path, forward_detection_range, 4.0, createPoint(8.0, 0.5, 0.0), false,
+      object_data, path, forward_detection_range, 4.0, create_point(8.0, 0.5, 0.0), false,
       parameters));
     EXPECT_EQ(object_data.info, ObjectInfo::FURTHER_THAN_THRESHOLD);
   }
@@ -583,8 +586,8 @@ TEST(TestUtils, isSatisfiedWithCommonCondition)
   // farther than detection range.
   {
     const auto object_pose = geometry_msgs::build<geometry_msgs::msg::Pose>()
-                               .position(createPoint(7.5, 1.0, 0.0))
-                               .orientation(createQuaternionFromRPY(0.0, 0.0, deg2rad(45)));
+                               .position(create_point(7.5, 1.0, 0.0))
+                               .orientation(create_quaternion_from_rpy(0.0, 0.0, deg2rad(45)));
 
     ObjectData object_data;
     object_data.object.shape.type = autoware_perception_msgs::msg::Shape::BOUNDING_BOX;
@@ -606,7 +609,7 @@ TEST(TestUtils, isSatisfiedWithCommonCondition)
     object_data.envelope_poly = createEnvelopePolygon(object_data, pose, margin);
 
     EXPECT_FALSE(filtering_utils::isSatisfiedWithCommonCondition(
-      object_data, path, forward_detection_range, 4.0, createPoint(0.0, 0.0, 0.0), false,
+      object_data, path, forward_detection_range, 4.0, create_point(0.0, 0.0, 0.0), false,
       parameters));
     EXPECT_EQ(object_data.info, ObjectInfo::FURTHER_THAN_THRESHOLD);
   }
@@ -614,8 +617,8 @@ TEST(TestUtils, isSatisfiedWithCommonCondition)
   // farther than goal position.
   {
     const auto object_pose = geometry_msgs::build<geometry_msgs::msg::Pose>()
-                               .position(createPoint(7.0, 1.0, 0.0))
-                               .orientation(createQuaternionFromRPY(0.0, 0.0, deg2rad(45)));
+                               .position(create_point(7.0, 1.0, 0.0))
+                               .orientation(create_quaternion_from_rpy(0.0, 0.0, deg2rad(45)));
 
     ObjectData object_data;
     object_data.object.shape.type = autoware_perception_msgs::msg::Shape::BOUNDING_BOX;
@@ -637,7 +640,7 @@ TEST(TestUtils, isSatisfiedWithCommonCondition)
     object_data.envelope_poly = createEnvelopePolygon(object_data, pose, margin);
 
     EXPECT_FALSE(filtering_utils::isSatisfiedWithCommonCondition(
-      object_data, path, forward_detection_range, 4.0, createPoint(0.0, 0.0, 0.0), false,
+      object_data, path, forward_detection_range, 4.0, create_point(0.0, 0.0, 0.0), false,
       parameters));
     EXPECT_EQ(object_data.info, ObjectInfo::FURTHER_THAN_GOAL);
   }
@@ -645,8 +648,8 @@ TEST(TestUtils, isSatisfiedWithCommonCondition)
   // within detection range.
   {
     const auto object_pose = geometry_msgs::build<geometry_msgs::msg::Pose>()
-                               .position(createPoint(4.5, 1.0, 0.0))
-                               .orientation(createQuaternionFromRPY(0.0, 0.0, deg2rad(45)));
+                               .position(create_point(4.5, 1.0, 0.0))
+                               .orientation(create_quaternion_from_rpy(0.0, 0.0, deg2rad(45)));
 
     ObjectData object_data;
     object_data.object.shape.type = autoware_perception_msgs::msg::Shape::BOUNDING_BOX;
@@ -668,7 +671,7 @@ TEST(TestUtils, isSatisfiedWithCommonCondition)
     object_data.envelope_poly = createEnvelopePolygon(object_data, pose, margin);
 
     EXPECT_FALSE(filtering_utils::isSatisfiedWithCommonCondition(
-      object_data, path, forward_detection_range, 6.4, createPoint(0.0, 0.0, 0.0), false,
+      object_data, path, forward_detection_range, 6.4, create_point(0.0, 0.0, 0.0), false,
       parameters));
     EXPECT_EQ(object_data.info, ObjectInfo::TOO_NEAR_TO_GOAL);
   }
@@ -676,8 +679,8 @@ TEST(TestUtils, isSatisfiedWithCommonCondition)
   // within detection range.
   {
     const auto object_pose = geometry_msgs::build<geometry_msgs::msg::Pose>()
-                               .position(createPoint(4.5, 1.0, 0.0))
-                               .orientation(createQuaternionFromRPY(0.0, 0.0, deg2rad(45)));
+                               .position(create_point(4.5, 1.0, 0.0))
+                               .orientation(create_quaternion_from_rpy(0.0, 0.0, deg2rad(45)));
 
     ObjectData object_data;
     object_data.object.shape.type = autoware_perception_msgs::msg::Shape::BOUNDING_BOX;
@@ -699,15 +702,15 @@ TEST(TestUtils, isSatisfiedWithCommonCondition)
     object_data.envelope_poly = createEnvelopePolygon(object_data, pose, margin);
 
     EXPECT_TRUE(filtering_utils::isSatisfiedWithCommonCondition(
-      object_data, path, forward_detection_range, 6.6, createPoint(0.0, 0.0, 0.0), false,
+      object_data, path, forward_detection_range, 6.6, create_point(0.0, 0.0, 0.0), false,
       parameters));
   }
 
   // within detection range.
   {
     const auto object_pose = geometry_msgs::build<geometry_msgs::msg::Pose>()
-                               .position(createPoint(4.5, 1.0, 0.0))
-                               .orientation(createQuaternionFromRPY(0.0, 0.0, deg2rad(45)));
+                               .position(create_point(4.5, 1.0, 0.0))
+                               .orientation(create_quaternion_from_rpy(0.0, 0.0, deg2rad(45)));
 
     ObjectData object_data;
     object_data.object.shape.type = autoware_perception_msgs::msg::Shape::BOUNDING_BOX;
@@ -729,7 +732,7 @@ TEST(TestUtils, isSatisfiedWithCommonCondition)
     object_data.envelope_poly = createEnvelopePolygon(object_data, pose, margin);
 
     EXPECT_TRUE(filtering_utils::isSatisfiedWithCommonCondition(
-      object_data, path, forward_detection_range, 4.0, createPoint(0.0, 0.0, 0.0), true,
+      object_data, path, forward_detection_range, 4.0, create_point(0.0, 0.0, 0.0), true,
       parameters));
   }
 }
@@ -816,11 +819,11 @@ TEST(TestUtils, insertDecelPoint)
     auto path = autoware::test_utils::generateTrajectory<PathWithLaneId>(
       50L, 1.0, 20.0, 0.0, 0.0, std::numeric_limits<size_t>::max());
 
-    const auto ego_position = createPoint(2.5, 0.5, 0.0);
+    const auto ego_position = create_point(2.5, 0.5, 0.0);
     constexpr double offset = 100.0;
     constexpr double velocity = 1.0;
 
-    std::optional<geometry_msgs::msg::Pose> p_out{std::nullopt};
+    PoseWithDetailOpt p_out{std::nullopt};
     insertDecelPoint(ego_position, offset, velocity, path, p_out);
 
     EXPECT_FALSE(p_out.has_value());
@@ -834,17 +837,17 @@ TEST(TestUtils, insertDecelPoint)
     auto path = autoware::test_utils::generateTrajectory<PathWithLaneId>(
       50L, 1.0, 20.0, 0.0, 0.0, std::numeric_limits<size_t>::max());
 
-    const auto ego_position = createPoint(3.5, 0.5, 0.0);
+    const auto ego_position = create_point(3.5, 0.5, 0.0);
     constexpr double offset = 3.0;
     constexpr double velocity = 1.0;
 
-    std::optional<geometry_msgs::msg::Pose> p_out{std::nullopt};
+    PoseWithDetailOpt p_out{std::nullopt};
     insertDecelPoint(ego_position, offset, velocity, path, p_out);
 
     ASSERT_TRUE(p_out.has_value());
-    EXPECT_DOUBLE_EQ(p_out.value().position.x, 6.5);
-    EXPECT_DOUBLE_EQ(p_out.value().position.y, 0.0);
-    EXPECT_DOUBLE_EQ(p_out.value().position.z, 0.0);
+    EXPECT_DOUBLE_EQ(p_out.value().pose.position.x, 6.5);
+    EXPECT_DOUBLE_EQ(p_out.value().pose.position.y, 0.0);
+    EXPECT_DOUBLE_EQ(p_out.value().pose.position.z, 0.0);
     for (size_t i = 7; i < path.points.size(); i++) {
       EXPECT_DOUBLE_EQ(path.points.at(i).point.longitudinal_velocity_mps, 1.0);
     }
@@ -858,18 +861,18 @@ TEST(TestUtils, DISABLED_fillObjectMovingTime)
   const auto parameters = get_parameters();
 
   const auto object_pose = geometry_msgs::build<geometry_msgs::msg::Pose>()
-                             .position(createPoint(0.0, 0.0, 0.0))
-                             .orientation(createQuaternionFromRPY(0.0, 0.0, deg2rad(45)));
+                             .position(create_point(0.0, 0.0, 0.0))
+                             .orientation(create_quaternion_from_rpy(0.0, 0.0, deg2rad(45)));
 
   const auto shape = autoware_perception_msgs::build<Shape>()
                        .type(Shape::BOUNDING_BOX)
                        .footprint(geometry_msgs::msg::Polygon{})
-                       .dimensions(createVector3(2.0, 1.0, 2.0));
+                       .dimensions(create_vector3(2.0, 1.0, 2.0));
 
-  const auto uuid = generateUUID();
+  const auto uuid = generate_uuid();
 
   auto old_object = create_test_object(
-    object_pose, createVector3(0.0, 0.0, 0.0), shape, ObjectClassification::TRUCK);
+    object_pose, create_vector3(0.0, 0.0, 0.0), shape, ObjectClassification::TRUCK);
 
   // set previous object data.
   {
@@ -878,19 +881,19 @@ TEST(TestUtils, DISABLED_fillObjectMovingTime)
     old_object.last_stop = rclcpp::Clock{RCL_ROS_TIME}.now();
     old_object.move_time = 0.0;
     old_object.object.kinematics.initial_twist_with_covariance.twist.linear =
-      createVector3(0.0, 0.0, 0.0);
+      create_vector3(0.0, 0.0, 0.0);
   }
 
   rclcpp::sleep_for(490ms);
 
   auto new_object = create_test_object(
-    object_pose, createVector3(0.0, 0.0, 0.0), shape, ObjectClassification::TRUCK);
+    object_pose, create_vector3(0.0, 0.0, 0.0), shape, ObjectClassification::TRUCK);
 
   // find new stop object
   {
-    new_object.object.object_id = generateUUID();
+    new_object.object.object_id = generate_uuid();
     new_object.object.kinematics.initial_twist_with_covariance.twist.linear =
-      createVector3(0.99, 0.0, 0.0);
+      create_vector3(0.99, 0.0, 0.0);
 
     ObjectDataArray buffer{};
     fillObjectMovingTime(new_object, buffer, parameters);
@@ -901,9 +904,9 @@ TEST(TestUtils, DISABLED_fillObjectMovingTime)
 
   // find new move object
   {
-    new_object.object.object_id = generateUUID();
+    new_object.object.object_id = generate_uuid();
     new_object.object.kinematics.initial_twist_with_covariance.twist.linear =
-      createVector3(1.01, 0.0, 0.0);
+      create_vector3(1.01, 0.0, 0.0);
 
     ObjectDataArray buffer{};
     fillObjectMovingTime(new_object, buffer, parameters);
@@ -915,7 +918,7 @@ TEST(TestUtils, DISABLED_fillObjectMovingTime)
   {
     new_object.object.object_id = uuid;
     new_object.object.kinematics.initial_twist_with_covariance.twist.linear =
-      createVector3(1.01, 0.0, 0.0);
+      create_vector3(1.01, 0.0, 0.0);
 
     ObjectDataArray buffer{old_object};
     fillObjectMovingTime(new_object, buffer, parameters);
@@ -929,7 +932,7 @@ TEST(TestUtils, DISABLED_fillObjectMovingTime)
   {
     new_object.object.object_id = uuid;
     new_object.object.kinematics.initial_twist_with_covariance.twist.linear =
-      createVector3(0.99, 0.0, 0.0);
+      create_vector3(0.99, 0.0, 0.0);
 
     ObjectDataArray buffer{old_object};
     fillObjectMovingTime(new_object, buffer, parameters);
@@ -945,7 +948,7 @@ TEST(TestUtils, DISABLED_fillObjectMovingTime)
   {
     new_object.object.object_id = uuid;
     new_object.object.kinematics.initial_twist_with_covariance.twist.linear =
-      createVector3(1.01, 0.0, 0.0);
+      create_vector3(1.01, 0.0, 0.0);
 
     ObjectDataArray buffer{old_object};
     fillObjectMovingTime(new_object, buffer, parameters);
@@ -962,8 +965,8 @@ TEST(TestUtils, calcEnvelopeOverhangDistance)
     50L, 1.0, 20.0, 0.0, 0.0, std::numeric_limits<size_t>::max());
 
   const auto object_pose = geometry_msgs::build<geometry_msgs::msg::Pose>()
-                             .position(createPoint(0.0, 0.0, 0.0))
-                             .orientation(createQuaternionFromRPY(0.0, 0.0, deg2rad(45)));
+                             .position(create_point(0.0, 0.0, 0.0))
+                             .orientation(create_quaternion_from_rpy(0.0, 0.0, deg2rad(45)));
 
   const auto nearest_path_pose =
     path.points.at(autoware::motion_utils::findNearestIndex(path.points, object_pose.position))
@@ -972,16 +975,16 @@ TEST(TestUtils, calcEnvelopeOverhangDistance)
   const auto shape = autoware_perception_msgs::build<Shape>()
                        .type(Shape::BOUNDING_BOX)
                        .footprint(geometry_msgs::msg::Polygon{})
-                       .dimensions(createVector3(2.8284271247461901, 1.41421356237309505, 2.0));
+                       .dimensions(create_vector3(2.8284271247461901, 1.41421356237309505, 2.0));
 
   auto object_data = create_test_object(
-    object_pose, createVector3(0.0, 0.0, 0.0), shape, ObjectClassification::TRUCK);
+    object_pose, create_vector3(0.0, 0.0, 0.0), shape, ObjectClassification::TRUCK);
 
   {
     object_data.object.kinematics.initial_pose_with_covariance.pose =
       geometry_msgs::build<geometry_msgs::msg::Pose>()
-        .position(createPoint(2.5, 1.0, 0.0))
-        .orientation(createQuaternionFromRPY(0.0, 0.0, deg2rad(45)));
+        .position(create_point(2.5, 1.0, 0.0))
+        .orientation(create_quaternion_from_rpy(0.0, 0.0, deg2rad(45)));
     object_data.direction = Direction::LEFT;
     object_data.envelope_poly = createEnvelopePolygon(object_data, nearest_path_pose, 0.0);
 
@@ -998,8 +1001,8 @@ TEST(TestUtils, calcEnvelopeOverhangDistance)
   {
     object_data.object.kinematics.initial_pose_with_covariance.pose =
       geometry_msgs::build<geometry_msgs::msg::Pose>()
-        .position(createPoint(2.5, -1.0, 0.0))
-        .orientation(createQuaternionFromRPY(0.0, 0.0, deg2rad(45)));
+        .position(create_point(2.5, -1.0, 0.0))
+        .orientation(create_quaternion_from_rpy(0.0, 0.0, deg2rad(45)));
     object_data.direction = Direction::RIGHT;
     object_data.envelope_poly = createEnvelopePolygon(object_data, nearest_path_pose, 0.0);
 
@@ -1022,8 +1025,8 @@ TEST(TestUtils, createEnvelopePolygon)
 
   constexpr double margin = 0.353553390593273762;
   const auto pose = geometry_msgs::build<geometry_msgs::msg::Pose>()
-                      .position(createPoint(0.0, 0.0, 0.0))
-                      .orientation(createQuaternionFromRPY(0.0, 0.0, deg2rad(45)));
+                      .position(create_point(0.0, 0.0, 0.0))
+                      .orientation(create_quaternion_from_rpy(0.0, 0.0, deg2rad(45)));
 
   const auto output = createEnvelopePolygon(footprint, pose, margin);
 
@@ -1060,16 +1063,16 @@ TEST(TestUtils, generateObstaclePolygonsForDrivableArea)
     ObjectClassification::TRUCK, create_params(envelope_buffer, 0.5, lateral_soft_margin));
 
   const auto object_pose = geometry_msgs::build<geometry_msgs::msg::Pose>()
-                             .position(createPoint(0.0, 0.0, 0.0))
-                             .orientation(createQuaternionFromRPY(0.0, 0.0, deg2rad(45)));
+                             .position(create_point(0.0, 0.0, 0.0))
+                             .orientation(create_quaternion_from_rpy(0.0, 0.0, deg2rad(45)));
 
   const auto shape = autoware_perception_msgs::build<Shape>()
                        .type(Shape::BOUNDING_BOX)
                        .footprint(geometry_msgs::msg::Polygon{})
-                       .dimensions(createVector3(2.0, 1.0, 2.0));
+                       .dimensions(create_vector3(2.0, 1.0, 2.0));
 
   auto object_data = create_test_object(
-    object_pose, createVector3(0.0, 0.0, 0.0), shape, ObjectClassification::TRUCK);
+    object_pose, create_vector3(0.0, 0.0, 0.0), shape, ObjectClassification::TRUCK);
 
   // empty
   {
@@ -1148,8 +1151,8 @@ TEST(TestUtils, fillLongitudinalAndLengthByClosestEnvelopeFootprint)
     50L, 1.0, 20.0, 0.0, 0.0, std::numeric_limits<size_t>::max());
 
   const auto object_pose = geometry_msgs::build<geometry_msgs::msg::Pose>()
-                             .position(createPoint(2.5, 1.0, 0.0))
-                             .orientation(createQuaternionFromRPY(0.0, 0.0, deg2rad(45)));
+                             .position(create_point(2.5, 1.0, 0.0))
+                             .orientation(create_quaternion_from_rpy(0.0, 0.0, deg2rad(45)));
 
   const auto nearest_path_pose =
     path.points.at(autoware::motion_utils::findNearestIndex(path.points, object_pose.position))
@@ -1158,15 +1161,15 @@ TEST(TestUtils, fillLongitudinalAndLengthByClosestEnvelopeFootprint)
   const auto shape = autoware_perception_msgs::build<Shape>()
                        .type(Shape::BOUNDING_BOX)
                        .footprint(geometry_msgs::msg::Polygon{})
-                       .dimensions(createVector3(2.8284271247461901, 1.41421356237309505, 2.0));
+                       .dimensions(create_vector3(2.8284271247461901, 1.41421356237309505, 2.0));
 
   auto object_data = create_test_object(
-    object_pose, createVector3(0.0, 0.0, 0.0), shape, ObjectClassification::TRUCK);
+    object_pose, create_vector3(0.0, 0.0, 0.0), shape, ObjectClassification::TRUCK);
   object_data.direction = Direction::LEFT;
   object_data.envelope_poly = createEnvelopePolygon(object_data, nearest_path_pose, 0.0);
 
   fillLongitudinalAndLengthByClosestEnvelopeFootprint(
-    path, createPoint(0.0, 0.0, 0.0), object_data);
+    path, create_point(0.0, 0.0, 0.0), object_data);
   EXPECT_NEAR(object_data.longitudinal, 1.0, epsilon);
   EXPECT_NEAR(object_data.length, 3.0, epsilon);
 }
@@ -1178,11 +1181,11 @@ TEST(TestUtils, fillObjectEnvelopePolygon)
 
   const auto parameters = get_parameters();
 
-  const auto uuid = generateUUID();
+  const auto uuid = generate_uuid();
 
   const auto object_pose = geometry_msgs::build<geometry_msgs::msg::Pose>()
-                             .position(createPoint(2.5, 1.0, 0.0))
-                             .orientation(createQuaternionFromRPY(0.0, 0.0, deg2rad(45)));
+                             .position(create_point(2.5, 1.0, 0.0))
+                             .orientation(create_quaternion_from_rpy(0.0, 0.0, deg2rad(45)));
 
   const auto nearest_path_pose =
     path.points.at(autoware::motion_utils::findNearestIndex(path.points, object_pose.position))
@@ -1191,10 +1194,10 @@ TEST(TestUtils, fillObjectEnvelopePolygon)
   const auto shape = autoware_perception_msgs::build<Shape>()
                        .type(Shape::BOUNDING_BOX)
                        .footprint(geometry_msgs::msg::Polygon{})
-                       .dimensions(createVector3(2.8284271247461901, 1.41421356237309505, 2.0));
+                       .dimensions(create_vector3(2.8284271247461901, 1.41421356237309505, 2.0));
 
   auto stored_object = create_test_object(
-    object_pose, createVector3(0.0, 0.0, 0.0), shape, ObjectClassification::TRUCK);
+    object_pose, create_vector3(0.0, 0.0, 0.0), shape, ObjectClassification::TRUCK);
   stored_object.object.object_id = uuid;
   stored_object.envelope_poly = createEnvelopePolygon(stored_object, nearest_path_pose, 0.0);
   stored_object.object.kinematics.initial_pose_with_covariance =
@@ -1208,13 +1211,13 @@ TEST(TestUtils, fillObjectEnvelopePolygon)
   stored_object.direction = Direction::LEFT;
 
   auto object_data = create_test_object(
-    object_pose, createVector3(0.0, 0.0, 0.0), shape, ObjectClassification::TRUCK);
+    object_pose, create_vector3(0.0, 0.0, 0.0), shape, ObjectClassification::TRUCK);
 
   // new object.
   {
     ObjectDataArray stored_objects{};
 
-    object_data.object.object_id = generateUUID();
+    object_data.object.object_id = generate_uuid();
     object_data.object.kinematics.initial_pose_with_covariance =
       geometry_msgs::build<geometry_msgs::msg::PoseWithCovariance>()
         .pose(object_pose)
@@ -1242,8 +1245,8 @@ TEST(TestUtils, fillObjectEnvelopePolygon)
     ObjectDataArray stored_objects{stored_object};
 
     const auto new_pose = geometry_msgs::build<geometry_msgs::msg::Pose>()
-                            .position(createPoint(3.0, 0.5, 0.0))
-                            .orientation(createQuaternionFromRPY(0.0, 0.0, deg2rad(45)));
+                            .position(create_point(3.0, 0.5, 0.0))
+                            .orientation(create_quaternion_from_rpy(0.0, 0.0, deg2rad(45)));
 
     object_data.object.object_id = uuid;
     object_data.object.kinematics.initial_pose_with_covariance =
@@ -1272,8 +1275,8 @@ TEST(TestUtils, fillObjectEnvelopePolygon)
     ObjectDataArray stored_objects{stored_object};
 
     const auto new_pose = geometry_msgs::build<geometry_msgs::msg::Pose>()
-                            .position(createPoint(3.0, 0.5, 0.0))
-                            .orientation(createQuaternionFromRPY(0.0, 0.0, deg2rad(45)));
+                            .position(create_point(3.0, 0.5, 0.0))
+                            .orientation(create_quaternion_from_rpy(0.0, 0.0, deg2rad(45)));
 
     object_data.object.object_id = uuid;
     object_data.object.kinematics.initial_pose_with_covariance =
@@ -1300,7 +1303,7 @@ TEST(TestUtils, fillObjectEnvelopePolygon)
   // threshold.
   {
     auto huge_covariance_object = create_test_object(
-      object_pose, createVector3(0.0, 0.0, 0.0), shape, ObjectClassification::TRUCK);
+      object_pose, create_vector3(0.0, 0.0, 0.0), shape, ObjectClassification::TRUCK);
     huge_covariance_object.object.object_id = uuid;
     huge_covariance_object.object.kinematics.initial_pose_with_covariance =
       geometry_msgs::build<geometry_msgs::msg::PoseWithCovariance>()
@@ -1318,8 +1321,8 @@ TEST(TestUtils, fillObjectEnvelopePolygon)
     ObjectDataArray stored_objects{huge_covariance_object};
 
     const auto new_pose = geometry_msgs::build<geometry_msgs::msg::Pose>()
-                            .position(createPoint(3.0, 0.5, 0.0))
-                            .orientation(createQuaternionFromRPY(0.0, 0.0, deg2rad(45)));
+                            .position(create_point(3.0, 0.5, 0.0))
+                            .orientation(create_quaternion_from_rpy(0.0, 0.0, deg2rad(45)));
 
     object_data.object.object_id = uuid;
     object_data.object.kinematics.initial_pose_with_covariance =
@@ -1378,7 +1381,7 @@ TEST(TestUtils, compensateLostTargetObjects)
 
   const auto planner_data = get_planner_data();
 
-  const auto uuid = generateUUID();
+  const auto uuid = generate_uuid();
 
   const auto init_time = rclcpp::Clock{RCL_ROS_TIME}.now();
 
@@ -1387,8 +1390,8 @@ TEST(TestUtils, compensateLostTargetObjects)
   stored_object.last_seen = init_time;
   stored_object.object.kinematics.initial_pose_with_covariance.pose =
     geometry_msgs::build<geometry_msgs::msg::Pose>()
-      .position(createPoint(1.0, 1.0, 0.0))
-      .orientation(createQuaternionFromRPY(0.0, 0.0, 0.0));
+      .position(create_point(1.0, 1.0, 0.0))
+      .orientation(create_quaternion_from_rpy(0.0, 0.0, 0.0));
 
   rclcpp::sleep_for(100ms);
 
@@ -1399,19 +1402,23 @@ TEST(TestUtils, compensateLostTargetObjects)
     ObjectDataArray stored_objects{};
 
     ObjectData new_object;
-    new_object.object.object_id = generateUUID();
+    new_object.object.object_id = generate_uuid();
     new_object.last_seen = now;
     new_object.object.kinematics.initial_pose_with_covariance.pose =
       geometry_msgs::build<geometry_msgs::msg::Pose>()
-        .position(createPoint(2.0, 5.0, 0.0))
-        .orientation(createQuaternionFromRPY(0.0, 0.0, 0.0));
+        .position(create_point(2.0, 5.0, 0.0))
+        .orientation(create_quaternion_from_rpy(0.0, 0.0, 0.0));
 
     AvoidancePlanningData avoidance_planning_data;
     avoidance_planning_data.target_objects = {new_object};
     avoidance_planning_data.other_objects = {};
 
-    compensateLostTargetObjects(
-      stored_objects, avoidance_planning_data, now, planner_data, parameters);
+    auto current_target_objects_snapshot = avoidance_planning_data.target_objects;
+
+    utils::static_obstacle_avoidance::compensateLostTargetObjects(
+      avoidance_planning_data, stored_objects, planner_data);
+    utils::static_obstacle_avoidance::updateStoredObjects(
+      stored_objects, current_target_objects_snapshot, now, parameters);
     ASSERT_FALSE(stored_objects.empty());
     EXPECT_EQ(stored_objects.front().object.object_id, new_object.object.object_id);
   }
@@ -1426,8 +1433,12 @@ TEST(TestUtils, compensateLostTargetObjects)
     avoidance_planning_data.target_objects = {};
     avoidance_planning_data.other_objects = {};
 
-    compensateLostTargetObjects(
-      stored_objects, avoidance_planning_data, now, planner_data, parameters);
+    auto current_target_objects_snapshot = avoidance_planning_data.target_objects;
+
+    utils::static_obstacle_avoidance::compensateLostTargetObjects(
+      avoidance_planning_data, stored_objects, planner_data);
+    utils::static_obstacle_avoidance::updateStoredObjects(
+      stored_objects, current_target_objects_snapshot, now, parameters);
     ASSERT_FALSE(avoidance_planning_data.target_objects.empty());
     EXPECT_EQ(
       avoidance_planning_data.target_objects.front().object.object_id,
@@ -1445,15 +1456,19 @@ TEST(TestUtils, compensateLostTargetObjects)
     detected_object.last_seen = now;
     detected_object.object.kinematics.initial_pose_with_covariance.pose =
       geometry_msgs::build<geometry_msgs::msg::Pose>()
-        .position(createPoint(1.0, 1.0, 0.0))
-        .orientation(createQuaternionFromRPY(0.0, 0.0, 0.0));
+        .position(create_point(1.0, 1.0, 0.0))
+        .orientation(create_quaternion_from_rpy(0.0, 0.0, 0.0));
 
     AvoidancePlanningData avoidance_planning_data;
     avoidance_planning_data.target_objects = {detected_object};
     avoidance_planning_data.other_objects = {};
 
-    compensateLostTargetObjects(
-      stored_objects, avoidance_planning_data, now, planner_data, parameters);
+    auto current_target_objects_snapshot = avoidance_planning_data.target_objects;
+
+    utils::static_obstacle_avoidance::compensateLostTargetObjects(
+      avoidance_planning_data, stored_objects, planner_data);
+    utils::static_obstacle_avoidance::updateStoredObjects(
+      stored_objects, current_target_objects_snapshot, now, parameters);
     ASSERT_FALSE(stored_objects.empty());
     EXPECT_EQ(stored_objects.front().last_seen, detected_object.last_seen);
   }
@@ -1465,19 +1480,22 @@ TEST(TestUtils, compensateLostTargetObjects)
     ObjectDataArray stored_objects{stored_object};
 
     ObjectData detected_object;
-    detected_object.object.object_id = generateUUID();
+    detected_object.object.object_id = generate_uuid();
     detected_object.last_seen = now;
     detected_object.object.kinematics.initial_pose_with_covariance.pose =
       geometry_msgs::build<geometry_msgs::msg::Pose>()
-        .position(createPoint(1.1, 1.1, 0.0))
-        .orientation(createQuaternionFromRPY(0.0, 0.0, 0.0));
+        .position(create_point(1.1, 1.1, 0.0))
+        .orientation(create_quaternion_from_rpy(0.0, 0.0, 0.0));
 
     AvoidancePlanningData avoidance_planning_data;
     avoidance_planning_data.target_objects = {detected_object};
     avoidance_planning_data.other_objects = {};
 
-    compensateLostTargetObjects(
-      stored_objects, avoidance_planning_data, now, planner_data, parameters);
+    auto current_target_objects_snapshot = avoidance_planning_data.target_objects;
+    utils::static_obstacle_avoidance::compensateLostTargetObjects(
+      avoidance_planning_data, stored_objects, planner_data);
+    utils::static_obstacle_avoidance::updateStoredObjects(
+      stored_objects, current_target_objects_snapshot, now, parameters);
     ASSERT_FALSE(stored_objects.empty());
     EXPECT_EQ(stored_objects.front().last_seen, detected_object.last_seen);
   }
@@ -1489,19 +1507,23 @@ TEST(TestUtils, compensateLostTargetObjects)
     ObjectDataArray stored_objects{stored_object};
 
     ObjectData detected_object;
-    detected_object.object.object_id = generateUUID();
+    detected_object.object.object_id = generate_uuid();
     detected_object.last_seen = now;
     detected_object.object.kinematics.initial_pose_with_covariance.pose =
       geometry_msgs::build<geometry_msgs::msg::Pose>()
-        .position(createPoint(3.0, 3.0, 0.0))
-        .orientation(createQuaternionFromRPY(0.0, 0.0, 0.0));
+        .position(create_point(3.0, 3.0, 0.0))
+        .orientation(create_quaternion_from_rpy(0.0, 0.0, 0.0));
 
     AvoidancePlanningData avoidance_planning_data;
     avoidance_planning_data.target_objects = {detected_object};
     avoidance_planning_data.other_objects = {};
 
-    compensateLostTargetObjects(
-      stored_objects, avoidance_planning_data, now, planner_data, parameters);
+    auto current_target_objects_snapshot = avoidance_planning_data.target_objects;
+    utils::static_obstacle_avoidance::compensateLostTargetObjects(
+      avoidance_planning_data, stored_objects, planner_data);
+    utils::static_obstacle_avoidance::updateStoredObjects(
+      stored_objects, current_target_objects_snapshot, now, parameters);
+
     ASSERT_FALSE(stored_objects.empty());
     EXPECT_EQ(stored_objects.front().last_seen, init_time);
   }
@@ -1518,8 +1540,19 @@ TEST(TestUtils, compensateLostTargetObjects)
     avoidance_planning_data.target_objects = {};
     avoidance_planning_data.other_objects = {};
 
-    compensateLostTargetObjects(
-      stored_objects, avoidance_planning_data, now, planner_data, parameters);
+    auto current_target_objects_snapshot = avoidance_planning_data.target_objects;
+    utils::static_obstacle_avoidance::compensateLostTargetObjects(
+      avoidance_planning_data, stored_objects, planner_data);
+    utils::static_obstacle_avoidance::updateStoredObjects(
+      stored_objects, current_target_objects_snapshot, now, parameters);
+
+    avoidance_planning_data.target_objects = {};
+    current_target_objects_snapshot = avoidance_planning_data.target_objects;
+    utils::static_obstacle_avoidance::compensateLostTargetObjects(
+      avoidance_planning_data, stored_objects, planner_data);
+    utils::static_obstacle_avoidance::updateStoredObjects(
+      stored_objects, current_target_objects_snapshot, now, parameters);
+
     EXPECT_TRUE(avoidance_planning_data.target_objects.empty());
   }
 }
@@ -1527,8 +1560,8 @@ TEST(TestUtils, compensateLostTargetObjects)
 TEST(TestUtils, calcErrorEclipseLongRadius)
 {
   const auto pose = geometry_msgs::build<geometry_msgs::msg::Pose>()
-                      .position(createPoint(3.0, 3.0, 0.0))
-                      .orientation(createQuaternionFromRPY(0.0, 0.0, 0.0));
+                      .position(create_point(3.0, 3.0, 0.0))
+                      .orientation(create_quaternion_from_rpy(0.0, 0.0, 0.0));
   const auto pose_with_covariance =
     geometry_msgs::build<geometry_msgs::msg::PoseWithCovariance>().pose(pose).covariance(
       {5.0, 4.0, 0.0, 0.0, 0.0, 0.0, 4.0, 5.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0,

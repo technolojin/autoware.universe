@@ -48,8 +48,15 @@ target_link_libraries(obstacle_pointcloud_based_validator
 )
 
 ament_auto_add_library(object_lanelet_filter SHARED
-  src/lanelet_filter/lanelet_filter.cpp
+  src/lanelet_filter/debug.cpp
+  src/lanelet_filter/lanelet_filter_base.cpp
+  src/lanelet_filter/detected_object_lanelet_filter.cpp
+  src/lanelet_filter/tracked_object_lanelet_filter.cpp
   lib/utils/utils.cpp
+)
+
+target_link_libraries(object_lanelet_filter
+  Eigen3::Eigen
 )
 
 ament_auto_add_library(object_position_filter SHARED
@@ -63,8 +70,13 @@ rclcpp_components_register_node(obstacle_pointcloud_based_validator
 )
 
 rclcpp_components_register_node(object_lanelet_filter
-  PLUGIN "autoware::detected_object_validation::lanelet_filter::ObjectLaneletFilterNode"
+  PLUGIN "autoware::detected_object_validation::lanelet_filter::DetectedObjectLaneletFilterNode"
   EXECUTABLE object_lanelet_filter_node
+)
+
+rclcpp_components_register_node(object_lanelet_filter
+  PLUGIN "autoware::detected_object_validation::lanelet_filter::TrackedObjectLaneletFilterNode"
+  EXECUTABLE tracked_object_lanelet_filter_node
 )
 
 rclcpp_components_register_node(object_position_filter
@@ -81,6 +93,10 @@ if(BUILD_TESTING)
   ament_auto_add_gtest(detection_object_validation_tests
     test/test_utils.cpp
     test/object_position_filter/test_object_position_filter.cpp
+  )
+  ament_auto_add_gtest(object_lanelet_filter_tests
+    test/test_utils.cpp
+    test/lanelet_filter/test_lanelet_filter.cpp
   )
 endif()
 

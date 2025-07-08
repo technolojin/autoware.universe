@@ -22,11 +22,15 @@ ament_auto_add_library(${PROJECT_NAME} SHARED
   src/debug.cpp
 )
 
+target_include_directories(${PROJECT_NAME} SYSTEM PUBLIC
+  ${OpenCV_INCLUDE_DIRS}
+)
+
 target_link_libraries(${PROJECT_NAME}
   ${OpenCV_LIBRARIES}
 )
 
-ament_auto_package(INSTALL_TO_SHARE config)
+ament_auto_package(INSTALL_TO_SHARE config test_data)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

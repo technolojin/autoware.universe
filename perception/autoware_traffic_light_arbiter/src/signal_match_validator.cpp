@@ -14,6 +14,12 @@
 
 #include "autoware/traffic_light_arbiter/signal_match_validator.hpp"
 
+#include <algorithm>
+#include <map>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
+
 namespace util
 {
 using TrafficSignalArray = autoware_perception_msgs::msg::TrafficLightGroupArray;
@@ -206,6 +212,9 @@ Time get_newer_stamp(const Time & stamp1, const Time & stamp2)
 
 }  // namespace util
 
+namespace autoware::traffic_light
+{
+
 autoware_perception_msgs::msg::TrafficLightGroupArray SignalMatchValidator::validateSignals(
   const TrafficSignalArray & perception_signals, const TrafficSignalArray & external_signals)
 {
@@ -285,3 +294,5 @@ bool SignalMatchValidator::isPedestrianSignal(const lanelet::Id & signal_id)
   return map_pedestrian_signal_regulatory_elements_set_.find(signal_id) !=
          map_pedestrian_signal_regulatory_elements_set_.end();
 }
+
+}  // namespace autoware::traffic_light

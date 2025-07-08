@@ -27,7 +27,8 @@
 #include <tf2_eigen/tf2_eigen.hpp>
 #endif
 
-#include <autoware_point_types/types.hpp>
+#include <autoware/point_types/types.hpp>
+#include <cuda_blackboard/cuda_pointcloud2.hpp>
 
 #include <sensor_msgs/msg/point_cloud2.hpp>
 
@@ -39,7 +40,7 @@
 namespace autoware::lidar_transfusion
 {
 constexpr std::size_t AFF_MAT_SIZE = 16;  // 4x4 matrix
-constexpr std::size_t MAX_CLOUD_STEP_SIZE = sizeof(autoware_point_types::PointXYZIRCAEDT);
+constexpr std::size_t MAX_CLOUD_STEP_SIZE = sizeof(autoware::point_types::PointXYZIRCAEDT);
 
 class VoxelGenerator
 {
@@ -48,12 +49,15 @@ public:
     const DensificationParam & densification_param, const TransfusionConfig & config,
     cudaStream_t & stream);
   std::size_t generateSweepPoints(
-    const sensor_msgs::msg::PointCloud2 & msg, cuda::unique_ptr<float[]> & points_d);
+    const std::shared_ptr<const cuda_blackboard::CudaPointCloud2> & msg_ptr,
+    cuda::unique_ptr<float[]> & points_d);
   bool enqueuePointCloud(
-    const sensor_msgs::msg::PointCloud2 & msg, const tf2_ros::Buffer & tf_buffer);
-  void initCloudInfo(const sensor_msgs::msg::PointCloud2 & msg);
+    const std::shared_ptr<const cuda_blackboard::CudaPointCloud2> & msg_ptr,
+    const tf2_ros::Buffer & tf_buffer);
+  void initCloudInfo(const std::shared_ptr<const cuda_blackboard::CudaPointCloud2> & msg_ptr);
   std::tuple<const uint32_t, const uint8_t, const uint8_t> getFieldInfo(
-    const sensor_msgs::msg::PointCloud2 & msg, const std::string & field_name);
+    const std::shared_ptr<const cuda_blackboard::CudaPointCloud2> & msg_ptr,
+    const std::string & field_name);
 
 private:
   std::unique_ptr<PointCloudDensification> pd_ptr_{nullptr};

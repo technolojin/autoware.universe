@@ -14,7 +14,9 @@
 
 #include "node.hpp"
 
-#include <component_interface_utils/rclcpp/exceptions.hpp>
+#include <autoware/component_interface_utils/rclcpp/exceptions.hpp>
+
+#include <memory>
 
 namespace autoware::operation_mode_transition_manager
 {
@@ -27,7 +29,7 @@ OperationModeTransitionManager::OperationModeTransitionManager(const rclcpp::Nod
 
   // component interface
   {
-    const auto node = component_interface_utils::NodeAdaptor(this);
+    const auto node = autoware::component_interface_utils::NodeAdaptor(this);
     node.init_srv(
       srv_autoware_control_, this, &OperationModeTransitionManager::onChangeAutowareControl);
     node.init_srv(
@@ -45,8 +47,6 @@ OperationModeTransitionManager::OperationModeTransitionManager(const rclcpp::Nod
   // initialize state
   current_mode_ = OperationMode::STOP;
   transition_ = nullptr;
-  gate_operation_mode_.mode = OperationModeState::UNKNOWN;
-  gate_operation_mode_.is_in_transition = false;
   control_mode_report_.mode = ControlModeReport::NO_COMMAND;
   transition_timeout_ = declare_parameter<double>("transition_timeout");
   {
@@ -55,11 +55,14 @@ OperationModeTransitionManager::OperationModeTransitionManager(const rclcpp::Nod
     const double TIMEOUT_MARGIN = 0.5;
     if (transition_timeout_ < stable_duration + TIMEOUT_MARGIN) {
       transition_timeout_ = stable_duration + TIMEOUT_MARGIN;
-      RCLCPP_WARN(
-        get_logger(), "`transition_timeout` must be somewhat larger than `stable_check.duration`");
-      RCLCPP_WARN_STREAM(get_logger(), "transition_timeout is set to " << transition_timeout_);
+      RCLCPP_WARN_THROTTLE(
+        get_logger(), *get_clock(), 3000,
+        "`transition_timeout` must be somewhat larger than `stable_check.duration`");
+      RCLCPP_WARN_STREAM_THROTTLE(
+        get_logger(), *get_clock(), 3000, "transition_timeout is set to " << transition_timeout_);
     }
   }
+  input_timeout_ = declare_parameter<double>("input_timeout");
 
   // modes
   modes_[OperationMode::STOP] = std::make_unique<StopMode>();
@@ -90,7 +93,7 @@ void OperationModeTransitionManager::onChangeOperationMode(
 {
   const auto mode = toEnum(*request);
   if (!mode) {
-    throw component_interface_utils::ParameterError("The operation mode is invalid.");
+    throw autoware::component_interface_utils::ParameterError("The operation mode is invalid.");
   }
   changeOperationMode(mode.value());
   response->status.success = true;
@@ -121,23 +124,25 @@ void OperationModeTransitionManager::changeOperationMode(std::optional<Operation
   const bool request_control = request_mode ? false : true;
 
   if (current_mode_ == request_mode) {
-    throw component_interface_utils::NoEffectWarning("The mode is the same as the current.");
+    throw autoware::component_interface_utils::NoEffectWarning(
+      "The mode is the same as the current.");
   }
 
   if (current_control && request_control) {
-    throw component_interface_utils::NoEffectWarning("Autoware already controls the vehicle.");
+    throw autoware::component_interface_utils::NoEffectWarning(
+      "Autoware already controls the vehicle.");
   }
 
   // TODO(Takagi, Isamu): Consider mode change request during transition.
   if (transition_ && request_mode != OperationMode::STOP) {
-    throw component_interface_utils::ServiceException(
+    throw autoware::component_interface_utils::ServiceException(
       ServiceResponse::ERROR_IN_TRANSITION, "The mode transition is in progress.");
   }
 
   // Enter transition mode if the vehicle is being or will be controlled by Autoware.
   if (current_control || request_control) {
     if (!available_mode_change_[request_mode.value_or(current_mode_)]) {
-      throw component_interface_utils::ServiceException(
+      throw autoware::component_interface_utils::ServiceException(
         ServiceResponse::ERROR_NOT_AVAILABLE, "The mode change condition is not satisfied.");
     }
     if (request_control) {
@@ -163,7 +168,7 @@ void OperationModeTransitionManager::cancelTransition()
   transition_.reset();
 }
 
-void OperationModeTransitionManager::processTransition()
+void OperationModeTransitionManager::processTransition(const InputData & input_data)
 {
   const bool current_control = control_mode_report_.mode == ControlModeReport::AUTONOMOUS;
 
@@ -193,11 +198,11 @@ void OperationModeTransitionManager::processTransition()
 
   // Check completion when engaged, otherwise engage after the gate reflects transition.
   if (current_control) {
-    if (modes_.at(current_mode_)->isModeChangeCompleted()) {
+    if (modes_.at(current_mode_)->isModeChangeCompleted(input_data)) {
       return transition_.reset();
     }
   } else {
-    if (transition_->is_engage_requested && gate_operation_mode_.is_in_transition) {
+    if (transition_->is_engage_requested && input_data.gate_operation_mode.is_in_transition) {
       transition_->is_engage_requested = false;
       return changeControlMode(ControlModeCommand::Request::AUTONOMOUS);
     }
@@ -206,23 +211,14 @@ void OperationModeTransitionManager::processTransition()
 
 void OperationModeTransitionManager::onTimer()
 {
-  const auto control_mode_report_ptr = sub_control_mode_report_.takeData();
-  if (!control_mode_report_ptr) {
-    return;
-  }
-  const auto gate_operation_mode_ptr = sub_gate_operation_mode_.takeData();
-  if (!gate_operation_mode_ptr) {
-    return;
-  }
-  control_mode_report_ = *control_mode_report_ptr;
-  gate_operation_mode_ = *gate_operation_mode_ptr;
+  const auto input_data = subscribeData();
 
   for (const auto & [type, mode] : modes_) {
     mode->update(current_mode_ == type && transition_);
   }
 
   for (const auto & [type, mode] : modes_) {
-    available_mode_change_[type] = mode->isModeChangeAvailable();
+    available_mode_change_[type] = mode->isModeChangeAvailable(input_data);
   }
 
   // Check sync timeout to the compatible interface.
@@ -247,10 +243,75 @@ void OperationModeTransitionManager::onTimer()
   }
 
   if (transition_) {
-    processTransition();
+    processTransition(input_data);
   }
 
   publishData();
+}
+
+InputData OperationModeTransitionManager::subscribeData()
+{
+  InputData input_data;
+
+  const auto kinematics_ptr = sub_kinematics_.take_data();
+  if (kinematics_ptr) {
+    if (input_timeout_ < (now() - kinematics_ptr->header.stamp).seconds()) {
+      RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 3000, "Subscribed kinematics is timed out.");
+    } else {
+      input_data.kinematics = *kinematics_ptr;
+    }
+  }
+
+  const auto trajectory_ptr = sub_trajectory_.take_data();
+  if (trajectory_ptr) {
+    if (input_timeout_ < (now() - trajectory_ptr->header.stamp).seconds()) {
+      RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 3000, "Subscribed trajectory is timed out.");
+    } else {
+      input_data.trajectory = *trajectory_ptr;
+    }
+  }
+
+  const auto trajectory_follower_control_cmd_ptr = sub_trajectory_follower_control_cmd_.take_data();
+  if (trajectory_follower_control_cmd_ptr) {
+    if (input_timeout_ < (now() - trajectory_follower_control_cmd_ptr->stamp).seconds()) {
+      RCLCPP_WARN_THROTTLE(
+        get_logger(), *get_clock(), 3000,
+        "Subscribed trajectory_follower_control_cmd is timed out.");
+    } else {
+      input_data.trajectory_follower_control_cmd = *trajectory_follower_control_cmd_ptr;
+    }
+  }
+
+  const auto control_cmd_ptr = sub_control_cmd_.take_data();
+  if (control_cmd_ptr) {
+    if (input_timeout_ < (now() - control_cmd_ptr->stamp).seconds()) {
+      RCLCPP_WARN_THROTTLE(
+        get_logger(), *get_clock(), 3000, "Subscribed control_cmd is timed out.");
+    } else {
+      input_data.control_cmd = *control_cmd_ptr;
+    }
+  }
+
+  // NOTE: Do not check the timeout of gate_operation_mode since the timestamp of this node's output
+  // is used in the vehicle_cmd_gate node, which is updated only when the state changes.
+  const auto gate_operation_mode_ptr = sub_gate_operation_mode_.take_data();
+  if (gate_operation_mode_ptr) {
+    input_data.gate_operation_mode = *gate_operation_mode_ptr;
+  } else {
+    // NOTE: initial state when the data is not subscribed yet.
+    input_data.gate_operation_mode = OperationModeState{};
+    input_data.gate_operation_mode.mode = OperationModeState::UNKNOWN;
+    input_data.gate_operation_mode.is_in_transition = false;
+  }
+
+  const auto control_mode_report_ptr = sub_control_mode_report_.take_data();
+  if (control_mode_report_ptr) {
+    // NOTE: This will be used outside the onTimer function. Therefore, it
+    // has to be a member variable
+    control_mode_report_ = *control_mode_report_ptr;
+  }
+
+  return input_data;
 }
 
 void OperationModeTransitionManager::publishData()

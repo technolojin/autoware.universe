@@ -27,6 +27,7 @@
 
 #include <limits>
 #include <memory>
+#include <optional>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -205,7 +206,6 @@ struct AvoidanceParameters
   // for merging/deviating vehicle
   double th_overhang_distance{0.0};
 
-  // parameters for safety check area
   bool enable_safety_check{false};
   bool check_current_lane{false};
   bool check_shift_side_lane{false};
@@ -277,6 +277,8 @@ struct AvoidanceParameters
   // lost_count and the registered object will be removed when the count exceeds this max count.
   double object_last_seen_threshold{0.0};
 
+  double unstable_classification_time{0.0};
+
   // The avoidance path generation is performed when the shift distance of the
   // avoidance points is greater than this threshold.
   // In multiple targets case: if there are multiple vehicles in a row to be avoided, no new
@@ -306,6 +308,9 @@ struct AvoidanceParameters
   bool use_shorten_margin_immediately{false};
 
   // policy
+  std::string policy_detection_reliability{"reliable"};
+
+  // policy
   std::string policy_approval{"per_shift_line"};
 
   // policy
@@ -320,8 +325,11 @@ struct AvoidanceParameters
   // target velocity matrix
   std::vector<double> velocity_map;
 
-  // Minimum lateral jerk limitation map.
-  std::vector<double> lateral_min_jerk_map;
+  // Minimum lateral jerk limitation map for avoidance maneuver.
+  std::vector<double> avoid_lateral_min_jerk_map;
+
+  // Minimum lateral jerk limitation map for return maneuver.
+  std::vector<double> return_lateral_min_jerk_map;
 
   // Maximum lateral jerk limitation map.
   std::vector<double> lateral_max_jerk_map;
@@ -387,6 +395,10 @@ struct ObjectData  // avoidance target
 
   // distance factor for perception noise (0.0~1.0)
   double distance_factor{0.0};
+
+  // Objects that have not been classified as UNKNOWN for a certain period of time may not be
+  // UNKNOWN.
+  bool is_classification_unstable{false};
 
   // count up when object disappeared. Removed when it exceeds threshold.
   rclcpp::Time last_seen{rclcpp::Clock(RCL_ROS_TIME).now()};
@@ -593,6 +605,14 @@ struct AvoidancePlanningData
   double to_start_point{std::numeric_limits<double>::lowest()};
 
   double to_return_point{std::numeric_limits<double>::max()};
+
+  std::optional<double> distance_to_red_traffic_light{std::nullopt};
+
+  std::optional<lanelet::ConstLanelet> closest_lanelet{std::nullopt};
+
+  bool is_allowed_goal_modification{false};
+
+  bool request_operator{false};
 };
 
 /*
