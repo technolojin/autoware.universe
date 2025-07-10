@@ -278,22 +278,22 @@ bool isPointAboveLaneletMesh(
 
     // For connected meshes, first check if point is inside the triangle
     const Eigen::Vector2d point_xy = point.head<2>();
-    
+
     // Check if point is inside triangle using barycentric coordinates
     const Eigen::Vector2d v0 = tri[2].head<2>() - tri[0].head<2>();
     const Eigen::Vector2d v1 = tri[1].head<2>() - tri[0].head<2>();
     const Eigen::Vector2d v2 = point_xy - tri[0].head<2>();
-    
+
     const double dot00 = v0.dot(v0);
     const double dot01 = v0.dot(v1);
     const double dot02 = v0.dot(v2);
     const double dot11 = v1.dot(v1);
     const double dot12 = v1.dot(v2);
-    
+
     const double inv_denom = 1.0 / (dot00 * dot11 - dot01 * dot01);
     const double u = (dot11 * dot02 - dot01 * dot12) * inv_denom;
     const double v = (dot00 * dot12 - dot01 * dot02) * inv_denom;
-    
+
     // If point is inside triangle, this is the best match - early exit
     // u and v are barycentric coordinates, if both are >= 0 and u + v <= 1,
     // the point is inside the triangle
@@ -301,16 +301,16 @@ bool isPointAboveLaneletMesh(
       // Point is inside the triangle, can't get better than this
       closest_xy_distance = 0.0;
       closest_normal = plane_normal_vec;
-      
+
       // Calculate signed distance to this triangle's plane
       const Eigen::Vector3d vec_to_point = point - tri[0];
       distance_to_closest_surface = plane_normal_vec.dot(vec_to_point);
       found_valid_triangle = true;
-      
+
       // Early exit: no need to check other triangles
       break;
     }
-    
+
     // Point is outside, calculate minimum distance to triangle vertices
     double xy_dist = std::numeric_limits<double>::infinity();
     for (int i = 0; i < 3; ++i) {
@@ -318,11 +318,11 @@ bool isPointAboveLaneletMesh(
       const double dist_to_vertex = (point_xy - vertex_xy).norm();
       xy_dist = std::min(xy_dist, dist_to_vertex);
     }
-    
+
     if (xy_dist < closest_xy_distance) {
       closest_xy_distance = xy_dist;
       closest_normal = plane_normal_vec;
-      
+
       // Calculate signed distance to this triangle's plane
       const Eigen::Vector3d vec_to_point = point - tri[0];
       distance_to_closest_surface = plane_normal_vec.dot(vec_to_point);
@@ -332,7 +332,7 @@ bool isPointAboveLaneletMesh(
 
   // Handle case where no valid triangle was found
   if (!found_valid_triangle) {
-    return true; // Conservative: allow object if no valid surface found
+    return true;  // Conservative: allow object if no valid surface found
   }
 
   // Calculate object bounds relative to the closest surface
@@ -347,7 +347,7 @@ bool isPointAboveLaneletMesh(
     (min_distance <= bottom_distance && bottom_distance <= max_distance)) {
     return true;
   }
-  
+
   return false;
 }
 
