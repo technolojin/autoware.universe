@@ -19,6 +19,7 @@
 #include <autoware/interpolation/linear_interpolation.hpp>
 #include <autoware/motion_utils/resample/resample.hpp>
 #include <autoware/motion_utils/trajectory/trajectory.hpp>
+#include <autoware/object_recognition_utils/object_recognition_utils.hpp>
 #include <autoware_lanelet2_extension/utility/message_conversion.hpp>
 #include <autoware_lanelet2_extension/utility/query.hpp>
 #include <autoware_lanelet2_extension/utility/utilities.hpp>
@@ -30,6 +31,7 @@
 #include <autoware_utils/ros/uuid_helper.hpp>
 
 #include <autoware_perception_msgs/msg/detected_objects.hpp>
+#include <diagnostic_msgs/msg/diagnostic_status.hpp>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
 #include <boost/geometry.hpp>
@@ -50,6 +52,8 @@
 #include <functional>
 #include <limits>
 #include <memory>
+#include <ratio>
+#include <sstream>
 #include <string>
 #include <utility>
 #include <vector>
@@ -364,7 +368,6 @@ MapBasedPredictionNode::MapBasedPredictionNode(const rclcpp::NodeOptions & node_
     google::InitGoogleLogging("map_based_prediction_node");
     google::InstallFailureSignalHandler();
   }
-  enable_delay_compensation_ = declare_parameter<bool>("enable_delay_compensation");
   prediction_time_horizon_.vehicle = declare_parameter<double>("prediction_time_horizon.vehicle");
   prediction_time_horizon_.pedestrian =
     declare_parameter<double>("prediction_time_horizon.pedestrian");
@@ -480,16 +483,29 @@ MapBasedPredictionNode::MapBasedPredictionNode(const rclcpp::NodeOptions & node_
   // publishers
   pub_objects_ = this->create_publisher<PredictedObjects>("~/output/objects", rclcpp::QoS{1});
 
+  // stopwatch
+  stop_watch_ptr_ = std::make_unique<autoware_utils::StopWatch<std::chrono::milliseconds>>();
+  stop_watch_ptr_->tic("cyclic_time");
+  stop_watch_ptr_->tic("processing_time");
+
+  {  // diagnostics
+    diagnostics_interface_ptr_ =
+      std::make_unique<autoware_utils::DiagnosticsInterface>(this, "map_based_prediction");
+
+    // [s] -> [ms]
+    processing_time_tolerance_ms_ = declare_parameter<double>("processing_time_tolerance") * 1e3;
+    processing_time_consecutive_excess_tolerance_ms_ =
+      declare_parameter<double>("processing_time_consecutive_excess_tolerance") * 1e3;
+  }
+
   // debug publishers
   if (use_time_publisher) {
     processing_time_publisher_ =
       std::make_unique<autoware_utils::DebugPublisher>(this, "map_based_prediction");
     published_time_publisher_ = std::make_unique<autoware_utils::PublishedTimePublisher>(this);
-    stop_watch_ptr_ = std::make_unique<autoware_utils::StopWatch<std::chrono::milliseconds>>();
-    stop_watch_ptr_->tic("cyclic_time");
-    stop_watch_ptr_->tic("processing_time");
   }
 
+  // debug time keeper
   if (use_time_keeper) {
     detailed_processing_time_publisher_ =
       this->create_publisher<autoware_utils::ProcessingTimeDetail>(
@@ -500,6 +516,7 @@ MapBasedPredictionNode::MapBasedPredictionNode(const rclcpp::NodeOptions & node_
     predictor_vru_->setTimeKeeper(time_keeper_);
   }
 
+  // debug marker
   if (use_debug_marker) {
     pub_debug_markers_ =
       this->create_publisher<visualization_msgs::msg::MarkerArray>("maneuver", rclcpp::QoS{1});
@@ -532,6 +549,54 @@ rcl_interfaces::msg::SetParametersResult MapBasedPredictionNode::onParam(
   return result;
 }
 
+void MapBasedPredictionNode::updateDiagnostics(
+  const rclcpp::Time & timestamp, double processing_time_ms)
+{
+  diagnostics_interface_ptr_->clear();
+  diagnostics_interface_ptr_->add_key_value("timestamp", timestamp.seconds());
+  diagnostics_interface_ptr_->add_key_value("processing_time_ms", processing_time_ms);
+  // check processing time is in time
+  bool is_processing_in_time = processing_time_ms <= processing_time_tolerance_ms_;
+  diagnostics_interface_ptr_->add_key_value("is_processing_in_time", is_processing_in_time);
+  if (!is_processing_in_time) {
+    // publish warning if the current processing time exceeded
+    std::ostringstream oss;
+    oss << "Processing time exceeded: " << processing_time_tolerance_ms_ << "[ms] < "
+        << processing_time_ms << "[ms]";
+    diagnostics_interface_ptr_->update_level_and_message(
+      diagnostic_msgs::msg::DiagnosticStatus::WARN, oss.str());
+  }
+
+  if (is_processing_in_time || !last_in_time_processing_timestamp_) {
+    last_in_time_processing_timestamp_ = timestamp;
+  }
+
+  // calculate consecutive excess duration
+  const double consecutive_excess_duration_ms =
+    std::chrono::duration<double, std::milli>(
+      std::chrono::nanoseconds(
+        (timestamp - last_in_time_processing_timestamp_.value()).nanoseconds()))
+      .count();
+
+  bool is_consecutive_excess_duration_ok =
+    consecutive_excess_duration_ms < processing_time_consecutive_excess_tolerance_ms_;
+  diagnostics_interface_ptr_->add_key_value(
+    "consecutive_excess_duration_ms", consecutive_excess_duration_ms);
+  diagnostics_interface_ptr_->add_key_value(
+    "is_consecutive_excess_duration_ok", is_consecutive_excess_duration_ok);
+  if (!is_consecutive_excess_duration_ok) {
+    // publish error if the processing time exceeded in a long term
+    std::ostringstream oss;
+    oss << "Processing time exceeded consecutively in a long term: "
+        << processing_time_consecutive_excess_tolerance_ms_ << "[ms] < "
+        << consecutive_excess_duration_ms << "[ms]";
+    diagnostics_interface_ptr_->update_level_and_message(
+      diagnostic_msgs::msg::DiagnosticStatus::ERROR, oss.str());
+  }
+
+  diagnostics_interface_ptr_->publish(timestamp);
+}
+
 void MapBasedPredictionNode::mapCallback(const LaneletMapBin::ConstSharedPtr msg)
 {
   RCLCPP_DEBUG(get_logger(), "[Map Based Prediction]: Start loading lanelet");
@@ -556,7 +621,7 @@ void MapBasedPredictionNode::objectsCallback(const TrackedObjects::ConstSharedPt
   std::unique_ptr<ScopedTimeTrack> st_ptr;
   if (time_keeper_) st_ptr = std::make_unique<ScopedTimeTrack>(__func__, *time_keeper_);
 
-  if (stop_watch_ptr_) stop_watch_ptr_->toc("processing_time", true);
+  stop_watch_ptr_->toc("processing_time", true);
 
   // take traffic_signal
   {
@@ -616,9 +681,11 @@ void MapBasedPredictionNode::objectsCallback(const TrackedObjects::ConstSharedPt
       transformed_object.kinematics.pose_with_covariance.pose = pose_in_map.pose;
     }
 
-    // get tracking label and update it for the prediction
-    const auto & label_ = transformed_object.classification.front().label;
-    const auto label = utils::changeLabelForPrediction(label_, object, lanelet_map_ptr_);
+    // get the maximum probability label from the classification array
+    const auto & label_ =
+      autoware::object_recognition_utils::getHighestProbLabel(transformed_object.classification);
+    // overwrite the label for VRU in specific cases
+    const auto label = utils::changeVRULabelForPrediction(label_, object, lanelet_map_ptr_);
 
     switch (label) {
       case ObjectClassification::PEDESTRIAN:
@@ -664,10 +731,15 @@ void MapBasedPredictionNode::objectsCallback(const TrackedObjects::ConstSharedPt
   // Publish Results
   publish(output, debug_markers);
 
+  // Processing time
+  const auto processing_time_ms = stop_watch_ptr_->toc("processing_time", true);
+  const auto cyclic_time_ms = stop_watch_ptr_->toc("cyclic_time", true);
+
+  // Diagnostics
+  updateDiagnostics(output.header.stamp, processing_time_ms);
+
   // Publish Processing Time
-  if (stop_watch_ptr_) {
-    const auto processing_time_ms = stop_watch_ptr_->toc("processing_time", true);
-    const auto cyclic_time_ms = stop_watch_ptr_->toc("cyclic_time", true);
+  if (processing_time_publisher_) {
     processing_time_publisher_->publish<autoware_internal_debug_msgs::msg::Float64Stamped>(
       "debug/cyclic_time_ms", cyclic_time_ms);
     processing_time_publisher_->publish<autoware_internal_debug_msgs::msg::Float64Stamped>(
@@ -1240,42 +1312,6 @@ Maneuver MapBasedPredictionNode::predictObjectManeuverByLatDiffDistance(
   }
 
   return Maneuver::LANE_FOLLOW;
-}
-
-geometry_msgs::msg::Pose MapBasedPredictionNode::compensateTimeDelay(
-  const geometry_msgs::msg::Pose & delayed_pose, const geometry_msgs::msg::Twist & twist,
-  const double dt) const
-{
-  if (!enable_delay_compensation_) {
-    return delayed_pose;
-  }
-
-  /*  == Nonlinear model ==
-   *
-   * x_{k+1}   = x_k + vx_k * cos(yaw_k) * dt - vy_k * sin(yaw_k) * dt
-   * y_{k+1}   = y_k + vx_k * sin(yaw_k) * dt + vy_k * cos(yaw_k) * dt
-   * yaw_{k+1} = yaw_k + (wz_k) * dt
-   *
-   */
-
-  const double vx = twist.linear.x;
-  const double vy = twist.linear.y;
-  const double wz = twist.angular.z;
-  const double prev_yaw = tf2::getYaw(delayed_pose.orientation);
-  const double prev_x = delayed_pose.position.x;
-  const double prev_y = delayed_pose.position.y;
-  const double prev_z = delayed_pose.position.z;
-
-  const double curr_x = prev_x + vx * std::cos(prev_yaw) * dt - vy * std::sin(prev_yaw) * dt;
-  const double curr_y = prev_y + vx * std::sin(prev_yaw) * dt + vy * std::cos(prev_yaw) * dt;
-  const double curr_z = prev_z;
-  const double curr_yaw = prev_yaw + wz * dt;
-
-  geometry_msgs::msg::Pose current_pose;
-  current_pose.position = autoware_utils::create_point(curr_x, curr_y, curr_z);
-  current_pose.orientation = autoware_utils::create_quaternion_from_yaw(curr_yaw);
-
-  return current_pose;
 }
 
 double MapBasedPredictionNode::calcRightLateralOffset(
