@@ -1,13 +1,12 @@
 <?xml version="1.0"?>
 <launch>
   <arg name="use_vector_map" default="false" description="use vector map in prediction"/>
-  <arg name="use_ml_prediction" default="false" description="use ml model instead of rule-based algorithm"/>
+  <arg name="use_ml_prediction" default="true" description="use ml model instead of rule-based algorithm"/>
   <arg name="input/objects" default="/perception/object_recognition/tracking/objects"/>
-  <let name="simpl_data_path" value="$(env HOME)/autoware_data/simpl"/>
+  <arg name="simpl_data_path" default="$(env HOME)/autoware_data/simpl"/>
   <arg name="simpl_param_path" default="$(find-pkg-share autoware_simpl)/config/simpl.param.yaml"/>
 
   <group if="$(var use_vector_map)">
-    <set_remap from="objects" to="/perception/object_recognition/objects"/>
     <group unless="$(var use_ml_prediction)">
       <include file="$(find-pkg-share autoware_map_based_prediction)/launch/map_based_prediction.launch.xml">
         <arg name="input_topic" value="$(var input/objects)"/>
