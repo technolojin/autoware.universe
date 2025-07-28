@@ -442,8 +442,19 @@ bool correctWithReferenceShapeAndPose(
     }
   }
 
-  Eigen::Vector3d ex = (Eigen::Vector3d(local_c1.x() / std::abs(local_c1.x()), 0, 0));
-  Eigen::Vector3d ey = (Eigen::Vector3d(0, local_c1.y() / std::abs(local_c1.y()), 0));
+  Eigen::Vector3d ex, ey;
+  // Safety check for division by zero
+  if (std::abs(local_c1.x()) < 1e-6) {
+    ex = Eigen::Vector3d(1.0, 0, 0);  // Default to positive x direction
+  } else {
+    ex = Eigen::Vector3d(local_c1.x() / std::abs(local_c1.x()), 0, 0);
+  }
+  
+  if (std::abs(local_c1.y()) < 1e-6) {
+    ey = Eigen::Vector3d(0, 1.0, 0);  // Default to positive y direction
+  } else {
+    ey = Eigen::Vector3d(0, local_c1.y() / std::abs(local_c1.y()), 0);
+  }
 
   double length;
   if (
