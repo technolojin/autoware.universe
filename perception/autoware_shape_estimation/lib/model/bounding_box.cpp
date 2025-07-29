@@ -79,6 +79,16 @@ bool BoundingBoxShapeModel::fitLShape(
   const pcl::PointCloud<pcl::PointXYZ> & cluster, const float min_angle, const float max_angle,
   autoware_perception_msgs::msg::Shape & shape_output, geometry_msgs::msg::Pose & pose_output)
 {
+  // Safety check for empty cluster
+  if (cluster.empty()) {
+    return false;  // Cannot fit bounding box to empty cluster
+  }
+  
+  // Safety check for invalid angle range
+  if (min_angle >= max_angle) {
+    return false;  // Invalid angle range
+  }
+
   // calc min and max z for height
   float min_z = cluster.empty() ? 0.0 : cluster.at(0).z;
   float max_z = cluster.empty() ? 0.0 : cluster.at(0).z;
