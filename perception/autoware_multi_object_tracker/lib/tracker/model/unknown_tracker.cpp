@@ -227,7 +227,7 @@ bool UnknownTracker::getTrackedObject(
   // get the object
   object = object_;
   object.time = time_object;
-  object.existence_probability = getTotalExistenceProbability();
+  object.existence_probability = total_existence_probability_;
 
   if (enable_velocity_estimation_) {
     // predict from motion model

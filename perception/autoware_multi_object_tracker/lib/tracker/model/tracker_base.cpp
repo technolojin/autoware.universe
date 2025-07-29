@@ -30,12 +30,12 @@ float updateProbability(
   const bool clamp = true)
 {
   float probability =
-    (prior * true_positive) / (prior * true_positive + (1 - prior) * false_positive);
+    (prior * true_positive) / (prior * true_positive + (1.0f - prior) * false_positive);
 
   if (clamp) {
     // Normalize the probability to [0.1, 0.999]
-    constexpr float max_updated_probability = 0.999;
-    constexpr float min_updated_probability = 0.100;
+    constexpr float max_updated_probability = 0.999f;
+    constexpr float min_updated_probability = 0.100f;
     probability = std::clamp(probability, min_updated_probability, max_updated_probability);
   }
 

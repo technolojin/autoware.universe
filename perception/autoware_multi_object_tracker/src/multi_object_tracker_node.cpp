@@ -20,6 +20,8 @@
 #include "autoware/multi_object_tracker/object_model/types.hpp"
 #include "autoware/multi_object_tracker/uncertainty/uncertainty_processor.hpp"
 
+#include <autoware_utils/ros/uuid_helper.hpp>
+
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
@@ -408,6 +410,13 @@ void MultiObjectTracker::publish(const rclcpp::Time & time) const
   output_msg.header.frame_id = world_frame_id_;
   const rclcpp::Time object_time = enable_delay_compensation_ ? this->now() : time;
   processor_->getTrackedObjects(object_time, output_msg);
+
+  // debug: print all of object existence probabilities and its uuid
+  for (const auto & object : output_msg.objects) {
+    RCLCPP_INFO(
+      this->get_logger(), "Object UUID: %s, Existence Probability: %.4f",
+      autoware_utils::to_hex_string(object.object_id).c_str(), object.existence_probability);
+  }
 
   // Publish
   {

@@ -303,7 +303,7 @@ bool VehicleTracker::getTrackedObject(
   }
   object = object_;
   object.time = time;
-  object.existence_probability = getTotalExistenceProbability();
+  object.existence_probability = total_existence_probability_;
 
   // predict from motion model
   auto & pose = object.pose;
