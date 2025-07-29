@@ -4,7 +4,7 @@
   <arg name="use_ml_prediction" default="true" description="use ml model instead of rule-based algorithm"/>
   <arg name="input/objects" default="/perception/object_recognition/tracking/objects"/>
   <arg name="simpl_data_path" default="$(env HOME)/autoware_data/simpl"/>
-  <arg name="simpl_param_path" default="$(find-pkg-share autoware_simpl)/config/simpl.param.yaml"/>
+  <arg name="simpl_param_path" default="$(find-pkg-share autoware_simpl_prediction)/config/simpl.param.yaml"/>
 
   <group if="$(var use_vector_map)">
     <group unless="$(var use_ml_prediction)">
@@ -15,7 +15,7 @@
       </include>
     </group>
     <group if="$(var use_ml_prediction)">
-      <include file="$(find-pkg-share autoware_simpl)/launch/simpl.launch.xml">
+      <include file="$(find-pkg-share autoware_simpl_prediction)/launch/simpl.launch.xml">
         <arg name="input/objects" value="$(var input/objects)"/>
         <arg name="output/objects" value="/perception/object_recognition/objects"/>
         <arg name="data_path" value="$(var simpl_data_path)"/>
