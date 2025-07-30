@@ -49,6 +49,7 @@ private:
   int total_measurement_count_;
   rclcpp::Time last_update_with_measurement_time_;
   std::vector<float> existence_probabilities_;
+  float total_existence_probability_;
 
   // cache
   mutable rclcpp::Time cached_time_;
@@ -57,8 +58,6 @@ private:
 public:
   Tracker(const rclcpp::Time & time, const types::DynamicObject & object);
   virtual ~Tracker() = default;
-  
-  float total_existence_probability_;
 
   // tracker probabilities
   void initializeExistenceProbabilities(

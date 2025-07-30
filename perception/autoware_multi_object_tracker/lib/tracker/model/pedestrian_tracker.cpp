@@ -206,7 +206,7 @@ bool PedestrianTracker::getTrackedObject(
 
   object = object_;
   object.time = time;
-  object.existence_probability = total_existence_probability_;
+  object.existence_probability = getTotalExistenceProbability();
 
   // predict from motion model
   auto & pose = object.pose;
