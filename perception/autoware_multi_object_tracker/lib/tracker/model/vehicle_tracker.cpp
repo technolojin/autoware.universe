@@ -340,12 +340,12 @@ bool VehicleTracker::getTrackedObject(
     if (std::abs(vel_x) < sigma_x) {
       // if the velocity is smaller than 1 sigma, set to 0
       vel_x = 0.0;
-    } else if (vel_x < 0.0) {
-      // if the velocity is negative, set to 1 sigma lower
-      vel_x = vel_x - sigma_x;
+    } else if (vel_x > 0.0) {
+      // if the velocity is positive, set to 1 sigma lower
+      vel_x -= sigma_x;
     } else {
-      // if the velocity is positive, set to 1 sigma higher
-      vel_x = vel_x + sigma_x;
+      // if the velocity is negative, set to 1 sigma higher
+      vel_x += sigma_x;
     }
 
   }

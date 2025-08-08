@@ -253,6 +253,35 @@ bool UnknownTracker::getTrackedObject(
     if (!enable_motion_output_) {
       object.twist.linear.x = 0.0;
       object.twist.linear.y = 0.0;
+    } else {
+      // twist regularization
+      // export twist, 1 sigma of the covariance lower
+      double & vel_x = object.twist.linear.x;
+      double & vel_y = object.twist.linear.y;
+      double & cov_x = object.twist_cov[autoware_utils::xyzrpy_covariance_index::XYZRPY_COV_IDX::X_X];
+      double & cov_y = object.twist_cov[autoware_utils::xyzrpy_covariance_index::XYZRPY_COV_IDX::Y_Y];
+      double sigma_x = std::sqrt(cov_x);
+      double sigma_y = std::sqrt(cov_y);
+      if (std::abs(vel_x) < sigma_x) {
+        // if the velocity is smaller than 1 sigma, set to 0
+        vel_x = 0.0;
+      } else if (vel_x > 0.0) {
+        // if the velocity is negative, set to 1 sigma lower
+        vel_x -= sigma_x;
+      } else {
+        // if the velocity is positive, set to 1 sigma higher
+        vel_x += sigma_x;
+      }
+      if (std::abs(vel_y) < sigma_y) {
+        // if the velocity is smaller than 1 sigma, set to 0
+        vel_y = 0.0;
+      } else if (vel_y > 0.0) {
+        // if the velocity is negative, set to 1 sigma lower
+        vel_y -= sigma_y;
+      } else {
+        // if the velocity is positive, set to 1 sigma higher
+        vel_y += sigma_y;
+      }
     }
   }
 
