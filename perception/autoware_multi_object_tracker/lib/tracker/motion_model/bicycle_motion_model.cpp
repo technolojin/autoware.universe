@@ -150,10 +150,12 @@ bool BicycleMotionModel::updateStatePoseHead(
   double lf = length * motion_params_.lf_ratio;
   lr = std::max(lr, motion_params_.lr_min);
   lf = std::max(lf, motion_params_.lf_min);
-  const double x1 = x - lr * std::cos(yaw);
-  const double y1 = y - lr * std::sin(yaw);
-  const double x2 = x + lf * std::cos(yaw);
-  const double y2 = y + lf * std::sin(yaw);
+  const double cos_yaw = std::cos(yaw);
+  const double sin_yaw = std::sin(yaw);
+  const double x1 = x - lr * cos_yaw;
+  const double y1 = y - lr * sin_yaw;
+  const double x2 = x + lf * cos_yaw;
+  const double y2 = y + lf * sin_yaw;
 
   // update state
   constexpr int DIM_Y = 4;
@@ -167,16 +169,29 @@ bool BicycleMotionModel::updateStatePoseHead(
   C(3, IDX::Y2) = 1.0;
 
   Eigen::Matrix<double, DIM_Y, DIM_Y> R = Eigen::Matrix<double, DIM_Y, DIM_Y>::Zero();
-  R(0, 0) = pose_cov[XYZRPY_COV_IDX::X_X];
-  R(0, 1) = pose_cov[XYZRPY_COV_IDX::X_Y];
-  R(1, 0) = pose_cov[XYZRPY_COV_IDX::Y_X];
-  R(1, 1) = pose_cov[XYZRPY_COV_IDX::Y_Y];
-  R(2, 2) = pose_cov[XYZRPY_COV_IDX::X_X];
-  R(2, 3) = pose_cov[XYZRPY_COV_IDX::X_Y];
-  R(3, 2) = pose_cov[XYZRPY_COV_IDX::Y_X];
-  R(3, 3) = pose_cov[XYZRPY_COV_IDX::Y_Y];
 
-  // todo: implement yaw covariance
+  // Get input covariances
+  const double x_var = pose_cov[XYZRPY_COV_IDX::X_X];
+  const double y_var = pose_cov[XYZRPY_COV_IDX::Y_Y]; 
+  const double xy_cov = pose_cov[XYZRPY_COV_IDX::X_Y];
+  const double yaw_var = pose_cov[XYZRPY_COV_IDX::YAW_YAW];
+  
+  // Jacobian matrix: J = ∂[x1,y1,x2,y2]/∂[x,y,yaw]
+  constexpr int DIM_INPUT = 3; // [x, y, yaw]
+  Eigen::Matrix<double, DIM_Y, DIM_INPUT> J;
+  J << 1.0, 0.0, -lr * sin_yaw,  // ∂x1/∂[x,y,yaw]
+       0.0, 1.0,  lr * cos_yaw,  // ∂y1/∂[x,y,yaw]
+       1.0, 0.0,  lf * sin_yaw,  // ∂x2/∂[x,y,yaw] 
+       0.0, 1.0, -lf * cos_yaw;  // ∂y2/∂[x,y,yaw]
+  
+  // Input covariance matrix
+  Eigen::Matrix<double, DIM_INPUT, DIM_INPUT> Sigma_input;
+  Sigma_input << x_var,  xy_cov, 0.0,
+                 xy_cov, y_var,  0.0,
+                 0.0,    0.0,    yaw_var;
+  
+  // Transform covariance: R = J * Sigma_input * J^T
+  R = J * Sigma_input * J.transpose();
 
   return ekf_.update(Y, C, R);
 }
@@ -212,10 +227,12 @@ bool BicycleMotionModel::updateStatePoseHeadVel(
   double lf = length * motion_params_.lf_ratio;
   lr = std::max(lr, motion_params_.lr_min);
   lf = std::max(lf, motion_params_.lf_min);
-  const double x1 = x - lr * std::cos(yaw);
-  const double y1 = y - lr * std::sin(yaw);
-  const double x2 = x + lf * std::cos(yaw);
-  const double y2 = y + lf * std::sin(yaw);
+  const double cos_yaw = std::cos(yaw);
+  const double sin_yaw = std::sin(yaw);
+  const double x1 = x - lr * cos_yaw;
+  const double y1 = y - lr * sin_yaw;
+  const double x2 = x + lf * cos_yaw;
+  const double y2 = y + lf * sin_yaw;
 
   const double yaw_track = getYawState();
   const double yaw_delta = yaw - yaw_track;
@@ -235,18 +252,32 @@ bool BicycleMotionModel::updateStatePoseHeadVel(
   C(4, IDX::VX) = 1.0;
   C(5, IDX::VY) = 1.0;
 
-  // todo: add yaw covariance in lateral position
   // todo: if wheel_base is changed a lot, add covariance in longitudinal position
-
   Eigen::Matrix<double, DIM_Y, DIM_Y> R = Eigen::Matrix<double, DIM_Y, DIM_Y>::Zero();
-  R(0, 0) = pose_cov[XYZRPY_COV_IDX::X_X];
-  R(0, 1) = pose_cov[XYZRPY_COV_IDX::X_Y];
-  R(1, 0) = pose_cov[XYZRPY_COV_IDX::Y_X];
-  R(1, 1) = pose_cov[XYZRPY_COV_IDX::Y_Y];
-  R(2, 2) = pose_cov[XYZRPY_COV_IDX::X_X];
-  R(2, 3) = pose_cov[XYZRPY_COV_IDX::X_Y];
-  R(3, 2) = pose_cov[XYZRPY_COV_IDX::Y_X];
-  R(3, 3) = pose_cov[XYZRPY_COV_IDX::Y_Y];
+
+  // Get input covariances
+  const double x_var = pose_cov[XYZRPY_COV_IDX::X_X];
+  const double y_var = pose_cov[XYZRPY_COV_IDX::Y_Y]; 
+  const double xy_cov = pose_cov[XYZRPY_COV_IDX::X_Y];
+  const double yaw_var = pose_cov[XYZRPY_COV_IDX::YAW_YAW];
+  
+  // Jacobian matrix: J = ∂[x1,y1,x2,y2]/∂[x,y,yaw]
+  constexpr int DIM_INPUT = 3; // [x, y, yaw]
+  Eigen::Matrix<double, DIM_Y, DIM_INPUT> J;
+  J << 1.0, 0.0, -lr * sin_yaw,  // ∂x1/∂[x,y,yaw]
+       0.0, 1.0,  lr * cos_yaw,  // ∂y1/∂[x,y,yaw]
+       1.0, 0.0,  lf * sin_yaw,  // ∂x2/∂[x,y,yaw] 
+       0.0, 1.0, -lf * cos_yaw;  // ∂y2/∂[x,y,yaw]
+  
+  // Input covariance matrix
+  Eigen::Matrix<double, DIM_INPUT, DIM_INPUT> Sigma_input;
+  Sigma_input << x_var,  xy_cov, 0.0,
+                 xy_cov, y_var,  0.0,
+                 0.0,    0.0,    yaw_var;
+  
+  // Transform covariance: R = J * Sigma_input * J^T
+  R = J * Sigma_input * J.transpose();
+
   R(4, 4) = twist_cov[XYZRPY_COV_IDX::X_X];
   R(5, 5) = twist_cov[XYZRPY_COV_IDX::Y_Y];
 
@@ -392,7 +423,6 @@ bool BicycleMotionModel::predictStateStep(const double dt, KalmanFilter & ekf) c
   constexpr double gamma = 0.69314718056;  // natural logarithm of 2
   const double decay_rate = std::exp(-dt * gamma / 2.0);
   X_next_t(IDX::VY) = vel_y * decay_rate;  // slip angle decays exponentially
-  // X_next_t(IDX::VY) = vel_y;
 
   // State transition matrix A
   ProcessMat A;
@@ -422,7 +452,6 @@ bool BicycleMotionModel::predictStateStep(const double dt, KalmanFilter & ekf) c
 
   A(IDX::VX, IDX::VX) = 1.0;  // velocity does not change
   A(IDX::VY, IDX::VY) = decay_rate;
-  // A(IDX::VY, IDX::VY) = 1.0;
 
   // // Process noise covariance Q
   // double q_stddev_yaw_rate = motion_params_.q_stddev_yaw_rate_min;
@@ -456,7 +485,8 @@ bool BicycleMotionModel::predictStateStep(const double dt, KalmanFilter & ekf) c
   // }
 
   // Process noise covariance Q
-  double q_cov_slip_rate = motion_params_.q_cov_slip_rate_min + 0.6;
+  // double q_cov_slip_rate = motion_params_.q_cov_slip_rate_min + 0.0001;
+  double q_cov_slip_rate = 0.0001;
   constexpr double q_cov_length = 1.0;  // length uncertainty
   const double q_stddev_yaw_rate = 0.01;
   const double q_stddev_head = q_stddev_yaw_rate * wheel_base * dt; // yaw uncertainty
@@ -466,25 +496,25 @@ bool BicycleMotionModel::predictStateStep(const double dt, KalmanFilter & ekf) c
 
   const double q_cov_vel_x = motion_params_.q_cov_acc_long * dt2;
   const double q_cov_vel_y = q_cov_slip_rate * dt2 * 4.0;
-  const double q_cov_x = 0.25 * motion_params_.q_cov_acc_long * dt4;
-  const double q_cov_y = 0.25 * motion_params_.q_cov_acc_lat * dt4;
-  // const double q_cov_x2 = 0.25 * motion_params_.q_cov_acc_long * dt4 + q_cov_length * dt2;
-  // const double q_cov_y2 = 0.25 * motion_params_.q_cov_acc_lat * dt4 + q_stddev_head * q_stddev_head; 
-  const double q_cov_x2 = q_cov_length * dt2;
-  const double q_cov_y2 = q_stddev_head * q_stddev_head; 
+  const double q_cov_long = 0.25 * motion_params_.q_cov_acc_long * dt4;
+  const double q_cov_lat = 0.25 * motion_params_.q_cov_acc_lat * dt4;
+  // const double q_cov_long2 = 0.25 * motion_params_.q_cov_acc_long * dt4 + q_cov_length * dt2;
+  // const double q_cov_lat2 = 0.25 * motion_params_.q_cov_acc_lat * dt4 + q_stddev_head * q_stddev_head; 
+  const double q_cov_long2 = q_cov_length * dt2;
+  const double q_cov_lat2 = q_stddev_head * q_stddev_head;
 
   StateMat Q;
   Q.setZero();
   const double sin_2yaw = std::sin(2.0 * yaw);
-  Q(IDX::X1, IDX::X1) = (q_cov_x * cos_yaw * cos_yaw + q_cov_y * sin_yaw * sin_yaw);
-  Q(IDX::X1, IDX::Y1) = (0.5f * (q_cov_x - q_cov_y) * sin_2yaw);
+  Q(IDX::X1, IDX::X1) = (q_cov_long * cos_yaw * cos_yaw + q_cov_lat * sin_yaw * sin_yaw);
+  Q(IDX::X1, IDX::Y1) = (0.5f * (q_cov_long - q_cov_lat) * sin_2yaw);
   Q(IDX::Y1, IDX::X1) = Q(IDX::X1, IDX::Y1);
-  Q(IDX::Y1, IDX::Y1) = (q_cov_x * sin_yaw * sin_yaw + q_cov_y * cos_yaw * cos_yaw);
+  Q(IDX::Y1, IDX::Y1) = (q_cov_long * sin_yaw * sin_yaw + q_cov_lat * cos_yaw * cos_yaw);
 
-  Q(IDX::X2, IDX::X2) = (q_cov_x2 * cos_yaw * cos_yaw + q_cov_y2 * sin_yaw * sin_yaw);
-  Q(IDX::X2, IDX::Y2) = (0.5f * (q_cov_x2 - q_cov_y2) * sin_2yaw);
+  Q(IDX::X2, IDX::X2) = (q_cov_long2 * cos_yaw * cos_yaw + q_cov_lat2 * sin_yaw * sin_yaw);
+  Q(IDX::X2, IDX::Y2) = (0.5f * (q_cov_long2 - q_cov_lat2) * sin_2yaw);
   Q(IDX::Y2, IDX::X2) = Q(IDX::X2, IDX::Y2);
-  Q(IDX::Y2, IDX::Y2) = (q_cov_x2 * sin_yaw * sin_yaw + q_cov_y2 * cos_yaw * cos_yaw);
+  Q(IDX::Y2, IDX::Y2) = (q_cov_long2 * sin_yaw * sin_yaw + q_cov_lat2 * cos_yaw * cos_yaw);
 
   Q(IDX::VX, IDX::VX) = q_cov_vel_x;
   Q(IDX::VY, IDX::VY) = q_cov_vel_y;
