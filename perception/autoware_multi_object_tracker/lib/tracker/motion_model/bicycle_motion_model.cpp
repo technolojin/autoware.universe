@@ -220,13 +220,15 @@ bool BicycleMotionModel::updateStatePoseHeadVel(
   double lf = length * motion_params_.lf_ratio;
   lr = std::max(lr, motion_params_.lr_min);
   lf = std::max(lf, motion_params_.lf_min);
-  const double x1 = x - lr * std::cos(yaw);
-  const double y1 = y - lr * std::sin(yaw);
-  const double x2 = x + lf * std::cos(yaw);
-  const double y2 = y + lf * std::sin(yaw);
+  const double cos_yaw = std::cos(yaw);
+  const double sin_yaw = std::sin(yaw);
+  const double x1 = x - lr * cos_yaw;
+  const double y1 = y - lr * sin_yaw;
+  const double x2 = x + lf * cos_yaw;
+  const double y2 = y + lf * sin_yaw;
 
-  const double vel_x = vel_long * std::cos(yaw) - vel_lat * std::sin(yaw);
-  const double vel_y = vel_long * std::sin(yaw) + vel_lat * std::cos(yaw);
+  const double vel_x = vel_long * cos_yaw - vel_lat * sin_yaw;
+  const double vel_y = vel_long * sin_yaw + vel_lat * cos_yaw;
 
   // update state
   constexpr int DIM_Y = 6;
@@ -253,8 +255,12 @@ bool BicycleMotionModel::updateStatePoseHeadVel(
   R(2, 3) = pose_cov[XYZRPY_COV_IDX::X_Y];
   R(3, 2) = pose_cov[XYZRPY_COV_IDX::Y_X];
   R(3, 3) = pose_cov[XYZRPY_COV_IDX::Y_Y];
-  R(4, 4) = twist_cov[XYZRPY_COV_IDX::X_X];
-  R(5, 5) = twist_cov[XYZRPY_COV_IDX::Y_Y];
+  R(4, 4) = twist_cov[XYZRPY_COV_IDX::X_X] * cos_yaw * cos_yaw +
+            twist_cov[XYZRPY_COV_IDX::X_Y] * sin_yaw * sin_yaw;
+  R(4, 5) = 0.5 * (twist_cov[XYZRPY_COV_IDX::X_X] - twist_cov[XYZRPY_COV_IDX::X_Y]) * std::sin(2.0 * yaw);
+  R(5, 4) = R(4, 5);
+  R(5, 5) = twist_cov[XYZRPY_COV_IDX::X_X] * sin_yaw * sin_yaw +
+            twist_cov[XYZRPY_COV_IDX::X_Y] * cos_yaw * cos_yaw;
 
   return ekf_.update(Y, C, R);
 }
