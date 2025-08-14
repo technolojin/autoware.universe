@@ -157,6 +157,44 @@ bool BicycleMotionModel::updateStatePoseHead(
   const double x2 = x + lf * cos_yaw;
   const double y2 = y + lf * sin_yaw;
 
+  // debug
+  {
+    StateVec X_t;
+    ekf_.getX(X_t);
+    // check if the state is consistent with the input
+    const double x1_t = X_t(IDX::X1);
+    const double y1_t = X_t(IDX::Y1);
+    const double x2_t = X_t(IDX::X2);
+    const double y2_t = X_t(IDX::Y2);
+
+    const double s1_p1_distance = std::hypot(x1 - x1_t, y1 - y1_t);
+    const double s2_p2_distance = std::hypot(x2 - x2_t, y2 - y2_t);
+    const double s1_p2_distance = std::hypot(x2 - x1_t, y2 - y1_t);
+    const double s2_p1_distance = std::hypot(x1 - x2_t, y1 - y2_t);
+    const double score_order = s1_p1_distance + s2_p2_distance;
+    const double score_cross = s1_p2_distance + s2_p1_distance;
+    if (score_order > score_cross) {
+      RCLCPP_WARN(
+        logger_,
+        "BicycleMotionModel::updateStatePoseHead: state is not consistent with the input. "
+        "s1_p1_distance: %f, s2_p2_distance: %f, s1_p2_distance: %f, s2_p1_distance: %f",
+        s1_p1_distance, s2_p2_distance, s1_p2_distance, s2_p1_distance);
+    }
+
+    double vec_track_x = x2_t - x1_t;
+    double vec_track_y = y2_t - y1_t;
+    double vec_meas_x = x2 - x1;
+    double vec_meas_y = y2 - y1;
+    double inner_product = vec_track_x * vec_meas_x + vec_track_y * vec_meas_y;
+    if (inner_product < 0.0) {
+      RCLCPP_WARN(
+        logger_,
+        "BicycleMotionModel::updateStatePoseHead: state is not consistent with the input. "
+        "inner_product: %f, x1: %f, y1: %f, x2: %f, y2: %f, x1_t: %f, y1_t: %f, x2_t: %f, y2_t: %f",
+        inner_product, x1, y1, x2, y2, x1_t, y1_t, x2_t, y2_t);
+    }
+  }
+
   // update state
   constexpr int DIM_Y = 4;
   Eigen::Matrix<double, DIM_Y, 1> Y;
@@ -179,10 +217,10 @@ bool BicycleMotionModel::updateStatePoseHead(
   // Jacobian matrix: J = ∂[x1,y1,x2,y2]/∂[x,y,yaw]
   constexpr int DIM_INPUT = 3; // [x, y, yaw]
   Eigen::Matrix<double, DIM_Y, DIM_INPUT> J;
-  J << 1.0, 0.0, -lr * sin_yaw,  // ∂x1/∂[x,y,yaw]
-       0.0, 1.0,  lr * cos_yaw,  // ∂y1/∂[x,y,yaw]
-       1.0, 0.0,  lf * sin_yaw,  // ∂x2/∂[x,y,yaw] 
-       0.0, 1.0, -lf * cos_yaw;  // ∂y2/∂[x,y,yaw]
+  J << 1.0, 0.0,  lr * sin_yaw,  // ∂x1/∂[x,y,yaw]
+       0.0, 1.0, -lr * cos_yaw,  // ∂y1/∂[x,y,yaw]
+       1.0, 0.0, -lf * sin_yaw,  // ∂x2/∂[x,y,yaw] 
+       0.0, 1.0,  lf * cos_yaw;  // ∂y2/∂[x,y,yaw]
   
   // Input covariance matrix
   Eigen::Matrix<double, DIM_INPUT, DIM_INPUT> Sigma_input;
@@ -263,11 +301,11 @@ bool BicycleMotionModel::updateStatePoseHeadVel(
   
   // Jacobian matrix: J = ∂[x1,y1,x2,y2]/∂[x,y,yaw]
   constexpr int DIM_INPUT = 3; // [x, y, yaw]
-  Eigen::Matrix<double, DIM_Y, DIM_INPUT> J;
-  J << 1.0, 0.0, -lr * sin_yaw,  // ∂x1/∂[x,y,yaw]
-       0.0, 1.0,  lr * cos_yaw,  // ∂y1/∂[x,y,yaw]
-       1.0, 0.0,  lf * sin_yaw,  // ∂x2/∂[x,y,yaw] 
-       0.0, 1.0, -lf * cos_yaw;  // ∂y2/∂[x,y,yaw]
+  Eigen::Matrix<double, 4, DIM_INPUT> J;
+  J << 1.0, 0.0,  lr * sin_yaw,  // ∂x1/∂[x,y,yaw]
+       0.0, 1.0, -lr * cos_yaw,  // ∂y1/∂[x,y,yaw]
+       1.0, 0.0, -lf * sin_yaw,  // ∂x2/∂[x,y,yaw] 
+       0.0, 1.0,  lf * cos_yaw;  // ∂y2/∂[x,y,yaw]
   
   // Input covariance matrix
   Eigen::Matrix<double, DIM_INPUT, DIM_INPUT> Sigma_input;
@@ -276,7 +314,7 @@ bool BicycleMotionModel::updateStatePoseHeadVel(
                  0.0,    0.0,    yaw_var;
   
   // Transform covariance: R = J * Sigma_input * J^T
-  R = J * Sigma_input * J.transpose();
+  R.block<4, 4>(0, 0) = J * Sigma_input * J.transpose();
 
   R(4, 4) = twist_cov[XYZRPY_COV_IDX::X_X];
   R(5, 5) = twist_cov[XYZRPY_COV_IDX::Y_Y];
@@ -329,17 +367,6 @@ bool BicycleMotionModel::limitStates()
       X_t(IDX::VY) = X_t(IDX::VY) < 0 ? -vel_lat_limit : vel_lat_limit;
 
     }
-  }
-
-  // debug message
-  {
-    const double wheel_base = std::hypot(X_t(IDX::X2) - X_t(IDX::X1), X_t(IDX::Y2) - X_t(IDX::Y1));
-    const double yaw_rate = X_t(IDX::VY) / wheel_base;  // [rad/s] yaw rate
-    RCLCPP_WARN(
-      logger_,
-      "BicycleMotionModel::limitStates: current state: x1: %f, y1: %f, vx: %f, vy: %f, wheel_base: %f, yaw_rate: %f",
-      X_t(IDX::X1), X_t(IDX::Y1), X_t(IDX::VX), X_t(IDX::VY), wheel_base, yaw_rate
-    );
   }
 
   // overwrite state
@@ -490,16 +517,6 @@ bool BicycleMotionModel::predictStateStep(const double dt, KalmanFilter & ekf) c
   Q(IDX::X2, IDX::Y2) = (0.5f * (q_cov_long2 - q_cov_lat2) * sin_2yaw);
   Q(IDX::Y2, IDX::X2) = Q(IDX::X2, IDX::Y2);
   Q(IDX::Y2, IDX::Y2) = (q_cov_long2 * sin_yaw * sin_yaw + q_cov_lat2 * cos_yaw * cos_yaw);
-
-  // covariance between X1 and X2, Y1 and Y2, shares the same covariance of rear axle
-  Q(IDX::X1, IDX::X2) = Q(IDX::X1, IDX::X1);
-  Q(IDX::X2, IDX::X1) = Q(IDX::X1, IDX::X1);
-  Q(IDX::Y1, IDX::Y2) = Q(IDX::Y1, IDX::Y1);
-  Q(IDX::Y2, IDX::Y1) = Q(IDX::Y1, IDX::Y1);
-  Q(IDX::X1, IDX::Y2) = Q(IDX::X1, IDX::Y1);
-  Q(IDX::Y2, IDX::X1) = Q(IDX::X1, IDX::Y1);
-  Q(IDX::Y1, IDX::X2) = Q(IDX::X1, IDX::Y1); 
-  Q(IDX::X2, IDX::Y1) = Q(IDX::X1, IDX::Y1);
 
   const double q_cov_vel_long = motion_params_.q_cov_acc_long * dt2;
   const double q_cov_vel_lat = motion_params_.q_cov_acc_lat * dt2;
