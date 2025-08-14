@@ -339,28 +339,61 @@ bool BicycleMotionModel::adjustPosition(const double & delta_x, const double & d
 
 bool BicycleMotionModel::predictStateStep(const double dt, KalmanFilter & ekf) const
 {
+  /* model and model equations
+   * 
+   * x1, y1: rear wheel position
+   * x2, y2: front wheel position
+   * vel_x, vel_y: ground velocity of front wheel
+   *
+   * wheel_base = sqrt((x2 - x1)^2 + (y2 - y1)^2) // length of the vehicle, consistent
+   * yaw = atan2(y2 - y1, x2 - x1) // head direction
+   * sin_yaw = sin(yaw) = (y2 - y1) / wheel_base
+   * cos_yaw = cos(yaw) = (x2 - x1) / wheel_base
+   * 
+   * theta = atan2(vel_y, vel_x)  // velocity direction
+   * vel_head = sqrt(vel_x^2 + vel_y^2) // head velocity, consistent
+   * 
+   * steer_angle = theta - yaw // front wheel steer angle
+   * radius = wheel_base / tan(steer_angle) // turning radius
+   * vel_long = vel_head * cos(steer_angle) // longitudinal velocity
+   *
+   * tan(theta - yaw) = ( tan(theta) - tan(yaw) )/( 1 + tan(theta) * tan(yaw) ) // tan of the difference of two angles
+   *                  = ( vel_y / vel_x - sin_yaw / cos_yaw ) / ( 1 + (vel_y / vel_x) * (sin_yaw / cos_yaw) )
+   * cos(theta - yaw) = cos(theta) * cos(yaw) + sin(theta) * sin(yaw) // cos of the difference of two angles
+                      = (cos_yaw * vel_x + sin_yaw * vel_y) / sqrt(vel_x^2 + vel_y^2)
+                      = ((x2 - x1) * vel_x + (y2 - y1) * vel_y) / (sqrt(vel_x^2 + vel_y^2) * wheel_base)
+   * sin(theta - yaw) = sin(theta) * cos(yaw) - cos(theta) * sin(yaw) // sin of the difference of two angles
+                      = (cos_yaw * vel_y - sin_yaw * vel_x) / sqrt(vel_x^2 + vel_y^2)
+                      = ((x2 - x1) * vel_y - (y2 - y1) * vel_x) / (sqrt(vel_x^2 + vel_y^2) * wheel_base)
+   *
+   * w_angular = vel_long / radius = vel_head * sin(steer_angle) / wheel_base // angular velocity
+   */
+
   /*  Motion model: static bicycle model (constant turn rate, constant velocity)
    *
-   * wheel_base = sqrt((x2 - x1)^2 + (y2 - y1)^2)
-   * yaw = atan2(y2 - y1, x2 - x1)
-   * sin_theta = (y2 - y1) / wheel_base
-   * cos_theta = (x2 - x1) / wheel_base
-   * x1_{k+1}   = x1_k + vel_x_k*(x2_k - x1_k)/wheel_base * dt
-   * y1_{k+1}   = y1_k + vel_x_k*(y2_k - y1_k)/wheel_base * dt
-   * x2_{k+1}   = x2_k + vel_x_k*(x2_k - x1_k)/wheel_base * dt - vel_y_k*(y2_k - y1_k)/wheel_base * dt
-   * y2_{k+1}   = y2_k + vel_x_k*(y2_k - y1_k)/wheel_base * dt + vel_y_k*(x2_k - x1_k)/wheel_base * dt
-   * vel_x_{k+1} = vel_x_k
-   * vel_y_{k+1} = vel_y_k * exp(-dt / 2.0)  // lateral velocity decays exponentially with a half-life of 2 seconds
+   * x1_{k+1}   = x1_k + vel_long_k * cos_yaw * dt
+   * y1_{k+1}   = y1_k + vel_long_k * sin_yaw * dt
+   * x2_{k+1}   = x2_k + vel_x_k * dt
+   * y2_{k+1}   = y2_k + vel_y_k * dt
+   * vel_x_{k+1} = vel_x_k * cos(w_angular * dt) - vel_y_k * sin(w_angular * dt)
+   * vel_y_{k+1} = vel_x_k * sin(w_angular * dt) + vel_y_k * cos(w_angular * dt)
+   * 
+   * x1_{k+1}   = x1_k + vel_long_k*(x2_k - x1_k)/wheel_base * dt
+   * y1_{k+1}   = y1_k + vel_long_k*(y2_k - y1_k)/wheel_base * dt
+   * x2_{k+1}   = x2_k + vel_x_k * dt 
+   * y2_{k+1}   = y2_k + vel_y_k * dt
+   * vel_x_{k+1} = vel_x_k * cos(w_angular * dt) - vel_y_k * sin(w_angular * dt)
+   * vel_y_{k+1} = vel_x_k * sin(w_angular * dt) + vel_y_k * cos(w_angular * dt)
    */
 
   /*  Jacobian Matrix
    *
-   * A_x1 = [1 - vel_x_k / wheel_base * dt, 0, vel_x_k / wheel_base * dt, 0, (x2_k - x1_k)/wheel_base * dt, 0]
-   * A_y1 = [0, 1 - vel_x_k / wheel_base * dt, 0, vel_x_k / wheel_base * dt, (y2_k - y1_k)/wheel_base * dt, 0]
-   * A_x2 = [- vel_x_k / wheel_base * dt, vel_y_k / wheel_base * dt, 1 + vel_x_k / wheel_base * dt,     - vel_y_k / wheel_base * dt, (x2_k - x1_k)/wheel_base * dt, - (y2_k - y1_k)/wheel_base * dt]
-   * A_y2 = [- vel_y_k / wheel_base * dt, vel_x_k / wheel_base * dt,     vel_y_k / wheel_base * dt,   1 + vel_x_k / wheel_base * dt, (y2_k - y1_k)/wheel_base * dt,   (x2_k - x1_k)/wheel_base * dt]
-   * A_vx = [0, 0, 0, 0, 1, 0]
-   * A_vy = [0, 0, 0, 0, 0, exp(-dt / 2.0)]
+   * A_x1 = [1 - vel_long_k / wheel_base * dt, 0, vel_long_k / wheel_base * dt, 0, 0, 0]
+   * A_y1 = [0, 1 - vel_long_k / wheel_base * dt, 0, vel_long_k / wheel_base * dt, 0, 0]
+   * A_x2 = [0, 0, 1, 0, dt, 0]
+   * A_y2 = [0, 0, 0, 1, 0, dt]
+   * A_vx = [0, 0, 0, 0, cos(w_angular * dt), sin(w_angular * dt)]
+   * A_vy = [0, 0, 0, 0, sin(w_angular * dt), cos(w_angular * dt)]
    */
 
   // Current state vector X_t
