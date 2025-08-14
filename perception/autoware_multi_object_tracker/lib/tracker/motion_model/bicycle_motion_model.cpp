@@ -83,17 +83,23 @@ void BicycleMotionModel::setMotionLimits(const double & max_vel, const double & 
 
 bool BicycleMotionModel::initialize(
   const rclcpp::Time & time, const double & x, const double & y, const double & yaw,
-  const std::array<double, 36> & pose_cov, const double & vel_x, const double & vel_x_cov,
-  const double & vel_y, const double & vel_y_cov, const double & length)
+  const std::array<double, 36> & pose_cov, const double & vel_long, const double & vel_long_cov,
+  const double & vel_lat, const double & vel_lat_cov, const double & length)
 {
   double lr = length * motion_params_.lr_ratio;
   double lf = length * motion_params_.lf_ratio;
   lr = std::max(lr, motion_params_.lr_min);
   lf = std::max(lf, motion_params_.lf_min);
-  const double x1 = x - lr * std::cos(yaw);
-  const double y1 = y - lr * std::sin(yaw);
-  const double x2 = x + lf * std::cos(yaw);
-  const double y2 = y + lf * std::sin(yaw);
+  const double cos_yaw = std::cos(yaw);
+  const double sin_yaw = std::sin(yaw);
+  // calculate the position of the rear and front wheels
+  const double x1 = x - lr * cos_yaw;
+  const double y1 = y - lr * sin_yaw;
+  const double x2 = x + lf * cos_yaw;
+  const double y2 = y + lf * sin_yaw;
+
+  const double vel_x = vel_long * cos_yaw - vel_lat * sin_yaw;
+  const double vel_y = vel_long * sin_yaw + vel_lat * cos_yaw;
 
   // initialize state vector X
   StateVec X;
@@ -110,8 +116,10 @@ bool BicycleMotionModel::initialize(
   P(IDX::X2, IDX::Y2) = pose_cov[XYZRPY_COV_IDX::X_Y];
   P(IDX::Y2, IDX::X2) = pose_cov[XYZRPY_COV_IDX::Y_X];
   P(IDX::Y2, IDX::Y2) = pose_cov[XYZRPY_COV_IDX::Y_Y];
-  P(IDX::VX, IDX::VX) = vel_x_cov;
-  P(IDX::VY, IDX::VY) = vel_y_cov;
+  P(IDX::VX, IDX::VX) = vel_long_cov * cos_yaw * cos_yaw + vel_lat_cov * sin_yaw * sin_yaw;
+  P(IDX::VX, IDX::VY) = 0.5 * (vel_long_cov - vel_lat_cov) * std::sin(2.0 * yaw);
+  P(IDX::VY, IDX::VX) = P(IDX::VX, IDX::VY);
+  P(IDX::VY, IDX::VY) = vel_long_cov * sin_yaw * sin_yaw + vel_lat_cov * cos_yaw * cos_yaw;
 
   return MotionModel::initialize(time, X, P);
 }
@@ -259,7 +267,11 @@ bool BicycleMotionModel::limitStates()
   ekf_.getP(P_t);
 
   // maximum reverse velocity
-  if (motion_params_.max_reverse_vel < 0 && X_t(IDX::VX) < motion_params_.max_reverse_vel) {
+  const double yaw = getYawState();
+  const double steer_angle = std::atan2(X_t(IDX::VX), X_t(IDX::VY)) - yaw;
+  const double vel_head = std::hypot(X_t(IDX::VX), X_t(IDX::VY));
+  const double vel_long = vel_head * std::cos(steer_angle);
+  if (motion_params_.max_reverse_vel < 0 && vel_long < motion_params_.max_reverse_vel) {
     // rotate the object orientation by 180 degrees
     // replace X1 and Y1 with X2 and Y2
     const double x_center = (X_t(IDX::X1) * motion_params_.lr_ratio + X_t(IDX::X2) * motion_params_.lf_ratio) / (motion_params_.lr_ratio + motion_params_.lf_ratio);
@@ -274,42 +286,40 @@ bool BicycleMotionModel::limitStates()
     X_t(IDX::X2) = x_center + x1_rel;
     X_t(IDX::Y2) = y_center + y1_rel;
 
-    // reverse the velocity
-    X_t(IDX::VX) = -X_t(IDX::VX);
-    // rotation velocity does not change
-
     // replace covariance
     // Swap rows and columns
     P_t.row(IDX::X1).swap(P_t.row(IDX::X2));
     P_t.row(IDX::Y1).swap(P_t.row(IDX::Y2));
     P_t.col(IDX::X1).swap(P_t.col(IDX::X2));
     P_t.col(IDX::Y1).swap(P_t.col(IDX::Y2));
-
   }
+
   // maximum velocity
-  if (!(-motion_params_.max_vel <= X_t(IDX::VX) && X_t(IDX::VX) <= motion_params_.max_vel)) {
-    X_t(IDX::VX) = X_t(IDX::VX) < 0 ? -motion_params_.max_vel : motion_params_.max_vel;
+  if (!(vel_head <= motion_params_.max_vel)) {
+    const double multiplier = motion_params_.max_vel / vel_head;
+    X_t(IDX::VX) *= multiplier;
+    X_t(IDX::VY) *= multiplier;
   }
 
-  // maximum lateral velocity by lateral acceleration limitations
-  // a_max = vel_long^2 * vel_lat / wheel_base
-  // vel_lat_limit = a_max * wheel_base / vel_long^2
-  {
-    const double wheel_base = std::hypot(X_t(IDX::X2) - X_t(IDX::X1), X_t(IDX::Y2) - X_t(IDX::Y1));
-    constexpr double acc_lat_max = 9.81 * 0.35;  // [m/s^2] maximum lateral acceleration (0.35g);
-    const double vel_lat_limit = acc_lat_max * wheel_base / (X_t(IDX::VX) * X_t(IDX::VX));
-    if (std::abs(X_t(IDX::VY)) > vel_lat_limit) {
+  // // maximum lateral velocity by lateral acceleration limitations
+  // // a_max = vel_long^2 * vel_lat / wheel_base
+  // // vel_lat_limit = a_max * wheel_base / vel_long^2
+  // {
+  //   const double wheel_base = std::hypot(X_t(IDX::X2) - X_t(IDX::X1), X_t(IDX::Y2) - X_t(IDX::Y1));
+  //   constexpr double acc_lat_max = 9.81 * 0.35;  // [m/s^2] maximum lateral acceleration (0.35g);
+  //   const double vel_lat_limit = acc_lat_max * wheel_base / (X_t(IDX::VX) * X_t(IDX::VX));
+  //   if (std::abs(X_t(IDX::VY)) > vel_lat_limit) {
 
-      //debug message
-      RCLCPP_WARN(
-        logger_,
-        "BicycleMotionModel::limitStates: limited lateral velocity from %f to %f",
-         X_t(IDX::VY), vel_lat_limit);
+  //     //debug message
+  //     RCLCPP_WARN(
+  //       logger_,
+  //       "BicycleMotionModel::limitStates: limited lateral velocity from %f to %f",
+  //        X_t(IDX::VY), vel_lat_limit);
 
-      // limit lateral velocity
-      // X_t(IDX::VY) = X_t(IDX::VY) < 0 ? -vel_lat_limit : vel_lat_limit;
-    }
-  }
+  //     // limit lateral velocity
+  //     // X_t(IDX::VY) = X_t(IDX::VY) < 0 ? -vel_lat_limit : vel_lat_limit;
+  //   }
+  // }
 
   // overwrite state
   ekf_.init(X_t, P_t);

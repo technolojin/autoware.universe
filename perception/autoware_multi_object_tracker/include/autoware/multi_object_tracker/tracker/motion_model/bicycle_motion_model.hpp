@@ -74,8 +74,8 @@ public:
 
   bool initialize(
     const rclcpp::Time & time, const double & x, const double & y, const double & yaw,
-    const std::array<double, 36> & pose_cov, const double & vel, const double & vel_cov,
-    const double & slip, const double & slip_cov, const double & length);
+    const std::array<double, 36> & pose_cov, const double & vel_long, const double & vel_long_cov,
+    const double & vel_lat, const double & vel_lat_cov, const double & length);
 
   void setMotionParams(
     const double & q_stddev_acc_long, const double & q_stddev_acc_lat,
