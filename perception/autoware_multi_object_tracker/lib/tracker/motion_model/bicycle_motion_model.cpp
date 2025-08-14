@@ -182,7 +182,7 @@ bool BicycleMotionModel::updateStatePoseHead(
 }
 
 bool BicycleMotionModel::updateStatePoseVel(
-  const double & x, const double & y, const std::array<double, 36> & pose_cov, const double & yaw, const double & vel_x, const double & vel_y, 
+  const double & x, const double & y, const std::array<double, 36> & pose_cov, const double & yaw, const double & vel_long, const double & vel_lat, 
   const std::array<double, 36> & twist_cov, const double & length)
 {
   // check if the state is initialized
@@ -190,19 +190,19 @@ bool BicycleMotionModel::updateStatePoseVel(
 
   // using given yaw to fix the velocity direction
   // input yaw is velocity direction
-  const double ground_vel_x = vel_x * std::cos(yaw) - vel_y * std::sin(yaw);
-  const double ground_vel_y = vel_x * std::sin(yaw) + vel_y * std::cos(yaw);
+  const double ground_vel_x = vel_long * std::cos(yaw) - vel_lat * std::sin(yaw);
+  const double ground_vel_y = vel_long * std::sin(yaw) + vel_lat * std::cos(yaw);
   const double vel_angle = std::atan2(ground_vel_y, ground_vel_x);
-  const double vel_long = std::hypot(ground_vel_x, ground_vel_y);
-  constexpr double vel_lat = 0.0;  // lateral velocity is not provided
+  const double vel_long_update = std::hypot(ground_vel_x, ground_vel_y);
+  constexpr double vel_lat_update = 0.0;  // lateral velocity is not provided
 
   return updateStatePoseHeadVel(
-    x, y, vel_angle, pose_cov, vel_long, vel_lat, twist_cov, length);
+    x, y, vel_angle, pose_cov, vel_long_update, vel_lat_update, twist_cov, length);
 }
 
 bool BicycleMotionModel::updateStatePoseHeadVel(
   const double & x, const double & y, const double & yaw, const std::array<double, 36> & pose_cov,
-  const double & vel_x, const double & vel_y, const std::array<double, 36> & twist_cov, const double & length)
+  const double & vel_long, const double & vel_lat, const std::array<double, 36> & twist_cov, const double & length)
 {
   // check if the state is initialized
   if (!checkInitialized()) return false;
@@ -217,15 +217,13 @@ bool BicycleMotionModel::updateStatePoseHeadVel(
   const double x2 = x + lf * std::cos(yaw);
   const double y2 = y + lf * std::sin(yaw);
 
-  const double yaw_track = getYawState();
-  const double yaw_delta = yaw - yaw_track;
-  const double vel_long = vel_x * std::cos(yaw_delta) - vel_y * std::sin(yaw_delta);
-  const double vel_lat = vel_x * std::sin(yaw_delta) + vel_y * std::cos(yaw_delta);
+  const double vel_x = vel_long * std::cos(yaw) - vel_lat * std::sin(yaw);
+  const double vel_y = vel_long * std::sin(yaw) + vel_lat * std::cos(yaw);
 
   // update state
   constexpr int DIM_Y = 6;
   Eigen::Matrix<double, DIM_Y, 1> Y;
-  Y << x1, y1, x2, y2, vel_long, vel_lat * 2.0;
+  Y << x1, y1, x2, y2, vel_x, vel_y;
 
   Eigen::Matrix<double, DIM_Y, DIM> C = Eigen::Matrix<double, DIM_Y, DIM>::Zero();
   C(0, IDX::X1) = 1.0;
@@ -392,7 +390,7 @@ bool BicycleMotionModel::predictStateStep(const double dt, KalmanFilter & ekf) c
    * A_y1 = [0, 1 - vel_long_k / wheel_base * dt, 0, vel_long_k / wheel_base * dt, 0, 0]
    * A_x2 = [0, 0, 1, 0, dt, 0]
    * A_y2 = [0, 0, 0, 1, 0, dt]
-   * A_vx = [0, 0, 0, 0, cos(w_angular * dt), sin(w_angular * dt)]
+   * A_vx = [0, 0, 0, 0, cos(w_angular * dt), -sin(w_angular * dt)]
    * A_vy = [0, 0, 0, 0, sin(w_angular * dt), cos(w_angular * dt)]
    */
 
@@ -414,48 +412,41 @@ bool BicycleMotionModel::predictStateStep(const double dt, KalmanFilter & ekf) c
   const double wheel_base_inv_dt = dt / wheel_base;
   const double sin_yaw_dt = sin_yaw * dt;
   const double cos_yaw_dt = cos_yaw * dt;
+  const double vel_head = std::hypot(vel_x, vel_y);
+  const double steer_angle = std::atan2(vel_y, vel_x) - yaw;  // front wheel steer angle
+  const double vel_long = vel_head * std::cos(steer_angle);  // longitudinal velocity
+  // const double vel_lat = vel_head * std::sin(steer_angle);  // lateral velocity
+  const double w_angular = vel_long * std::tan(steer_angle) / wheel_base;  // angular velocity
 
   // Predict state vector X t+1
   StateVec X_next_t;
-  X_next_t(IDX::X1) = x1 + vel_x * cos_yaw_dt;
-  X_next_t(IDX::Y1) = y1 + vel_x * sin_yaw_dt;
-  X_next_t(IDX::X2) = x2 + vel_x * cos_yaw_dt - vel_y * sin_yaw_dt;
-  X_next_t(IDX::Y2) = y2 + vel_x * sin_yaw_dt + vel_y * cos_yaw_dt;
-  X_next_t(IDX::VX) = vel_x;  // velocity does not change
-  // Apply exponential decay to slip angle over time, with a half-life of 2 seconds
-  constexpr double gamma = 0.69314718056;  // natural logarithm of 2
-  const double decay_rate = std::exp(-dt * gamma / 2.0);
-  X_next_t(IDX::VY) = vel_y * decay_rate;  // lateral velocity decays exponentially
-  // X_next_t(IDX::VY) = vel_y;
+  X_next_t(IDX::X1) = x1 + vel_long * cos_yaw_dt;
+  X_next_t(IDX::Y1) = y1 + vel_long * sin_yaw_dt;
+  X_next_t(IDX::X2) = x2 + vel_x * dt;
+  X_next_t(IDX::Y2) = y2 + vel_y * dt;
+  X_next_t(IDX::VX) = vel_x * cos(w_angular * dt) - vel_y * sin(w_angular * dt);
+  X_next_t(IDX::VY) = vel_x * sin(w_angular * dt) + vel_y * cos(w_angular * dt);
 
   // State transition matrix A
   ProcessMat A;
   A.setZero();
 
-  A(IDX::X1, IDX::X1) = 1.0 - vel_x * wheel_base_inv_dt;
-  A(IDX::X1, IDX::X2) = vel_x * wheel_base_inv_dt;
-  A(IDX::X1, IDX::VX) = cos_yaw_dt;
+  A(IDX::X1, IDX::X1) = 1.0 - vel_long * wheel_base_inv_dt;
+  A(IDX::X1, IDX::X2) = vel_long * wheel_base_inv_dt;
 
-  A(IDX::Y1, IDX::Y1) = 1.0 - vel_x * wheel_base_inv_dt;
-  A(IDX::Y1, IDX::Y2) = vel_x * wheel_base_inv_dt;
-  A(IDX::Y1, IDX::VX) = sin_yaw_dt;
+  A(IDX::Y1, IDX::Y1) = 1.0 - vel_long * wheel_base_inv_dt;
+  A(IDX::Y1, IDX::Y2) = vel_long * wheel_base_inv_dt;
 
-  A(IDX::X2, IDX::X1) = -vel_x * wheel_base_inv_dt;
-  A(IDX::X2, IDX::Y1) = vel_y * wheel_base_inv_dt;
-  A(IDX::X2, IDX::X2) = 1.0 + vel_x * wheel_base_inv_dt;
-  A(IDX::X2, IDX::Y2) = -vel_y * wheel_base_inv_dt;
-  A(IDX::X2, IDX::VX) = cos_yaw_dt;
-  A(IDX::X2, IDX::VY) = -sin_yaw_dt;
+  A(IDX::X2, IDX::X2) = 1.0;
+  A(IDX::X2, IDX::VX) = dt;
 
-  A(IDX::Y2, IDX::X1) = -vel_y * wheel_base_inv_dt;
-  A(IDX::Y2, IDX::Y1) = vel_x * wheel_base_inv_dt;
-  A(IDX::Y2, IDX::X2) = vel_y * wheel_base_inv_dt;
-  A(IDX::Y2, IDX::Y2) = 1.0 + vel_x * wheel_base_inv_dt;
-  A(IDX::Y2, IDX::VX) = sin_yaw_dt;
-  A(IDX::Y2, IDX::VY) = cos_yaw_dt;
+  A(IDX::Y2, IDX::Y2) = 1.0;
+  A(IDX::Y2, IDX::VY) = dt;
 
-  A(IDX::VX, IDX::VX) = 1.0;  // velocity does not change
-  A(IDX::VY, IDX::VY) = decay_rate;
+  A(IDX::VX, IDX::VX) = std::cos(w_angular * dt);
+  A(IDX::VX, IDX::VY) = -std::sin(w_angular * dt);
+  A(IDX::VY, IDX::VX) = std::sin(w_angular * dt);
+  A(IDX::VY, IDX::VY) = std::cos(w_angular * dt);
 
   // Process noise covariance Q
   constexpr double q_cov_length = 1.0;  // length uncertainty
@@ -510,13 +501,10 @@ bool BicycleMotionModel::predictStateStep(const double dt, KalmanFilter & ekf) c
   // covariance of velocity
   const double q_cov_vel_long = motion_params_.q_cov_acc_long * dt2;
   const double q_cov_vel_lat = motion_params_.q_cov_acc_lat * dt2;
-  Q(IDX::VX, IDX::VX) = q_cov_vel_long;
-  Q(IDX::VY, IDX::VY) = q_cov_vel_lat;
-
-
-  // control-input model B and control-input u are not used
-  // Eigen::MatrixXd B = Eigen::MatrixXd::Zero(DIM, DIM);
-  // Eigen::MatrixXd u = Eigen::MatrixXd::Zero(DIM, 1);
+  Q(IDX::VX, IDX::VX) = q_cov_vel_long * cos_yaw * cos_yaw + q_cov_vel_lat * sin_yaw * sin_yaw;
+  Q(IDX::VX, IDX::VY) = 0.5 * (q_cov_vel_long - q_cov_vel_lat) * sin_2yaw;
+  Q(IDX::VY, IDX::VX) = Q(IDX::VX, IDX::VY);
+  Q(IDX::VY, IDX::VY) = q_cov_vel_long * sin_yaw * sin_yaw + q_cov_vel_lat * cos_yaw * cos_yaw;
 
   // predict state
   return ekf.predict(X_next_t, A, Q);
@@ -537,6 +525,11 @@ bool BicycleMotionModel::getPredictedState(
   const double wheel_base_inv = 1.0 / wheel_base;
   const double wheel_base_inv_sq = wheel_base_inv * wheel_base_inv;
 
+  const double vel_head = std::hypot(X(IDX::VX), X(IDX::VY));
+  const double vel_angle = std::atan2(X(IDX::VY), X(IDX::VX));
+  const double vel_long = vel_head * std::cos(vel_angle - yaw);
+  const double vel_lat = vel_head * std::sin(vel_angle - yaw);
+
   // set position
   pose.position.x = 0.5 * (X(IDX::X1) + X(IDX::X2));
   pose.position.y = 0.5 * (X(IDX::Y1) + X(IDX::Y2));
@@ -551,31 +544,39 @@ bool BicycleMotionModel::getPredictedState(
   pose.orientation.w = quaternion.w();
 
   // set twist
-  twist.linear.x = X(IDX::VX);
-  twist.linear.y = X(IDX::VY) * 0.5;
+  twist.linear.x = vel_long;
+  twist.linear.y = vel_lat;
   twist.linear.z = 0.0;
   twist.angular.x = 0.0;
   twist.angular.y = 0.0;
-  twist.angular.z = X(IDX::VY) * wheel_base_inv;
+  twist.angular.z = vel_lat * wheel_base_inv;
+
+  const double cos_yaw = std::cos(yaw);
+  const double sin_yaw = std::sin(yaw);
 
   // set pose covariance
   constexpr double zz_cov = 0.1 * 0.1;  // TODO(yukkysaito) Currently tentative
   constexpr double rr_cov = 0.1 * 0.1;  // TODO(yukkysaito) Currently tentative
   constexpr double pp_cov = 0.1 * 0.1;  // TODO(yukkysaito) Currently tentative
+  pose_cov.fill(0.0);
   pose_cov[XYZRPY_COV_IDX::X_X] = (P(IDX::X1, IDX::X1) + P(IDX::X2, IDX::X2)) * 0.25;
   pose_cov[XYZRPY_COV_IDX::X_Y] = (P(IDX::X1, IDX::Y1) + P(IDX::X2, IDX::Y2)) * 0.25;
   pose_cov[XYZRPY_COV_IDX::Y_X] = (P(IDX::Y1, IDX::X1) + P(IDX::Y2, IDX::X2)) * 0.25;
   pose_cov[XYZRPY_COV_IDX::Y_Y] = (P(IDX::Y1, IDX::Y1) + P(IDX::Y2, IDX::Y2)) * 0.25;
-  pose_cov[XYZRPY_COV_IDX::YAW_YAW] = P(IDX::X2, IDX::X2) * cos(yaw) * wheel_base_inv_sq + P(IDX::Y2, IDX::Y2) * sin(yaw) * wheel_base_inv_sq;
+  pose_cov[XYZRPY_COV_IDX::YAW_YAW] = P(IDX::X2, IDX::X2) * cos_yaw * wheel_base_inv_sq + P(IDX::Y2, IDX::Y2) * sin_yaw * wheel_base_inv_sq;
   pose_cov[XYZRPY_COV_IDX::Z_Z] = zz_cov;
   pose_cov[XYZRPY_COV_IDX::ROLL_ROLL] = rr_cov;
   pose_cov[XYZRPY_COV_IDX::PITCH_PITCH] = pp_cov;
 
   // set twist covariance
   constexpr double vel_cov = 0.1 * 0.1;
-  twist_cov[XYZRPY_COV_IDX::X_X] = P(IDX::VX, IDX::VX);
-  twist_cov[XYZRPY_COV_IDX::Y_Y] = P(IDX::VY, IDX::VY);
-  twist_cov[XYZRPY_COV_IDX::YAW_YAW] = P(IDX::VY, IDX::VY) * wheel_base_inv_sq * 0.25;
+  twist_cov.fill(0.0);
+  twist_cov[XYZRPY_COV_IDX::X_X] = P(IDX::VX, IDX::VX) * cos_yaw * cos_yaw + P(IDX::VY, IDX::VY) * sin_yaw * sin_yaw;
+  twist_cov[XYZRPY_COV_IDX::X_Y] = 0.5 * (P(IDX::VX, IDX::VY) - P(IDX::VY, IDX::VX)) * sin(2.0 * yaw);
+  twist_cov[XYZRPY_COV_IDX::Y_X] = twist_cov[XYZRPY_COV_IDX::X_Y];
+  twist_cov[XYZRPY_COV_IDX::Y_Y] = P(IDX::VX, IDX::VX) * sin_yaw * sin_yaw + P(IDX::VY, IDX::VY) * cos_yaw * cos_yaw;
+  twist_cov[XYZRPY_COV_IDX::YAW_YAW] = P(IDX::VY, IDX::VY) * cos_yaw * wheel_base_inv_sq +
+                                       P(IDX::VX, IDX::VX) * sin_yaw * wheel_base_inv_sq;
   twist_cov[XYZRPY_COV_IDX::Z_Z] = vel_cov;
   twist_cov[XYZRPY_COV_IDX::ROLL_ROLL] = vel_cov;
   twist_cov[XYZRPY_COV_IDX::PITCH_PITCH] = vel_cov;

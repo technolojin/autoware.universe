@@ -179,22 +179,22 @@ bool VehicleTracker::measureWithPose(
     const double x = object.pose.position.x;
     const double y = object.pose.position.y;
     const double yaw = tf2::getYaw(object.pose.orientation);
-    const double vel_x = object.twist.linear.x;
-    const double vel_y = object.twist.linear.y;
+    const double vel_long = object.twist.linear.x;
+    const double vel_lat = object.twist.linear.y;
     constexpr double min_length = 1.0;  // minimum length to avoid division by zero
     const double length = std::max(object.shape.dimensions.x, min_length);
 
     if (is_yaw_available && is_velocity_available) {
       // update with yaw angle and velocity
       is_updated = motion_model_.updateStatePoseHeadVel(
-        x, y, yaw, object.pose_covariance, vel_x, vel_y, object.twist_covariance, length);
+        x, y, yaw, object.pose_covariance, vel_long, vel_lat, object.twist_covariance, length);
     } else if (is_yaw_available && !is_velocity_available) {
       // update with yaw angle, but without velocity
       is_updated = motion_model_.updateStatePoseHead(x, y, yaw, object.pose_covariance, length);
     } else if (!is_yaw_available && is_velocity_available) {
       // update without yaw angle, but with velocity
       is_updated = motion_model_.updateStatePoseVel(
-        x, y, object.pose_covariance, yaw, vel_x, vel_y, object.twist_covariance, length);
+        x, y, object.pose_covariance, yaw, vel_long, vel_lat, object.twist_covariance, length);
     } else {
       // update without yaw angle and velocity
       is_updated = motion_model_.updateStatePose(
