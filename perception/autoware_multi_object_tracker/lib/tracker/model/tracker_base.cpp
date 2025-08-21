@@ -374,9 +374,9 @@ bool Tracker::isConfident(
   }
   rclcpp::Time time_to_check;
   if (!time) {
-    // add 150ms extrapolation time to the latest measurement time
+    // add 200ms extrapolation time to the latest measurement time
     // to consider the velocity uncertainty
-    const rclcpp::Duration extrapolate_time = rclcpp::Duration::from_seconds(0.15);
+    const rclcpp::Duration extrapolate_time = rclcpp::Duration::from_seconds(0.2);
     time_to_check = object_.time + extrapolate_time;
   } else {
     // use the given time
