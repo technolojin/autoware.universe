@@ -30,32 +30,32 @@
 #include <utility>
 #include <vector>
 
-namespace
-{
+// namespace
+// {
 
-double getFormedYawAngle(
-  const geometry_msgs::msg::Quaternion & measurement_quat,
-  const geometry_msgs::msg::Quaternion & tracker_quat, const bool distinguish_front_or_back = true)
-{
-  // Calculate raw difference
-  double diff = tf2::getYaw(measurement_quat) - tf2::getYaw(tracker_quat);
+// double getFormedYawAngle(
+//   const geometry_msgs::msg::Quaternion & measurement_quat,
+//   const geometry_msgs::msg::Quaternion & tracker_quat, const bool distinguish_front_or_back = true)
+// {
+//   // Calculate raw difference
+//   double diff = tf2::getYaw(measurement_quat) - tf2::getYaw(tracker_quat);
 
-  // Fast modulo to bring diff into [-2π, 2π] range
-  diff += (diff > M_PI) ? -2.0 * M_PI : (diff < -M_PI) ? 2.0 * M_PI : 0.0;
+//   // Fast modulo to bring diff into [-2π, 2π] range
+//   diff += (diff > M_PI) ? -2.0 * M_PI : (diff < -M_PI) ? 2.0 * M_PI : 0.0;
 
-  // For front/back distinction, use [-π, π] range
-  // For side distinction only, use [-π/2, π/2] range by folding at ±π/2
-  if (!distinguish_front_or_back) {
-    if (diff > M_PI_2) {
-      diff = M_PI - diff;
-    } else if (diff < -M_PI_2) {
-      diff = -M_PI - diff;
-    }
-  }
+//   // For front/back distinction, use [-π, π] range
+//   // For side distinction only, use [-π/2, π/2] range by folding at ±π/2
+//   if (!distinguish_front_or_back) {
+//     if (diff > M_PI_2) {
+//       diff = M_PI - diff;
+//     } else if (diff < -M_PI_2) {
+//       diff = -M_PI - diff;
+//     }
+//   }
 
-  return std::abs(diff);
-}
-}  // namespace
+//   return std::abs(diff);
+// }
+// }  // namespace
 
 namespace autoware::multi_object_tracker
 {
@@ -276,11 +276,11 @@ double DataAssociation::calculateScore(
     return (generalized_iou - generalized_iou_threshold) / (1.0 - generalized_iou_threshold);
   }
 
-  // area gate
-  const double max_area = config_.max_area_matrix(tracker_label, measurement_label);
-  const double min_area = config_.min_area_matrix(tracker_label, measurement_label);
-  const double & area = measurement_object.area;
-  if (area < min_area || area > max_area) return 0.0;
+  // // area gate
+  // const double max_area = config_.max_area_matrix(tracker_label, measurement_label);
+  // const double min_area = config_.min_area_matrix(tracker_label, measurement_label);
+  // const double & area = measurement_object.area;
+  // if (area < min_area || area > max_area) return 0.0;
 
   // dist gate
   const double max_dist_sq = config_.max_dist_matrix(tracker_label, measurement_label);
@@ -296,15 +296,15 @@ double DataAssociation::calculateScore(
             // for a chi-square distribution with 2 degrees of freedom (critical value).
   if (mahalanobis_dist >= mahalanobis_dist_threshold) return 0.0;
 
-  // angle gate, only if the threshold is set less than pi
-  const double max_rad = config_.max_rad_matrix(tracker_label, measurement_label);
-  if (max_rad < M_PI) {
-    const double angle = getFormedYawAngle(
-      measurement_object.pose.orientation, tracked_object.pose.orientation, false);
-    if (max_rad < std::fabs(angle)) {
-      return 0.0;
-    }
-  }
+  // // angle gate, only if the threshold is set less than pi
+  // const double max_rad = config_.max_rad_matrix(tracker_label, measurement_label);
+  // if (max_rad < M_PI) {
+  //   const double angle = getFormedYawAngle(
+  //     measurement_object.pose.orientation, tracked_object.pose.orientation, false);
+  //   if (max_rad < std::fabs(angle)) {
+  //     return 0.0;
+  //   }
+  // }
 
   const double ratio_sq = dist_sq / max_dist_sq;
   const double score = 1.0 - std::sqrt(ratio_sq);
