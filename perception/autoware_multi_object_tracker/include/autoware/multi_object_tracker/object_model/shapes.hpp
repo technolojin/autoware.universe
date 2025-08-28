@@ -43,7 +43,8 @@ bool get2dPrecisionRecallGIoU(
   double & precision, double & recall, double & generalized_iou);
 
 bool convertConvexHullToBoundingBox(
-  const types::DynamicObject & input_object, types::DynamicObject & output_object);
+  const types::DynamicObject & input_object, const double yaw,
+  types::DynamicObject & output_object);
 
 }  // namespace shapes
 }  // namespace autoware::multi_object_tracker
