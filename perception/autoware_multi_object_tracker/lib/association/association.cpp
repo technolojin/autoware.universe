@@ -35,7 +35,8 @@
 
 // double getFormedYawAngle(
 //   const geometry_msgs::msg::Quaternion & measurement_quat,
-//   const geometry_msgs::msg::Quaternion & tracker_quat, const bool distinguish_front_or_back = true)
+//   const geometry_msgs::msg::Quaternion & tracker_quat, const bool distinguish_front_or_back =
+//   true)
 // {
 //   // Calculate raw difference
 //   double diff = tf2::getYaw(measurement_quat) - tf2::getYaw(tracker_quat);
@@ -263,7 +264,7 @@ Eigen::MatrixXd DataAssociation::calcScoreMatrix(
 double DataAssociation::calculateScore(
   const types::DynamicObject & tracked_object, const std::uint8_t tracker_label,
   const types::DynamicObject & measurement_object, const std::uint8_t measurement_label,
-  const InverseCovariance2D & inv_cov) const
+  [[maybe_unused]] const InverseCovariance2D & inv_cov) const
 {
   // when the tracker and measurements are unknown, use generalized IoU
   if (tracker_label == Label::UNKNOWN && measurement_label == Label::UNKNOWN) {
@@ -289,12 +290,12 @@ double DataAssociation::calculateScore(
   const double dist_sq = dx * dx + dy * dy;
   if (dist_sq > max_dist_sq) return 0.0;
 
-  // mahalanobis dist gate
-  const double mahalanobis_dist = getMahalanobisDistanceFast(dx, dy, inv_cov);
-  constexpr double mahalanobis_dist_threshold =
-    11.62;  // This is an empirical value corresponding to the 99.6% confidence level
-            // for a chi-square distribution with 2 degrees of freedom (critical value).
-  if (mahalanobis_dist >= mahalanobis_dist_threshold) return 0.0;
+  // // mahalanobis dist gate
+  // const double mahalanobis_dist = getMahalanobisDistanceFast(dx, dy, inv_cov);
+  // constexpr double mahalanobis_dist_threshold =
+  //   11.62;  // This is an empirical value corresponding to the 99.6% confidence level
+  //           // for a chi-square distribution with 2 degrees of freedom (critical value).
+  // if (mahalanobis_dist >= mahalanobis_dist_threshold) return 0.0;
 
   // // angle gate, only if the threshold is set less than pi
   // const double max_rad = config_.max_rad_matrix(tracker_label, measurement_label);
@@ -305,6 +306,17 @@ double DataAssociation::calculateScore(
   //     return 0.0;
   //   }
   // }
+
+  double precision = 0.0;
+  double recall = 0.0;
+  double generalized_iou = 0.0;
+  if (!shapes::get2dPrecisionRecallGIoU(
+        tracked_object, measurement_object, precision, recall, generalized_iou)) {
+    return 0.0;
+  }
+  if (recall < 0.7) return 0.0;
+  if (precision < 0.03) return 0.0;
+  if (generalized_iou < 0.0) return 0.0;
 
   const double ratio_sq = dist_sq / max_dist_sq;
   const double score = 1.0 - std::sqrt(ratio_sq);
