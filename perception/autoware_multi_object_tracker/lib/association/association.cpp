@@ -314,7 +314,7 @@ double DataAssociation::calculateScore(
         tracked_object, measurement_object, precision, recall, generalized_iou)) {
     return 0.0;
   }
-  if (recall < 0.7) return 0.0;
+  if (recall < 0.5) return 0.0;
   if (precision < 0.03) return 0.0;
   if (generalized_iou < 0.0) return 0.0;
 
