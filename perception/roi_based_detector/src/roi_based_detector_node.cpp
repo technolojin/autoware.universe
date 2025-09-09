@@ -159,22 +159,26 @@ void RoiBasedDetectorNode::roiCallback(const DetectedObjectsWithFeature::ConstSh
     pixelTo3DPoint(pixel_center, camera2lidar_mul_inv_projection_, point_center);
 
     std::vector<Eigen::Vector2f> footprint_pixels;
-    footprint_pixels.push_back(Eigen::Vector2f(
-      static_cast<float>(obj_with_feature.feature.roi.x_offset),
-      static_cast<float>(obj_with_feature.feature.roi.y_offset)));
-    footprint_pixels.push_back(Eigen::Vector2f(
-      static_cast<float>(
-        obj_with_feature.feature.roi.x_offset + obj_with_feature.feature.roi.width),
-      static_cast<float>(obj_with_feature.feature.roi.y_offset)));
-    footprint_pixels.push_back(Eigen::Vector2f(
-      static_cast<float>(
-        obj_with_feature.feature.roi.x_offset + obj_with_feature.feature.roi.width),
-      static_cast<float>(
-        obj_with_feature.feature.roi.y_offset + obj_with_feature.feature.roi.height)));
-    footprint_pixels.push_back(Eigen::Vector2f(
-      static_cast<float>(obj_with_feature.feature.roi.x_offset),
-      static_cast<float>(
-        obj_with_feature.feature.roi.y_offset + obj_with_feature.feature.roi.height)));
+    footprint_pixels.push_back(
+      Eigen::Vector2f(
+        static_cast<float>(obj_with_feature.feature.roi.x_offset),
+        static_cast<float>(obj_with_feature.feature.roi.y_offset)));
+    footprint_pixels.push_back(
+      Eigen::Vector2f(
+        static_cast<float>(
+          obj_with_feature.feature.roi.x_offset + obj_with_feature.feature.roi.width),
+        static_cast<float>(obj_with_feature.feature.roi.y_offset)));
+    footprint_pixels.push_back(
+      Eigen::Vector2f(
+        static_cast<float>(
+          obj_with_feature.feature.roi.x_offset + obj_with_feature.feature.roi.width),
+        static_cast<float>(
+          obj_with_feature.feature.roi.y_offset + obj_with_feature.feature.roi.height)));
+    footprint_pixels.push_back(
+      Eigen::Vector2f(
+        static_cast<float>(obj_with_feature.feature.roi.x_offset),
+        static_cast<float>(
+          obj_with_feature.feature.roi.y_offset + obj_with_feature.feature.roi.height)));
 
     float max_x{-150.0}, min_x{150.0}, max_y{-150.0}, min_y{150.0};
     for (const auto & pixel : footprint_pixels) {

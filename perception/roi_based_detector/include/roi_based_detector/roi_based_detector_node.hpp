@@ -16,7 +16,6 @@
 #define ROI_BASED_DETECTOR__ROI_BASED_DETECTOR_NODE_HPP_
 
 #include <autoware/universe_utils/ros/transform_listener.hpp>
-
 #include <rclcpp/rclcpp.hpp>
 
 #include <autoware_perception_msgs/msg/detected_objects.hpp>
@@ -48,8 +47,8 @@ using autoware::universe_utils::TransformListener;
 using autoware_perception_msgs::msg::DetectedObject;
 using autoware_perception_msgs::msg::DetectedObjects;
 using sensor_msgs::msg::CameraInfo;
-using tier4_perception_msgs::msg::DetectedObjectWithFeature;
 using tier4_perception_msgs::msg::DetectedObjectsWithFeature;
+using tier4_perception_msgs::msg::DetectedObjectWithFeature;
 using Label = autoware_perception_msgs::msg::ObjectClassification;
 
 class RoiBasedDetectorNode : public rclcpp::Node
@@ -58,7 +57,8 @@ public:
   explicit RoiBasedDetectorNode(const rclcpp::NodeOptions & node_options);
 
 private:
-  struct IgnoreLabel{
+  struct IgnoreLabel
+  {
     bool UNKNOWN;
     bool CAR;
     bool TRUCK;
@@ -70,17 +70,17 @@ private:
     bool isIgnore(const uint8_t label) const
     {
       return (label == Label::UNKNOWN && UNKNOWN) || (label == Label::CAR && CAR) ||
-            (label == Label::TRUCK && TRUCK) || (label == Label::BUS && BUS) ||
-            (label == Label::TRAILER && TRAILER) || (label == Label::MOTORCYCLE && MOTORCYCLE) ||
-            (label == Label::BICYCLE && BICYCLE) || (label == Label::PEDESTRIAN && PEDESTRIAN);
+             (label == Label::TRUCK && TRUCK) || (label == Label::BUS && BUS) ||
+             (label == Label::TRAILER && TRAILER) || (label == Label::MOTORCYCLE && MOTORCYCLE) ||
+             (label == Label::BICYCLE && BICYCLE) || (label == Label::PEDESTRIAN && PEDESTRIAN);
     }
-  }; // struct IgnoreLabel
+  };  // struct IgnoreLabel
   IgnoreLabel ignore_class_;
-  void roiCallback(
-    const DetectedObjectsWithFeature::ConstSharedPtr & msg);
+  void roiCallback(const DetectedObjectsWithFeature::ConstSharedPtr & msg);
   void cameraInfoCallback(const CameraInfo::ConstSharedPtr & msg);
   Eigen::Matrix4d transformToHomogeneous(const geometry_msgs::msg::Transform & transform);
-  void pixelTo3DPoint(const Eigen::Vector2f &pixel, const Eigen::Matrix4f & transform, Eigen::Vector4f & point);
+  void pixelTo3DPoint(
+    const Eigen::Vector2f & pixel, const Eigen::Matrix4f & transform, Eigen::Vector4f & point);
 
   rclcpp::Publisher<DetectedObjectsWithFeature>::SharedPtr rois_pub_;
   rclcpp::Publisher<DetectedObjects>::SharedPtr objects_pub_;
