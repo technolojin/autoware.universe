@@ -1,4 +1,4 @@
-// Copyright 2024 TIER IV, Inc.
+// Copyright 2025 TIER IV, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@
 
 namespace roi_based_detector
 {
-// initialize Constructor
+// initialize constructor
 RoiBasedDetectorNode::RoiBasedDetectorNode(const rclcpp::NodeOptions & node_options)
 : Node("roi_based_detector_node", node_options)
 {
@@ -42,9 +42,11 @@ RoiBasedDetectorNode::RoiBasedDetectorNode(const rclcpp::NodeOptions & node_opti
   ignore_class_.MOTORCYCLE = declare_parameter<bool>("ignore_class.MOTORCYCLE");
   ignore_class_.BICYCLE = declare_parameter<bool>("ignore_class.BICYCLE");
   ignore_class_.PEDESTRIAN = declare_parameter<bool>("ignore_class.PEDESTRIAN");
+
   // create publisher
   rois_pub_ = this->create_publisher<DetectedObjectsWithFeature>("output_rois", 1);
   objects_pub_ = this->create_publisher<DetectedObjects>("output_objects", 1);
+
   // create subscriber
   roi_sub_ = this->create_subscription<DetectedObjectsWithFeature>(
     "input_rois", 1, std::bind(&RoiBasedDetectorNode::roiCallback, this, std::placeholders::_1));
@@ -60,17 +62,17 @@ Eigen::Matrix4d RoiBasedDetectorNode::transformToHomogeneous(
 {
   Eigen::Matrix4d homogeneous = Eigen::Matrix4d::Identity();
 
-  // Extract translation
+  // extract translation
   homogeneous(0, 3) = transform.translation.x;
   homogeneous(1, 3) = transform.translation.y;
   homogeneous(2, 3) = transform.translation.z;
 
-  // Extract rotation (quaternion to rotation matrix)
+  // extract rotation (quaternion to rotation matrix)
   tf2::Quaternion quat(
     transform.rotation.x, transform.rotation.y, transform.rotation.z, transform.rotation.w);
   tf2::Matrix3x3 rotationMatrix(quat);
 
-  // Convert tf2::Matrix3x3 to Eigen::Matrix3d
+  // convert tf2::Matrix3x3 to Eigen::Matrix3d
   for (int i = 0; i < 3; ++i) {
     for (int j = 0; j < 3; ++j) {
       homogeneous(i, j) = rotationMatrix[i][j];
@@ -84,6 +86,7 @@ void RoiBasedDetectorNode::cameraInfoCallback(const CameraInfo::ConstSharedPtr &
 {
   camera_info_ = *msg;
   RCLCPP_INFO(get_logger(), "camera_info is received");
+
   if (!is_inv_projection_initialized_) {
     Eigen::Matrix4f projection;
     projection << camera_info_.p.at(0), camera_info_.p.at(1), camera_info_.p.at(2),
@@ -94,6 +97,7 @@ void RoiBasedDetectorNode::cameraInfoCallback(const CameraInfo::ConstSharedPtr &
     is_inv_projection_initialized_ = true;
   }
 }
+
 void RoiBasedDetectorNode::pixelTo3DPoint(
   const Eigen::Vector2f & pixel, const Eigen::Matrix4f & transform, Eigen::Vector4f & point)
 {
@@ -106,7 +110,7 @@ void RoiBasedDetectorNode::pixelTo3DPoint(
     Eigen::Vector4f(pixel(0) * projected_z, pixel(1) * projected_z, projected_z, w);
   point = transform * projected_point;
 }
-// implement roiCallback
+
 void RoiBasedDetectorNode::roiCallback(const DetectedObjectsWithFeature::ConstSharedPtr & msg)
 {
   if (!is_inv_projection_initialized_) {
@@ -116,7 +120,6 @@ void RoiBasedDetectorNode::roiCallback(const DetectedObjectsWithFeature::ConstSh
   DetectedObjects objects;
 
   // get transform from camera frame to base_link frame
-
   try {
     transform_ = transform_listener_->getTransform(
       target_frame_, msg->header.frame_id, msg->header.stamp, rclcpp::Duration::from_seconds(0.01));
@@ -134,6 +137,7 @@ void RoiBasedDetectorNode::roiCallback(const DetectedObjectsWithFeature::ConstSh
     objects_pub_->publish(objects);
     return;
   }
+
   if (!is_camera2lidar_mul_inv_projection_initialized_) {
     const Eigen::Matrix4f transform_matrix_cam2base =
       tf2::transformToEigen(transform_->transform).matrix().cast<float>();
@@ -143,12 +147,15 @@ void RoiBasedDetectorNode::roiCallback(const DetectedObjectsWithFeature::ConstSh
 
   for (const auto & obj_with_feature : msg->feature_objects) {
     DetectedObject object;
+
     const auto & label = obj_with_feature.object.classification.front().label;
     if (!ignore_class_.isIgnore(label)) {
       continue;
     }
+
     object.classification.push_back(obj_with_feature.object.classification.front());
     object.existence_probability = obj_with_feature.object.existence_probability;
+
     Eigen::Vector2f pixel_center(
       static_cast<float>(
         obj_with_feature.feature.roi.x_offset + obj_with_feature.feature.roi.width / 2.0),
@@ -184,6 +191,7 @@ void RoiBasedDetectorNode::roiCallback(const DetectedObjectsWithFeature::ConstSh
     for (const auto & pixel : footprint_pixels) {
       Eigen::Vector4f point;
       pixelTo3DPoint(pixel, camera2lidar_mul_inv_projection_, point);
+
       geometry_msgs::msg::Point32 geo_point;
       geo_point.x = point(0);
       geo_point.y = point(1);
@@ -206,11 +214,14 @@ void RoiBasedDetectorNode::roiCallback(const DetectedObjectsWithFeature::ConstSh
 
     objects.objects.push_back(object);
   }
+
   rois_pub_->publish(*msg);
+
   objects.header = msg->header;
   objects.header.frame_id = target_frame_;
   objects_pub_->publish(objects);
 }
+
 }  // namespace roi_based_detector
 
 #include <rclcpp_components/register_node_macro.hpp>

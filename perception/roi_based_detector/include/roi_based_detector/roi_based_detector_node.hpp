@@ -1,4 +1,4 @@
-// Copyright 2024 TIER IV, Inc.
+// Copyright 2025 TIER IV, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -67,6 +67,7 @@ private:
     bool MOTORCYCLE;
     bool BICYCLE;
     bool PEDESTRIAN;
+
     bool isIgnore(const uint8_t label) const
     {
       return (label == Label::UNKNOWN && UNKNOWN) || (label == Label::CAR && CAR) ||
@@ -76,6 +77,7 @@ private:
     }
   };  // struct IgnoreLabel
   IgnoreLabel ignore_class_;
+
   void roiCallback(const DetectedObjectsWithFeature::ConstSharedPtr & msg);
   void cameraInfoCallback(const CameraInfo::ConstSharedPtr & msg);
   Eigen::Matrix4d transformToHomogeneous(const geometry_msgs::msg::Transform & transform);
@@ -85,18 +87,21 @@ private:
   rclcpp::Publisher<DetectedObjectsWithFeature>::SharedPtr rois_pub_;
   rclcpp::Publisher<DetectedObjects>::SharedPtr objects_pub_;
   rclcpp::Subscription<DetectedObjectsWithFeature>::SharedPtr roi_sub_;
-  // camera_info sub
   rclcpp::Subscription<CameraInfo>::SharedPtr camera_info_sub_;
+
   CameraInfo camera_info_;
+
   Eigen::Matrix4f inv_projection_;
   bool is_inv_projection_initialized_{false};
   Eigen::Matrix4f camera2lidar_mul_inv_projection_;
   bool is_camera2lidar_mul_inv_projection_initialized_{false};
+
   std::shared_ptr<TransformListener> transform_listener_;
   geometry_msgs::msg::TransformStamped::ConstSharedPtr transform_;
 
   std::string target_frame_;
 };
+
 }  // namespace roi_based_detector
 
 #endif  // ROI_BASED_DETECTOR__ROI_BASED_DETECTOR_NODE_HPP_
