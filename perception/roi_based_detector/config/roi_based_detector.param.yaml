@@ -10,3 +10,4 @@
         MOTORCYCLE : false
         BICYCLE : false
         PEDESTRIAN : false
+      roi_ids: [0, 1]

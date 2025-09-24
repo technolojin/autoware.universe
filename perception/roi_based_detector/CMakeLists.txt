@@ -10,6 +10,7 @@ find_package(ament_cmake REQUIRED)
 find_package(ament_cmake_auto REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
+find_package(OpenCV REQUIRED)
 
 # Initialize ament_auto
 ament_auto_find_build_dependencies()
@@ -18,6 +19,10 @@ autoware_package()
 # Targets
 ament_auto_add_library(${PROJECT_NAME} SHARED
   src/roi_based_detector_node.cpp
+)
+
+target_link_libraries(${PROJECT_NAME}
+  ${OpenCV_LIBRARIES}
 )
 
 rclcpp_components_register_node(${PROJECT_NAME}

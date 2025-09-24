@@ -18,6 +18,8 @@
 #include <autoware/universe_utils/ros/transform_listener.hpp>
 #include <rclcpp/rclcpp.hpp>
 
+#include <opencv2/opencv.hpp>
+
 #include <autoware_perception_msgs/msg/detected_objects.hpp>
 #include <sensor_msgs/msg/camera_info.hpp>
 #include <tier4_perception_msgs/msg/detected_objects_with_feature.hpp>
@@ -57,7 +59,7 @@ public:
   explicit RoiBasedDetectorNode(const rclcpp::NodeOptions & node_options);
 
 private:
-  struct IgnoreLabel
+  struct LabelSettings
   {
     bool UNKNOWN;
     bool CAR;
@@ -68,33 +70,58 @@ private:
     bool BICYCLE;
     bool PEDESTRIAN;
 
-    bool isIgnore(const uint8_t label) const
+    bool isIgnoreLabel(const uint8_t label) const
     {
       return (label == Label::UNKNOWN && UNKNOWN) || (label == Label::CAR && CAR) ||
              (label == Label::TRUCK && TRUCK) || (label == Label::BUS && BUS) ||
              (label == Label::TRAILER && TRAILER) || (label == Label::MOTORCYCLE && MOTORCYCLE) ||
              (label == Label::BICYCLE && BICYCLE) || (label == Label::PEDESTRIAN && PEDESTRIAN);
     }
-  };  // struct IgnoreLabel
-  IgnoreLabel ignore_class_;
 
-  void roiCallback(const DetectedObjectsWithFeature::ConstSharedPtr & msg);
-  void cameraInfoCallback(const CameraInfo::ConstSharedPtr & msg);
+    uint8_t getLabelShape(const uint8_t label) const
+    {
+      if (
+        label == Label::CAR || label == Label::TRUCK || label == Label::BUS ||
+        label == Label::TRAILER || label == Label::MOTORCYCLE || label == Label::BICYCLE) {
+        return autoware_perception_msgs::msg::Shape::BOUNDING_BOX;
+      } else if (label == Label::PEDESTRIAN) {
+        return autoware_perception_msgs::msg::Shape::CYLINDER;
+      } else {
+        return autoware_perception_msgs::msg::Shape::POLYGON;
+      }
+    }
+  };  // struct LabelSettings
+  
+  struct CameraIntrinsics
+  {
+    cv::Matx33d K;
+    cv::Mat D;
+  };  // struct CameraIntrinsics
+
+  void roiCallback(const DetectedObjectsWithFeature::ConstSharedPtr & msg, int roi_id);
+  void cameraInfoCallback(const CameraInfo::ConstSharedPtr & msg, int roi_id);
   Eigen::Matrix4d transformToHomogeneous(const geometry_msgs::msg::Transform & transform);
   void pixelTo3DPoint(
     const Eigen::Vector2f & pixel, const Eigen::Matrix4f & transform, Eigen::Vector4f & point);
+  void createProjectedObject(const sensor_msgs::msg::RegionOfInterest & roi,
+    const int & roi_id, const geometry_msgs::msg::TransformStamped & tf, const uint8_t & label,
+    DetectedObject & object);
 
-  rclcpp::Publisher<DetectedObjectsWithFeature>::SharedPtr rois_pub_;
-  rclcpp::Publisher<DetectedObjects>::SharedPtr objects_pub_;
-  rclcpp::Subscription<DetectedObjectsWithFeature>::SharedPtr roi_sub_;
-  rclcpp::Subscription<CameraInfo>::SharedPtr camera_info_sub_;
+  // subscriber
+  std::vector<rclcpp::Subscription<CameraInfo>::SharedPtr> camera_info_subs_;
+  std::vector<rclcpp::Subscription<DetectedObjectsWithFeature>::SharedPtr> roi_subs_;
+  // publisher
+  std::unordered_map<int, rclcpp::Publisher<DetectedObjects>::SharedPtr> objects_pubs_;
 
-  CameraInfo camera_info_;
+  LabelSettings label_settings_;
 
-  Eigen::Matrix4f inv_projection_;
-  bool is_inv_projection_initialized_{false};
-  Eigen::Matrix4f camera2lidar_mul_inv_projection_;
-  bool is_camera2lidar_mul_inv_projection_initialized_{false};
+  std::unordered_map<int, CameraInfo> camera_info_;
+  std::unordered_map<int, CameraIntrinsics> cam_intrinsics_;
+
+  std::unordered_map<int, Eigen::Matrix4f> inv_projection_;
+  std::unordered_map<int, bool>is_inv_projection_initialized_;
+  std::unordered_map<int, Eigen::Matrix4f> camera2lidar_mul_inv_projection_;
+  std::unordered_map<int, bool> is_camera2lidar_mul_inv_projection_initialized_;
 
   std::shared_ptr<TransformListener> transform_listener_;
   geometry_msgs::msg::TransformStamped::ConstSharedPtr transform_;
