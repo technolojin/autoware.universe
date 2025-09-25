@@ -8,9 +8,9 @@
   <arg name="output/rois0/objects" default="~/rois0/objects"/>
   <arg name="output/rois1/objects" default="~/rois1/objects"/>
 
-  <arg name="param_path" default="$(find-pkg-share roi_based_detector)/config/roi_based_detector.param.yaml"/>
+  <arg name="param_path" default="$(find-pkg-share autoware_roi_based_detector)/config/roi_based_detector.param.yaml"/>
 
-  <node pkg="roi_based_detector" exec="roi_based_detector_node" name="roi_based_detector" output="screen">
+  <node pkg="autoware_roi_based_detector" exec="roi_based_detector_node" name="roi_based_detector" output="screen">
     <param name="input/rois0" value="$(var input/rois0)"/>
     <param name="input/rois1" value="$(var input/rois1)"/>
     <param name="input/camera_info0" value="$(var input/camera_info0)"/>

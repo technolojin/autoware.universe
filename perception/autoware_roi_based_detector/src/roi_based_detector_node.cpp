@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "roi_based_detector/roi_based_detector_node.hpp"
+#include "roi_based_detector_node.hpp"
 
 #include <rclcpp/qos.hpp>
 
@@ -33,7 +33,7 @@
 #include <string>
 #include <vector>
 
-namespace roi_based_detector
+namespace autoware::roi_based_detector
 {
 void transformToRT(const geometry_msgs::msg::TransformStamped & tf, cv::Matx33d & R, cv::Vec3d & t)
 {
@@ -382,7 +382,7 @@ void RoiBasedDetectorNode::roiCallback(
   objects_pubs_[rois_id]->publish(objects);
 }
 
-}  // namespace roi_based_detector
+}  // namespace autoware::roi_based_detector
 
 #include <rclcpp_components/register_node_macro.hpp>
-RCLCPP_COMPONENTS_REGISTER_NODE(roi_based_detector::RoiBasedDetectorNode)
+RCLCPP_COMPONENTS_REGISTER_NODE(autoware::roi_based_detector::RoiBasedDetectorNode)

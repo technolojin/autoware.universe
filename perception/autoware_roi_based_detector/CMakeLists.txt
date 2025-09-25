@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(roi_based_detector)
+project(autoware_roi_based_detector)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -26,7 +26,7 @@ target_link_libraries(${PROJECT_NAME}
 )
 
 rclcpp_components_register_node(${PROJECT_NAME}
-  PLUGIN "roi_based_detector::RoiBasedDetectorNode"
+  PLUGIN "autoware::roi_based_detector::RoiBasedDetectorNode"
   EXECUTABLE roi_based_detector_node
 )
 

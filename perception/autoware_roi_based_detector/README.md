@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The `roi_based_detector` package is designed to use objects detected from 2D images to generate 3D object detections for more robust perception.
+The `autoware_roi_based_detector` package is designed to use objects detected from 2D images to generate 3D object detections for more robust perception.
 
 ## Inner Workings / Algorithms
 
