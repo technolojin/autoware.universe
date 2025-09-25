@@ -144,7 +144,7 @@ double computeHeight(
 
 // initialize constructor
 RoiBasedDetectorNode::RoiBasedDetectorNode(const rclcpp::NodeOptions & node_options)
-: Node("roi_based_detector_node", node_options)
+: Node("roi_based_detector", node_options)
 {
   target_frame_ = declare_parameter<std::string>("target_frame");
 
@@ -181,8 +181,7 @@ RoiBasedDetectorNode::RoiBasedDetectorNode(const rclcpp::NodeOptions & node_opti
 
     // subscriber: camera info
     const std::string camera_info_topic_name = declare_parameter<std::string>(
-      "input/rois" + rois_id_str + "/camera_info",
-      "/sensing/camera/camera" + rois_id_str + "/camera_info");
+      "input/camera_info" + rois_id_str, "/sensing/camera/camera" + rois_id_str + "/camera_info");
     const auto camera_info_qos = rclcpp::QoS{1}.best_effort();
 
     camera_info_subs_[rois_id_index] = this->create_subscription<CameraInfo>(
@@ -203,8 +202,8 @@ RoiBasedDetectorNode::RoiBasedDetectorNode(const rclcpp::NodeOptions & node_opti
       });
 
     // publisher
-    const std::string output_topic_name =
-      declare_parameter<std::string>("output/rois" + rois_id_str + "/objects");
+    const std::string output_topic_name = declare_parameter<std::string>(
+      "output/rois" + rois_id_str + "/objects", "~/rois" + rois_id_str + "/objects");
     objects_pubs_[rois_id] = this->create_publisher<DetectedObjects>(output_topic_name, 1);
   }
 
