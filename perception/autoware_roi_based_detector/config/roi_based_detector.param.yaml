@@ -2,7 +2,7 @@
   ros__parameters:
     target_frame: "base_link"
     ignore_class:
-      UNKNOWN : false
+      UNKNOWN : true
       CAR : true
       TRUCK : true
       BUS : true
@@ -19,5 +19,5 @@
 
     roi_truncation:
       check_truncation: true
-      truncation_image_bottom_margin: 15 # [pixel]
+      truncation_image_bottom_margin: 0 # [pixel]
       projection_plane_z: 0.5 # [m]
