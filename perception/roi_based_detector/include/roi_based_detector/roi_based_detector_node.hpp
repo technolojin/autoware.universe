@@ -91,42 +91,40 @@ private:
       }
     }
   };  // struct LabelSettings
-  
+
   struct CameraIntrinsics
   {
     cv::Matx33d K;
     cv::Mat D;
   };  // struct CameraIntrinsics
 
-  void roiCallback(const DetectedObjectsWithFeature::ConstSharedPtr & msg, int roi_id);
-  void cameraInfoCallback(const CameraInfo::ConstSharedPtr & msg, int roi_id);
-  Eigen::Matrix4d transformToHomogeneous(const geometry_msgs::msg::Transform & transform);
-  void pixelTo3DPoint(
-    const Eigen::Vector2f & pixel, const Eigen::Matrix4f & transform, Eigen::Vector4f & point);
-  void createProjectedObject(const sensor_msgs::msg::RegionOfInterest & roi,
-    const int & roi_id, const geometry_msgs::msg::TransformStamped & tf, const uint8_t & label,
+  void roiCallback(const DetectedObjectsWithFeature::ConstSharedPtr & msg, int rois_id);
+  void cameraInfoCallback(const CameraInfo::ConstSharedPtr & msg, int rois_id);
+  bool generateROIBasedObject(const sensor_msgs::msg::RegionOfInterest & roi,
+    const int & rois_id, const geometry_msgs::msg::TransformStamped & tf, const uint8_t & label,
     DetectedObject & object);
 
   // subscriber
   std::vector<rclcpp::Subscription<CameraInfo>::SharedPtr> camera_info_subs_;
   std::vector<rclcpp::Subscription<DetectedObjectsWithFeature>::SharedPtr> roi_subs_;
+
   // publisher
   std::unordered_map<int, rclcpp::Publisher<DetectedObjects>::SharedPtr> objects_pubs_;
 
+  std::string target_frame_;
   LabelSettings label_settings_;
+  double detection_max_range_sq_;
+  double pseudo_height_;
+  bool check_roi_truncation_;
+  uint32_t roi_truncation_bottom_margin_;
+  double truncated_roi_projection_plane_z_;
 
   std::unordered_map<int, CameraInfo> camera_info_;
   std::unordered_map<int, CameraIntrinsics> cam_intrinsics_;
-
-  std::unordered_map<int, Eigen::Matrix4f> inv_projection_;
-  std::unordered_map<int, bool>is_inv_projection_initialized_;
-  std::unordered_map<int, Eigen::Matrix4f> camera2lidar_mul_inv_projection_;
-  std::unordered_map<int, bool> is_camera2lidar_mul_inv_projection_initialized_;
+  std::unordered_map<int, bool> is_camera_info_arrived_;
 
   std::shared_ptr<TransformListener> transform_listener_;
   geometry_msgs::msg::TransformStamped::ConstSharedPtr transform_;
-
-  std::string target_frame_;
 };
 
 }  // namespace roi_based_detector

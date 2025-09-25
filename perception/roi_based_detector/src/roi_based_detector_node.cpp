@@ -56,8 +56,10 @@ void transformToRT(const geometry_msgs::msg::TransformStamped& tf, cv::Matx33d& 
 }
 
 /**
- * @brief Compute the ground point of the bounding box in 3D space.
- * This function is assuming the bbox is 
+ * @brief Computes the ground intersection point of a pixel ray.
+ *
+ * Assumes that the ROI covers the entire object, and projects the given image point
+ * onto the ground plane (z=0) in target frame coordinate.
  */
 cv::Vec3d projectToGround(
   const cv::Point2f& pixel,
@@ -72,22 +74,49 @@ cv::Vec3d projectToGround(
   cv::Vec3d ray_world = R * ray_cam;
   cv::Vec3d cam_origin = t;
 
-  // get the ray length to the baselink's ground level (z=0)
+  // compute the scale factor (lambda) where the ray intersects the ground plane (z=0)
   double lambda = -cam_origin[2] / ray_world[2];
 
   return cam_origin + lambda * ray_world;
 }
 
 /**
- * @brief Compute the height of the bounding box in 3D space.
- * This function use the top pixel of bbox to calculate the height by
- * casting rays to the near (x, y) point of bottom pixel.
+ * @brief Back-projects a pixel into 3D space at a specified depth.
+ *
+ * Given a pixel coordinate, this function computes the corresponding 3D point
+ * located at depth z along the camera's optical axis, and returns its position
+ * in target frame coordinate.
+ */
+cv::Vec3d projectPixelToImagePlane(
+    const cv::Point2f& pixel,
+    const cv::Matx33d& K, const cv::Mat& D,
+    const cv::Matx33d& R, const cv::Vec3d& t,
+    double z)
+{
+    std::vector<cv::Point2f> pixels = { pixel };
+    std::vector<cv::Point2f> undistorted;
+    cv::undistortPoints(pixels, undistorted, K, D);
+
+    cv::Vec3d ray_cam(undistorted[0].x, undistorted[0].y, 1.0);
+    cv::Vec3d point_cam = ray_cam * z;
+    cv::Vec3d point_world = R * point_cam + t;
+
+    return point_world;
+}
+
+/**
+ * @brief Computes the height of an ROI in 3D space.
+ *
+ * Uses the top pixel of the ROI to cast a ray into 3D, and estimates the height
+ * by intersecting this ray with the (x, y) location of the projected bottom pixel.
+ * Falls back to a pseudo height if no valid intersection is found.
  */
 double computeHeight(
   const cv::Point2f& pixel_top,
   const cv::Matx33d& K, const cv::Mat& D,
   const cv::Matx33d& R, const cv::Vec3d& t,
-  const cv::Vec3d& bottom_world)
+  const cv::Vec3d& projected_bottom_pixel,
+  const double pseudo_height)
 {
   std::vector<cv::Point2f> pixels = { pixel_top };
   std::vector<cv::Point2f> undistorted;
@@ -97,16 +126,33 @@ double computeHeight(
   cv::Vec3d ray_world = R * ray_cam;
   cv::Vec3d cam_origin = t;
 
-  // search the ray length that hit the x, y of the bottom point
-  // NOTE: it might be better to solve with least squares or something.
-  double lambda_x = (bottom_world[0] - cam_origin[0]) / ray_world[0];
-  double lambda_y = (bottom_world[1] - cam_origin[1]) / ray_world[1];
-  // averaging for robustness
-  double lambda = (lambda_x + lambda_y) / 2.0;
+  // search for the scale factor (lambda) at which the ray intersects
+  // the (x, y) position of the projected bottom pixel
+  const double lambda_x = (projected_bottom_pixel[0] - cam_origin[0]) / ray_world[0];
+  const double lambda_y = (projected_bottom_pixel[1] - cam_origin[1]) / ray_world[1];
 
-  cv::Vec3d top_point = cam_origin + lambda * ray_world;
+  double lambda;
+  // handle cases where the ray points in the opposite direction (negative lambda)
+  if (lambda_x >= 0) {
+    if (lambda_y >= 0) {
+      // average the two solutions for robustness
+      // NOTE: a least-squares solution might be more accurate
+      lambda = (lambda_x + lambda_y) / 2.0;
+    } else {
+      lambda = lambda_x;
+    }
+  } else {
+    if (lambda_y >= 0) {
+      lambda = lambda_y;
+    } else {
+      // if both lambdas are negative, fall back to the pseudo height
+      lambda = pseudo_height;
+    }
+  }
 
-  return top_point[2];
+  cv::Vec3d projected_top_point = cam_origin + lambda * ray_world;
+
+  return projected_top_point[2];
 }
 
 // initialize constructor
@@ -114,6 +160,7 @@ RoiBasedDetectorNode::RoiBasedDetectorNode(const rclcpp::NodeOptions & node_opti
 : Node("roi_based_detector_node", node_options)
 {
   target_frame_ = declare_parameter<std::string>("target_frame");
+
   label_settings_.UNKNOWN = declare_parameter<bool>("ignore_class.UNKNOWN");
   label_settings_.CAR = declare_parameter<bool>("ignore_class.CAR");
   label_settings_.TRUCK = declare_parameter<bool>("ignore_class.TRUCK");
@@ -123,64 +170,67 @@ RoiBasedDetectorNode::RoiBasedDetectorNode(const rclcpp::NodeOptions & node_opti
   label_settings_.BICYCLE = declare_parameter<bool>("ignore_class.BICYCLE");
   label_settings_.PEDESTRIAN = declare_parameter<bool>("ignore_class.PEDESTRIAN");
 
-  std::vector<long> roi_ids = declare_parameter<std::vector<long>>("roi_ids");
-  size_t rois_number = roi_ids.size();
+  const double detection_max_range = declare_parameter<double>("detection_max_range");
+  detection_max_range_sq_ = detection_max_range * detection_max_range;
+  pseudo_height_ = declare_parameter<double>("pseudo_height");
+
+  check_roi_truncation_ = declare_parameter<bool>("roi_truncation.check_truncation");
+  roi_truncation_bottom_margin_ =
+    declare_parameter<long>("roi_truncation.truncation_image_bottom_margin");
+  truncated_roi_projection_plane_z_ = declare_parameter<double>("roi_truncation.projection_plane_z");
+
+  std::vector<long> rois_ids = declare_parameter<std::vector<long>>("rois_ids");
+  size_t rois_number = rois_ids.size();
 
   // create subscriber and publisher
   camera_info_subs_.resize(rois_number);
   roi_subs_.resize(rois_number);
-  for (auto roi_id_index = 0u; roi_id_index < rois_number; ++roi_id_index) {
-    const int roi_id = roi_ids[roi_id_index];
-    const std::string roi_id_str = std::to_string(roi_id);
+  for (auto rois_id_index = 0u; rois_id_index < rois_number; ++rois_id_index) {
+    const int rois_id = rois_ids[rois_id_index];
+    const std::string rois_id_str = std::to_string(rois_id);
+
+    is_camera_info_arrived_[rois_id] = false;
 
     // subscriber: camera info
     const std::string camera_info_topic_name = declare_parameter<std::string>(
-      "input/rois" + roi_id_str + "/camera_info",
-      "/sensing/camera/camera" + roi_id_str + "/camera_info");
+      "input/rois" + rois_id_str + "/camera_info",
+      "/sensing/camera/camera" + rois_id_str + "/camera_info");
     const auto camera_info_qos = rclcpp::QoS{1}.best_effort();
 
-    camera_info_subs_[roi_id_index] = this->create_subscription<CameraInfo>(
-      camera_info_topic_name, camera_info_qos, [this, roi_id](
+    camera_info_subs_[rois_id_index] = this->create_subscription<CameraInfo>(
+      camera_info_topic_name, camera_info_qos, [this, rois_id](
         const CameraInfo::ConstSharedPtr msg) {
-          this->cameraInfoCallback(msg, roi_id);
+          this->cameraInfoCallback(msg, rois_id);
         }
       );
 
     // subscriber: roi
     const std::string roi_topic_name = declare_parameter<std::string>(
-      "input/rois" + roi_id_str,
-      "/perception/object_recognition/detection/rois" + roi_id_str);
+      "input/rois" + rois_id_str,
+      "/perception/object_recognition/detection/rois" + rois_id_str);
     const auto roi_qos = rclcpp::QoS{1}.best_effort();
 
-    roi_subs_[roi_id_index] = this->create_subscription<DetectedObjectsWithFeature>(
-      roi_topic_name, roi_qos, [this, roi_id](const DetectedObjectsWithFeature::ConstSharedPtr msg) {
-        this->roiCallback(msg, roi_id);
+    roi_subs_[rois_id_index] = this->create_subscription<DetectedObjectsWithFeature>(
+      roi_topic_name, roi_qos, [this, rois_id](const DetectedObjectsWithFeature::ConstSharedPtr msg) {
+        this->roiCallback(msg, rois_id);
       });
 
     // publisher
     const std::string output_topic_name = declare_parameter<std::string>(
-      "output/rois" + roi_id_str + "/objects");
-    objects_pubs_[roi_id] =
+      "output/rois" + rois_id_str + "/objects");
+    objects_pubs_[rois_id] =
       this->create_publisher<DetectedObjects>(output_topic_name, 1);
   }
 
   transform_listener_ = std::make_shared<TransformListener>(this);
 }
 
-void RoiBasedDetectorNode::cameraInfoCallback(const CameraInfo::ConstSharedPtr & msg, int roi_id)
+void RoiBasedDetectorNode::cameraInfoCallback(const CameraInfo::ConstSharedPtr & msg, int rois_id)
 {
-  CameraInfo camera_info = *msg;
-  camera_info_[roi_id] = camera_info;
-
   // assuming camera paramter never changes while running
-  if (!is_inv_projection_initialized_[roi_id]) {
-    Eigen::Matrix4f projection;
-    projection << camera_info.p.at(0), camera_info.p.at(1), camera_info.p.at(2),
-      camera_info.p.at(3), camera_info.p.at(4), camera_info.p.at(5), camera_info.p.at(6),
-      camera_info.p.at(7), camera_info.p.at(8), camera_info.p.at(9), camera_info.p.at(10),
-      camera_info.p.at(11), 0.0, 0.0, 0.0, 1.0;
-    inv_projection_[roi_id] = projection.inverse();
-    is_inv_projection_initialized_[roi_id] = true;
+  if (!is_camera_info_arrived_[rois_id]) {
+    CameraInfo camera_info = *msg;
+    camera_info_[rois_id] = camera_info;
 
     // K is row-major 3x3
     cv::Matx33d K(
@@ -194,23 +244,23 @@ void RoiBasedDetectorNode::cameraInfoCallback(const CameraInfo::ConstSharedPtr &
       D.at<double>(i, 0) = camera_info.d[i];
     }
 
-    cam_intrinsics_[roi_id] = CameraIntrinsics{K, D};
-
-    is_inv_projection_initialized_[roi_id] = true;
+    cam_intrinsics_[rois_id] = CameraIntrinsics{K, D};
+    is_camera_info_arrived_[rois_id] = true;
   }
 }
 
 /**
- * @brief Create a 3D object from a 2D ROI.
- * This function mainly target for pedestrian since the created object should not
- * be precise without the dephs information.
+ * @brief Estimates a 3D object from a 2D ROI.
+ *
+ * This function primarily targets pedestrian detection, as the generated 3D object
+ * is only an approximation and may be inaccurate without depth information.
  */
-void RoiBasedDetectorNode::createProjectedObject(
-  const sensor_msgs::msg::RegionOfInterest & roi, const int & roi_id,
+bool RoiBasedDetectorNode::generateROIBasedObject(
+  const sensor_msgs::msg::RegionOfInterest & roi, const int & rois_id,
   const geometry_msgs::msg::TransformStamped & tf, const uint8_t & label,
   DetectedObject & object)
 {
-  CameraIntrinsics cam_intrinsics = cam_intrinsics_[roi_id];
+  CameraIntrinsics cam_intrinsics = cam_intrinsics_[rois_id];
   const cv::Matx33d K = cam_intrinsics.K;
   const cv::Mat D = cam_intrinsics.D;
 
@@ -218,83 +268,99 @@ void RoiBasedDetectorNode::createProjectedObject(
   const uint32_t y_offset = roi.y_offset;
   const uint32_t roi_width = roi.width;
   const uint32_t roi_height = roi.height;
-  // use the ROI's bottom center for spawning position, and top center to approximate the height
-  const cv::Point2f bottom_center(x_offset + roi_width * 0.5f, y_offset + roi_height);
+
+  // use the ROI's bottom center to estimate the 3D position,
+  // and the top center to approximate object height
+  const uint32_t bottom_pixel_y = y_offset + roi_height;
+  const cv::Point2f bottom_center(x_offset + roi_width * 0.5f, bottom_pixel_y);
   const cv::Point2f top_center(x_offset + roi_width * 0.5f, y_offset);
-  // for deciding the diameter or width
-  const cv::Point2f bottom_left(x_offset, y_offset + roi_height);
-  const cv::Point2f bottom_right(x_offset + roi.width, y_offset + roi_height);
+  // bottom left and right points are used to estimate the object's width/diameter
+  const cv::Point2f bottom_left(x_offset, bottom_pixel_y);
+  const cv::Point2f bottom_right(x_offset + roi.width, bottom_pixel_y);
 
   cv::Matx33d R;
   cv::Vec3d t;
   transformToRT(tf, R, t);
 
-  const cv::Vec3d bottom_point_in_3d = projectToGround(bottom_center, K, D, R, t);
-  const double height = computeHeight(top_center, K, D, R, t, bottom_point_in_3d);
+  cv::Vec3d bottom_point_in_3d;
+  if (
+    check_roi_truncation_ &&
+    bottom_pixel_y >= (camera_info_[rois_id].height - roi_truncation_bottom_margin_)) {
+    // if the ROI is close to the image bottom border, treat it as truncated
+    bottom_point_in_3d =
+      projectPixelToImagePlane(bottom_center, K, D, R, t, truncated_roi_projection_plane_z_);
+    bottom_point_in_3d[2] = 0.0;
+  } else {
+    bottom_point_in_3d = projectToGround(bottom_center, K, D, R, t);
+  }
+
+  const double dist_sq =
+    bottom_point_in_3d[0] * bottom_point_in_3d[0] + bottom_point_in_3d[1] * bottom_point_in_3d[1];
+  if (dist_sq > detection_max_range_sq_) {
+    // skip this ROI if it is beyond the maximum detection range
+    return false;
+  }
+
+  const double height = computeHeight(top_center, K, D, R, t, bottom_point_in_3d, pseudo_height_);
+  std::cout << height << std::endl;
 
   const cv::Vec3d left_point_in_3d = projectToGround(bottom_left, K, D, R, t);
   const cv::Vec3d right_point_in_3d = projectToGround(bottom_right, K, D, R, t);
 
-  const double dim_xy = cv::norm(left_point_in_3d-right_point_in_3d);
+  const double dim_xy = cv::norm(left_point_in_3d - right_point_in_3d);
 
-  geometry_msgs::msg::PoseStamped pose_stamped{};
-  pose_stamped.pose.position.x = bottom_point_in_3d[0];
-  pose_stamped.pose.position.y = bottom_point_in_3d[1];
-  pose_stamped.pose.position.z = height * 0.5;
-  object.kinematics.pose_with_covariance.pose = pose_stamped.pose;
-
-  uint8_t shape_type = label_settings_.getLabelShape(label);
-  if (
-    shape_type == autoware_perception_msgs::msg::Shape::BOUNDING_BOX ||
-    shape_type == autoware_perception_msgs::msg::Shape::CYLINDER){
-    object.shape.type = shape_type;
-  } else {
-    object.shape.type = autoware_perception_msgs::msg::Shape::POLYGON;
-
-    const float spacing = static_cast<float>(dim_xy);
-
-    // add points for better visualization
-    geometry_msgs::msg::Point32 p1;
-    p1.x = -spacing * 0.5f;
-    p1.y = -spacing * 0.5f;
-    p1.z = 0.0f;
-    object.shape.footprint.points.push_back(p1);
-
-    geometry_msgs::msg::Point32 p2;
-    p2.x = -spacing * 0.5f;
-    p2.y = +spacing * 0.5f;
-    p2.z = 0.0f;
-    object.shape.footprint.points.push_back(p2);
-
-    geometry_msgs::msg::Point32 p3;
-    p3.x = +spacing * 0.5f;
-    p3.y = +spacing * 0.5f;
-    p3.z = 0.0f;
-    object.shape.footprint.points.push_back(p3);
-
-    geometry_msgs::msg::Point32 p4;
-    p4.x = +spacing * 0.5f;
-    p4.y = -spacing * 0.5f;
-    p4.z = 0.0f;
-    object.shape.footprint.points.push_back(p4);
-  }
+  object.kinematics.pose_with_covariance.pose.position.x = bottom_point_in_3d[0];
+  object.kinematics.pose_with_covariance.pose.position.y = bottom_point_in_3d[1];
+  object.kinematics.pose_with_covariance.pose.position.z = height * 0.5;
 
   object.shape.dimensions.x = dim_xy;
   object.shape.dimensions.y = dim_xy;
   object.shape.dimensions.z = height;
+
+  object.shape.type = label_settings_.getLabelShape(label);
+  if (object.shape.type == autoware_perception_msgs::msg::Shape::POLYGON) {
+    const float spacing = static_cast<float>(dim_xy) * 0.5f;
+
+    // add footprint polygon points for visualization
+    geometry_msgs::msg::Point32 p1;
+    p1.x = -spacing;
+    p1.y = -spacing;
+    p1.z = 0.0f;
+    object.shape.footprint.points.push_back(p1);
+
+    geometry_msgs::msg::Point32 p2;
+    p2.x = -spacing;
+    p2.y = +spacing;
+    p2.z = 0.0f;
+    object.shape.footprint.points.push_back(p2);
+
+    geometry_msgs::msg::Point32 p3;
+    p3.x = +spacing;
+    p3.y = +spacing;
+    p3.z = 0.0f;
+    object.shape.footprint.points.push_back(p3);
+
+    geometry_msgs::msg::Point32 p4;
+    p4.x = +spacing;
+    p4.y = -spacing;
+    p4.z = 0.0f;
+    object.shape.footprint.points.push_back(p4);
+  }
+
+  return true;
 }
 
 void RoiBasedDetectorNode::roiCallback(
-  const DetectedObjectsWithFeature::ConstSharedPtr & msg, int roi_id)
+  const DetectedObjectsWithFeature::ConstSharedPtr & msg, int rois_id)
 {
-  if (!is_inv_projection_initialized_[roi_id]) {
+  if (!is_camera_info_arrived_[rois_id]) {
     RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 5000, "camera_info is not received yet");
     return;
   }
 
   DetectedObjects objects;
 
-  // get transform from camera frame to base_link frame
+  // get transform from camera frame to target frame
   try {
     transform_ = transform_listener_->getTransform(
       target_frame_, msg->header.frame_id, msg->header.stamp,
@@ -302,7 +368,7 @@ void RoiBasedDetectorNode::roiCallback(
   } catch (const tf2::TransformException & ex) {
     RCLCPP_ERROR(get_logger(), "Failed to get transform: %s", ex.what());
     objects.header = msg->header;
-    objects_pubs_[roi_id]->publish(objects);
+    objects_pubs_[rois_id]->publish(objects);
     return;
   }
 
@@ -311,15 +377,8 @@ void RoiBasedDetectorNode::roiCallback(
       get_logger(), *get_clock(), 5000, "getTransform failed. output objects will be empty.");
     std::cout << msg->header.frame_id << " to " << target_frame_ << std::endl;
     objects.header = msg->header;
-    objects_pubs_[roi_id]->publish(objects);
+    objects_pubs_[rois_id]->publish(objects);
     return;
-  }
-
-  if (!is_camera2lidar_mul_inv_projection_initialized_[roi_id]) {
-    const Eigen::Matrix4f transform_matrix_cam2base =
-      tf2::transformToEigen(transform_->transform).matrix().cast<float>();
-    camera2lidar_mul_inv_projection_[roi_id] = transform_matrix_cam2base * inv_projection_[roi_id];
-    is_camera2lidar_mul_inv_projection_initialized_[roi_id] = true;
   }
 
   for (const auto & obj_with_feature : msg->feature_objects) {
@@ -333,14 +392,15 @@ void RoiBasedDetectorNode::roiCallback(
     object.classification.push_back(obj_with_feature.object.classification.front());
     object.existence_probability = obj_with_feature.object.existence_probability;
 
-    createProjectedObject(obj_with_feature.feature.roi, roi_id, *transform_, label, object);
-
-    objects.objects.push_back(object);
+    // if it is in the detection range, we will publish it
+    if (generateROIBasedObject(obj_with_feature.feature.roi, rois_id, *transform_, label, object)) {
+      objects.objects.push_back(object);
+    }
   }
 
   objects.header = msg->header;
   objects.header.frame_id = target_frame_;
-  objects_pubs_[roi_id]->publish(objects);
+  objects_pubs_[rois_id]->publish(objects);
 }
 
 }  // namespace roi_based_detector
