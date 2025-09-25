@@ -29,30 +29,23 @@
 #include <tf2_sensor_msgs/tf2_sensor_msgs.hpp>
 #endif
 
+#include <memory>
+#include <string>
+#include <vector>
+
 namespace roi_based_detector
 {
-void transformToRT(const geometry_msgs::msg::TransformStamped& tf, cv::Matx33d& R, cv::Vec3d& t)
+void transformToRT(const geometry_msgs::msg::TransformStamped & tf, cv::Matx33d & R, cv::Vec3d & t)
 {
   tf2::Quaternion q(
-    tf.transform.rotation.x,
-    tf.transform.rotation.y,
-    tf.transform.rotation.z,
-    tf.transform.rotation.w
-  );
+    tf.transform.rotation.x, tf.transform.rotation.y, tf.transform.rotation.z,
+    tf.transform.rotation.w);
 
   tf2::Matrix3x3 m(q);
 
-  R = cv::Matx33d(
-    m[0][0], m[0][1], m[0][2],
-    m[1][0], m[1][1], m[1][2],
-    m[2][0], m[2][1], m[2][2]
-  );
+  R = cv::Matx33d(m[0][0], m[0][1], m[0][2], m[1][0], m[1][1], m[1][2], m[2][0], m[2][1], m[2][2]);
 
-  t = cv::Vec3d(
-    tf.transform.translation.x,
-    tf.transform.translation.y,
-    tf.transform.translation.z
-  );
+  t = cv::Vec3d(tf.transform.translation.x, tf.transform.translation.y, tf.transform.translation.z);
 }
 
 /**
@@ -62,11 +55,10 @@ void transformToRT(const geometry_msgs::msg::TransformStamped& tf, cv::Matx33d& 
  * onto the ground plane (z=0) in target frame coordinate.
  */
 cv::Vec3d projectToGround(
-  const cv::Point2f& pixel,
-  const cv::Matx33d& K, const cv::Mat& D,
-  const cv::Matx33d& R, const cv::Vec3d& t)
+  const cv::Point2f & pixel, const cv::Matx33d & K, const cv::Mat & D, const cv::Matx33d & R,
+  const cv::Vec3d & t)
 {
-  std::vector<cv::Point2f> pixels = { pixel };
+  std::vector<cv::Point2f> pixels = {pixel};
   std::vector<cv::Point2f> undistorted;
   cv::undistortPoints(pixels, undistorted, K, D);
 
@@ -75,7 +67,7 @@ cv::Vec3d projectToGround(
   cv::Vec3d cam_origin = t;
 
   // compute the scale factor (lambda) where the ray intersects the ground plane (z=0)
-  double lambda = -cam_origin[2] / ray_world[2];
+  const double lambda = -cam_origin[2] / ray_world[2];
 
   return cam_origin + lambda * ray_world;
 }
@@ -88,20 +80,18 @@ cv::Vec3d projectToGround(
  * in target frame coordinate.
  */
 cv::Vec3d projectPixelToImagePlane(
-    const cv::Point2f& pixel,
-    const cv::Matx33d& K, const cv::Mat& D,
-    const cv::Matx33d& R, const cv::Vec3d& t,
-    double z)
+  const cv::Point2f & pixel, const cv::Matx33d & K, const cv::Mat & D, const cv::Matx33d & R,
+  const cv::Vec3d & t, double z)
 {
-    std::vector<cv::Point2f> pixels = { pixel };
-    std::vector<cv::Point2f> undistorted;
-    cv::undistortPoints(pixels, undistorted, K, D);
+  std::vector<cv::Point2f> pixels = {pixel};
+  std::vector<cv::Point2f> undistorted;
+  cv::undistortPoints(pixels, undistorted, K, D);
 
-    cv::Vec3d ray_cam(undistorted[0].x, undistorted[0].y, 1.0);
-    cv::Vec3d point_cam = ray_cam * z;
-    cv::Vec3d point_world = R * point_cam + t;
+  cv::Vec3d ray_cam(undistorted[0].x, undistorted[0].y, 1.0);
+  cv::Vec3d point_cam = ray_cam * z;
+  cv::Vec3d point_world = R * point_cam + t;
 
-    return point_world;
+  return point_world;
 }
 
 /**
@@ -112,13 +102,10 @@ cv::Vec3d projectPixelToImagePlane(
  * Falls back to a pseudo height if no valid intersection is found.
  */
 double computeHeight(
-  const cv::Point2f& pixel_top,
-  const cv::Matx33d& K, const cv::Mat& D,
-  const cv::Matx33d& R, const cv::Vec3d& t,
-  const cv::Vec3d& projected_bottom_pixel,
-  const double pseudo_height)
+  const cv::Point2f & pixel_top, const cv::Matx33d & K, const cv::Mat & D, const cv::Matx33d & R,
+  const cv::Vec3d & t, const cv::Vec3d & projected_bottom_pixel, const double pseudo_height)
 {
-  std::vector<cv::Point2f> pixels = { pixel_top };
+  std::vector<cv::Point2f> pixels = {pixel_top};
   std::vector<cv::Point2f> undistorted;
   cv::undistortPoints(pixels, undistorted, K, D);
 
@@ -176,10 +163,11 @@ RoiBasedDetectorNode::RoiBasedDetectorNode(const rclcpp::NodeOptions & node_opti
 
   check_roi_truncation_ = declare_parameter<bool>("roi_truncation.check_truncation");
   roi_truncation_bottom_margin_ =
-    declare_parameter<long>("roi_truncation.truncation_image_bottom_margin");
-  truncated_roi_projection_plane_z_ = declare_parameter<double>("roi_truncation.projection_plane_z");
+    declare_parameter<int64_t>("roi_truncation.truncation_image_bottom_margin");
+  truncated_roi_projection_plane_z_ =
+    declare_parameter<double>("roi_truncation.projection_plane_z");
 
-  std::vector<long> rois_ids = declare_parameter<std::vector<long>>("rois_ids");
+  std::vector<int64_t> rois_ids = declare_parameter<std::vector<int64_t>>("rois_ids");
   size_t rois_number = rois_ids.size();
 
   // create subscriber and publisher
@@ -198,28 +186,26 @@ RoiBasedDetectorNode::RoiBasedDetectorNode(const rclcpp::NodeOptions & node_opti
     const auto camera_info_qos = rclcpp::QoS{1}.best_effort();
 
     camera_info_subs_[rois_id_index] = this->create_subscription<CameraInfo>(
-      camera_info_topic_name, camera_info_qos, [this, rois_id](
-        const CameraInfo::ConstSharedPtr msg) {
-          this->cameraInfoCallback(msg, rois_id);
-        }
-      );
+      camera_info_topic_name, camera_info_qos,
+      [this, rois_id](const CameraInfo::ConstSharedPtr msg) {
+        this->cameraInfoCallback(msg, rois_id);
+      });
 
     // subscriber: roi
     const std::string roi_topic_name = declare_parameter<std::string>(
-      "input/rois" + rois_id_str,
-      "/perception/object_recognition/detection/rois" + rois_id_str);
+      "input/rois" + rois_id_str, "/perception/object_recognition/detection/rois" + rois_id_str);
     const auto roi_qos = rclcpp::QoS{1}.best_effort();
 
     roi_subs_[rois_id_index] = this->create_subscription<DetectedObjectsWithFeature>(
-      roi_topic_name, roi_qos, [this, rois_id](const DetectedObjectsWithFeature::ConstSharedPtr msg) {
+      roi_topic_name, roi_qos,
+      [this, rois_id](const DetectedObjectsWithFeature::ConstSharedPtr msg) {
         this->roiCallback(msg, rois_id);
       });
 
     // publisher
-    const std::string output_topic_name = declare_parameter<std::string>(
-      "output/rois" + rois_id_str + "/objects");
-    objects_pubs_[rois_id] =
-      this->create_publisher<DetectedObjects>(output_topic_name, 1);
+    const std::string output_topic_name =
+      declare_parameter<std::string>("output/rois" + rois_id_str + "/objects");
+    objects_pubs_[rois_id] = this->create_publisher<DetectedObjects>(output_topic_name, 1);
   }
 
   transform_listener_ = std::make_shared<TransformListener>(this);
@@ -227,17 +213,15 @@ RoiBasedDetectorNode::RoiBasedDetectorNode(const rclcpp::NodeOptions & node_opti
 
 void RoiBasedDetectorNode::cameraInfoCallback(const CameraInfo::ConstSharedPtr & msg, int rois_id)
 {
-  // assuming camera paramter never changes while running
+  // assuming camera paramter never changes while node is running
   if (!is_camera_info_arrived_[rois_id]) {
     CameraInfo camera_info = *msg;
     camera_info_[rois_id] = camera_info;
 
     // K is row-major 3x3
     cv::Matx33d K(
-      camera_info.k[0], camera_info.k[1], camera_info.k[2],
-      camera_info.k[3], camera_info.k[4], camera_info.k[5],
-      camera_info.k[6], camera_info.k[7], camera_info.k[8]
-    );
+      camera_info.k[0], camera_info.k[1], camera_info.k[2], camera_info.k[3], camera_info.k[4],
+      camera_info.k[5], camera_info.k[6], camera_info.k[7], camera_info.k[8]);
 
     cv::Mat D = cv::Mat(camera_info.d.size(), 1, CV_64F);
     for (size_t i = 0; i < camera_info.d.size(); i++) {
@@ -257,8 +241,7 @@ void RoiBasedDetectorNode::cameraInfoCallback(const CameraInfo::ConstSharedPtr &
  */
 bool RoiBasedDetectorNode::generateROIBasedObject(
   const sensor_msgs::msg::RegionOfInterest & roi, const int & rois_id,
-  const geometry_msgs::msg::TransformStamped & tf, const uint8_t & label,
-  DetectedObject & object)
+  const geometry_msgs::msg::TransformStamped & tf, const uint8_t & label, DetectedObject & object)
 {
   CameraIntrinsics cam_intrinsics = cam_intrinsics_[rois_id];
   const cv::Matx33d K = cam_intrinsics.K;
@@ -302,7 +285,6 @@ bool RoiBasedDetectorNode::generateROIBasedObject(
   }
 
   const double height = computeHeight(top_center, K, D, R, t, bottom_point_in_3d, pseudo_height_);
-  std::cout << height << std::endl;
 
   const cv::Vec3d left_point_in_3d = projectToGround(bottom_left, K, D, R, t);
   const cv::Vec3d right_point_in_3d = projectToGround(bottom_right, K, D, R, t);
@@ -363,8 +345,7 @@ void RoiBasedDetectorNode::roiCallback(
   // get transform from camera frame to target frame
   try {
     transform_ = transform_listener_->getTransform(
-      target_frame_, msg->header.frame_id, msg->header.stamp,
-      rclcpp::Duration::from_seconds(0.01));
+      target_frame_, msg->header.frame_id, msg->header.stamp, rclcpp::Duration::from_seconds(0.01));
   } catch (const tf2::TransformException & ex) {
     RCLCPP_ERROR(get_logger(), "Failed to get transform: %s", ex.what());
     objects.header = msg->header;
@@ -375,7 +356,6 @@ void RoiBasedDetectorNode::roiCallback(
   if (!transform_) {
     RCLCPP_ERROR_THROTTLE(
       get_logger(), *get_clock(), 5000, "getTransform failed. output objects will be empty.");
-    std::cout << msg->header.frame_id << " to " << target_frame_ << std::endl;
     objects.header = msg->header;
     objects_pubs_[rois_id]->publish(objects);
     return;

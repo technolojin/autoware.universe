@@ -16,9 +16,8 @@
 #define ROI_BASED_DETECTOR__ROI_BASED_DETECTOR_NODE_HPP_
 
 #include <autoware/universe_utils/ros/transform_listener.hpp>
-#include <rclcpp/rclcpp.hpp>
-
 #include <opencv2/opencv.hpp>
+#include <rclcpp/rclcpp.hpp>
 
 #include <autoware_perception_msgs/msg/detected_objects.hpp>
 #include <sensor_msgs/msg/camera_info.hpp>
@@ -41,6 +40,7 @@
 
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 namespace roi_based_detector
@@ -50,7 +50,6 @@ using autoware_perception_msgs::msg::DetectedObject;
 using autoware_perception_msgs::msg::DetectedObjects;
 using sensor_msgs::msg::CameraInfo;
 using tier4_perception_msgs::msg::DetectedObjectsWithFeature;
-using tier4_perception_msgs::msg::DetectedObjectWithFeature;
 using Label = autoware_perception_msgs::msg::ObjectClassification;
 
 class RoiBasedDetectorNode : public rclcpp::Node
@@ -100,8 +99,9 @@ private:
 
   void roiCallback(const DetectedObjectsWithFeature::ConstSharedPtr & msg, int rois_id);
   void cameraInfoCallback(const CameraInfo::ConstSharedPtr & msg, int rois_id);
-  bool generateROIBasedObject(const sensor_msgs::msg::RegionOfInterest & roi,
-    const int & rois_id, const geometry_msgs::msg::TransformStamped & tf, const uint8_t & label,
+  bool generateROIBasedObject(
+    const sensor_msgs::msg::RegionOfInterest & roi, const int & rois_id,
+    const geometry_msgs::msg::TransformStamped & tf, const uint8_t & label,
     DetectedObject & object);
 
   // subscriber

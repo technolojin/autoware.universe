@@ -6,7 +6,6 @@
   <arg name="input/rois1" default="/perception/object_recognition/detection/rois1"/>
   <arg name="camera/rois1/camera_info" default="/sensing/camera/camera1/camera_info"/>
   <arg name="output/rois1/objects" default="/perception/object_recognition/detection/roi_based_detector/rois1/objects"/>
-  <!--<arg name="output/roi0" default="/perception/object_recognition/detection/output_rois"/>-->
   <arg name="param_path" default="$(find-pkg-share roi_based_detector)/config/roi_based_detector.param.yaml"/>
 
   <node pkg="roi_based_detector" exec="roi_based_detector_node" name="roi_based_detector_node" output="screen">
@@ -16,7 +15,6 @@
     <remap from="input/rois1" to="$(var input/rois1)"/>
     <remap from="input/rois1/camera_info" to="$(var camera/rois1/camera_info)"/>
     <param name="output/rois1/objects" value="$(var output/rois1/objects)"/>
-    <!--<remap from="output_rois" to="$(var output/rois)"/>-->
     <param from="$(var param_path)"/>
   </node>
 </launch>
