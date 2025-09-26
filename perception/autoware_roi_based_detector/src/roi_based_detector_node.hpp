@@ -77,7 +77,7 @@ private:
              (label == Label::BICYCLE && BICYCLE) || (label == Label::PEDESTRIAN && PEDESTRIAN);
     }
 
-    uint8_t getLabelShape(const uint8_t label) const
+    static uint8_t getLabelShape(const uint8_t label) const
     {
       if (
         label == Label::CAR || label == Label::TRUCK || label == Label::BUS ||
