@@ -33,6 +33,8 @@
 #include <string>
 #include <vector>
 
+// cspell: ignore Matx
+
 namespace autoware::roi_based_detector
 {
 void transformToRT(const geometry_msgs::msg::TransformStamped & tf, cv::Matx33d & R, cv::Vec3d & t)
@@ -212,7 +214,7 @@ RoiBasedDetectorNode::RoiBasedDetectorNode(const rclcpp::NodeOptions & node_opti
 
 void RoiBasedDetectorNode::cameraInfoCallback(const CameraInfo::ConstSharedPtr & msg, int rois_id)
 {
-  // assuming camera paramter never changes while node is running
+  // assuming camera parameter never changes while node is running
   if (!is_camera_info_arrived_[rois_id]) {
     CameraInfo camera_info = *msg;
     camera_info_[rois_id] = camera_info;

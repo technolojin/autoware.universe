@@ -93,6 +93,7 @@ private:
 
   struct CameraIntrinsics
   {
+    // cspell: ignore Matx
     cv::Matx33d K;
     cv::Mat D;
   };  // struct CameraIntrinsics
