@@ -163,6 +163,11 @@ RoiBasedDetectorNode::RoiBasedDetectorNode(const rclcpp::NodeOptions & node_opti
   detection_max_range_sq_ = detection_max_range * detection_max_range;
   pseudo_height_ = declare_parameter<double>("pseudo_height");
 
+  std::vector<double> pedestrian_width_limits =
+    declare_parameter<std::vector<double>>("pedestrian_width_limits");
+  pedestrian_width_min_ = pedestrian_width_limits[0];
+  pedestrian_width_max_ = pedestrian_width_limits[1];
+
   check_roi_truncation_ = declare_parameter<bool>("roi_truncation.check_truncation");
   roi_truncation_bottom_margin_ =
     declare_parameter<int64_t>("roi_truncation.truncation_image_bottom_margin");
@@ -296,8 +301,15 @@ bool RoiBasedDetectorNode::generateROIBasedObject(
   object.kinematics.pose_with_covariance.pose.position.y = bottom_point_in_3d[1];
   object.kinematics.pose_with_covariance.pose.position.z = height * 0.5;
 
-  object.shape.dimensions.x = dim_xy;
-  object.shape.dimensions.y = dim_xy;
+  // this function primarily targets pedestrian, we will check the dimensions of pedestrian
+  if (label == Label::PEDESTRIAN) {
+    const double clamped_dim_xy = std::clamp(dim_xy, pedestrian_width_min_, pedestrian_width_max_);
+    object.shape.dimensions.x = clamped_dim_xy;
+    object.shape.dimensions.y = clamped_dim_xy;
+  } else {
+    object.shape.dimensions.x = dim_xy;
+    object.shape.dimensions.y = dim_xy;
+  }
   object.shape.dimensions.z = height;
 
   object.shape.type = label_settings_.getLabelShape(label);

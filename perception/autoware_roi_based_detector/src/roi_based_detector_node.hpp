@@ -116,6 +116,8 @@ private:
   LabelSettings label_settings_;
   double detection_max_range_sq_;
   double pseudo_height_;
+  double pedestrian_width_min_;
+  double pedestrian_width_max_;
   bool check_roi_truncation_;
   uint32_t roi_truncation_bottom_margin_;
   double truncated_roi_projection_plane_z_;
