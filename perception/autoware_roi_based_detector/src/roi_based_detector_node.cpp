@@ -163,10 +163,8 @@ RoiBasedDetectorNode::RoiBasedDetectorNode(const rclcpp::NodeOptions & node_opti
   detection_max_range_sq_ = detection_max_range * detection_max_range;
   pseudo_height_ = declare_parameter<double>("pseudo_height");
 
-  std::vector<double> pedestrian_width_limits =
-    declare_parameter<std::vector<double>>("pedestrian_width_limits");
-  pedestrian_width_min_ = pedestrian_width_limits[0];
-  pedestrian_width_max_ = pedestrian_width_limits[1];
+  pedestrian_width_min_ = declare_parameter<double>("pedestrian_detection_config.width_min");
+  pedestrian_width_max_ = declare_parameter<double>("pedestrian_detection_config.width_max");
 
   std::vector<int64_t> rois_ids = declare_parameter<std::vector<int64_t>>("rois_ids");
   size_t rois_number = rois_ids.size();

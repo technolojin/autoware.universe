@@ -75,6 +75,23 @@
           "description": "If height was not able to compute, this value will used as pseudo height of a object [m].",
           "default": 1.5,
           "minimum": 0.1
+        },
+        "pedestrian_detection_config": {
+          "type": "object",
+          "properties": {
+            "width_min": {
+              "type": "number",
+              "description": "If the estimated width is smaller than this value, it will be clamped to this value [m].",
+              "default": 0.5,
+              "minimum": 0.3
+            },
+            "width_max": {
+              "type": "number",
+              "description": "If the estimated width is larger than this value, it will be clamped to this value [m].",
+              "width_max": 0.8,
+              "minimum": 0.3
+            }
+          }
         }
       },
       "required": [

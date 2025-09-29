@@ -17,4 +17,6 @@
     # if object height is unavailable, this will be used instead
     pseudo_height: 1.5 # [m]
 
-    pedestrian_width_limits: [0.5, 0.8] # (min, max) [m]
+    pedestrian_detection_config:
+      width_min: 0.5 # [m]
+      width_max: 0.8 # [m]
