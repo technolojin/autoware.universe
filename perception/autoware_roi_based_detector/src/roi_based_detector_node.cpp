@@ -75,28 +75,6 @@ cv::Vec3d projectToGround(
 }
 
 /**
- * @brief Back-projects a pixel into 3D space at a specified depth.
- *
- * Given a pixel coordinate, this function computes the corresponding 3D point
- * located at depth z along the camera's optical axis, and returns its position
- * in target frame coordinate.
- */
-cv::Vec3d projectPixelToImagePlane(
-  const cv::Point2f & pixel, const cv::Matx33d & K, const cv::Mat & D, const cv::Matx33d & R,
-  const cv::Vec3d & t, double z)
-{
-  std::vector<cv::Point2f> pixels = {pixel};
-  std::vector<cv::Point2f> undistorted;
-  cv::undistortPoints(pixels, undistorted, K, D);
-
-  cv::Vec3d ray_cam(undistorted[0].x, undistorted[0].y, 1.0);
-  cv::Vec3d point_cam = ray_cam * z;
-  cv::Vec3d point_world = R * point_cam + t;
-
-  return point_world;
-}
-
-/**
  * @brief Computes the height of an ROI in 3D space.
  *
  * Uses the top pixel of the ROI to cast a ray into 3D, and estimates the height
