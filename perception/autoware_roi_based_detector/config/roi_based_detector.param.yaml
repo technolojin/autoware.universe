@@ -10,7 +10,6 @@
       MOTORCYCLE : true
       BICYCLE : true
       PEDESTRIAN : false
-    rois_ids: [0, 1]
 
     # if an object is detected farther than this, it will be filtered out
     detection_max_range: 30.0 # [m]

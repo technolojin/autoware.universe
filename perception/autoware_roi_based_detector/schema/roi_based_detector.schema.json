@@ -56,14 +56,6 @@
             }
           }
         },
-        "rois_ids": {
-          "type": "array",
-          "items": {
-            "type": "integer"
-          },
-          "description": "An array of input ROIs ids",
-          "default": [0]
-        },
         "detection_max_range": {
           "type": "number",
           "description": "Maximum detection range. Objects beyond this distance will not be included in the output [m].",
