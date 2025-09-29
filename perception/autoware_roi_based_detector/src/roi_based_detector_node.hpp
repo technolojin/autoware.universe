@@ -118,9 +118,6 @@ private:
   double pseudo_height_;
   double pedestrian_width_min_;
   double pedestrian_width_max_;
-  bool check_roi_truncation_;
-  uint32_t roi_truncation_bottom_margin_;
-  double truncated_roi_projection_plane_z_;
 
   std::unordered_map<int, CameraInfo> camera_info_;
   std::unordered_map<int, CameraIntrinsics> cam_intrinsics_;

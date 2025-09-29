@@ -168,12 +168,6 @@ RoiBasedDetectorNode::RoiBasedDetectorNode(const rclcpp::NodeOptions & node_opti
   pedestrian_width_min_ = pedestrian_width_limits[0];
   pedestrian_width_max_ = pedestrian_width_limits[1];
 
-  check_roi_truncation_ = declare_parameter<bool>("roi_truncation.check_truncation");
-  roi_truncation_bottom_margin_ =
-    declare_parameter<int64_t>("roi_truncation.truncation_image_bottom_margin");
-  truncated_roi_projection_plane_z_ =
-    declare_parameter<double>("roi_truncation.projection_plane_z");
-
   std::vector<int64_t> rois_ids = declare_parameter<std::vector<int64_t>>("rois_ids");
   size_t rois_number = rois_ids.size();
 
@@ -271,17 +265,8 @@ bool RoiBasedDetectorNode::generateROIBasedObject(
   cv::Vec3d t;
   transformToRT(tf, R, t);
 
-  cv::Vec3d bottom_point_in_3d;
-  if (
-    check_roi_truncation_ &&
-    bottom_pixel_y >= (camera_info_[rois_id].height - roi_truncation_bottom_margin_)) {
-    // if the ROI is close to the image bottom border, treat it as truncated
-    bottom_point_in_3d =
-      projectPixelToImagePlane(bottom_center, K, D, R, t, truncated_roi_projection_plane_z_);
-    bottom_point_in_3d[2] = 0.0;
-  } else {
-    bottom_point_in_3d = projectToGround(bottom_center, K, D, R, t);
-  }
+  // compute object ground point
+  cv::Vec3d bottom_point_in_3d = projectToGround(bottom_center, K, D, R, t);
 
   const double dist_sq =
     bottom_point_in_3d[0] * bottom_point_in_3d[0] + bottom_point_in_3d[1] * bottom_point_in_3d[1];

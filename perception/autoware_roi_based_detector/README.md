@@ -13,9 +13,6 @@ This package produces 3D object detections through the following steps:
 3. Back-project the bottom-left and bottom-right pixels of the ROI to estimate the object’s width (diameter).
 4. Use these four points to determine the object’s position and size.
 
-If `check_truncation` is set to `true`, the package checks whether a ROI is truncated by evaluating its distance from the bottom of the image.  
-When a ROI is considered truncated, the (x, y) coordinate is computed by projecting onto the camera plane at a fixed depth given by `projection_plane_z`.
-
 ## Parameters
 
 {{ json_to_markdown("perception/autoware_roi_based_detector/schema/roi_based_detector.schema.json") }}

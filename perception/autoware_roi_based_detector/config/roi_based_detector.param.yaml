@@ -18,8 +18,3 @@
     pseudo_height: 1.5 # [m]
 
     pedestrian_width_limits: [0.5, 0.8] # (min, max) [m]
-
-    roi_truncation:
-      check_truncation: true
-      truncation_image_bottom_margin: 0 # [pixel]
-      projection_plane_z: 0.5 # [m]

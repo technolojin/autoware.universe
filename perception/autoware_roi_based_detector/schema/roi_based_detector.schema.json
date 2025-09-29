@@ -75,27 +75,6 @@
           "description": "If height was not able to compute, this value will used as pseudo height of a object [m].",
           "default": 1.5,
           "minimum": 0.1
-        },
-        "roi_truncation": {
-          "type": "object",
-          "properties": {
-            "check_truncation": {
-              "type": "boolean",
-              "description": "If true, checks whether an ROI is near the bottom border of the image.",
-              "default": true
-            },
-            "truncation_image_bottom_margin": {
-              "type": "integer",
-              "description": "Pixel margin from the bottom of the image used to determine whether an ROI is considered truncated [pixel].",
-              "default": 0
-            },
-            "projection_plane_z": {
-              "type": "number",
-              "description": "Depth value used for projection when an ROI is considered truncated. The bottom point of the ROI will be projected onto the camera plane at this z value [m].",
-              "default": 0.5,
-              "minimum": 0.0
-            }
-          }
         }
       },
       "required": [
@@ -103,8 +82,7 @@
         "ignore_class",
         "rois_ids",
         "detection_max_range",
-        "pseudo_height",
-        "roi_truncation"
+        "pseudo_height"
       ]
     }
   },
