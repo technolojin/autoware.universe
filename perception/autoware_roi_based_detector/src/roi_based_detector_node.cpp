@@ -264,7 +264,7 @@ bool RoiBasedDetectorNode::generateROIBasedObject(
   transformToRT(tf, R, t);
 
   // compute object ground point
-  cv::Vec3d bottom_point_in_3d = projectToGround(bottom_center, K, D, R, t);
+  const cv::Vec3d bottom_point_in_3d = projectToGround(bottom_center, K, D, R, t);
 
   const double dist_sq =
     bottom_point_in_3d[0] * bottom_point_in_3d[0] + bottom_point_in_3d[1] * bottom_point_in_3d[1];
@@ -280,18 +280,26 @@ bool RoiBasedDetectorNode::generateROIBasedObject(
 
   const double dim_xy = cv::norm(left_point_in_3d - right_point_in_3d);
 
-  object.kinematics.pose_with_covariance.pose.position.x = bottom_point_in_3d[0];
-  object.kinematics.pose_with_covariance.pose.position.y = bottom_point_in_3d[1];
-  object.kinematics.pose_with_covariance.pose.position.z = height * 0.5;
-
   // this function primarily targets pedestrian, we will check the dimensions of pedestrian
   if (label == Label::PEDESTRIAN) {
     const double clamped_dim_xy = std::clamp(dim_xy, pedestrian_width_min_, pedestrian_width_max_);
     object.shape.dimensions.x = clamped_dim_xy;
     object.shape.dimensions.y = clamped_dim_xy;
+
+    // move the cylinder toward the optical axis to improve fitting
+    cv::Vec3d bias_vec = R * camera_optical_axis_;
+    bias_vec = bias_vec * dim_xy * 0.5;
+
+    object.kinematics.pose_with_covariance.pose.position.x = bottom_point_in_3d[0] + bias_vec[0];
+    object.kinematics.pose_with_covariance.pose.position.y = bottom_point_in_3d[1] + bias_vec[1];
+    object.kinematics.pose_with_covariance.pose.position.z = height * 0.5;
   } else {
     object.shape.dimensions.x = dim_xy;
     object.shape.dimensions.y = dim_xy;
+
+    object.kinematics.pose_with_covariance.pose.position.x = bottom_point_in_3d[0];
+    object.kinematics.pose_with_covariance.pose.position.y = bottom_point_in_3d[1];
+    object.kinematics.pose_with_covariance.pose.position.z = height * 0.5;
   }
   object.shape.dimensions.z = height;
 

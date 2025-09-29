@@ -119,6 +119,9 @@ private:
   double pedestrian_width_min_;
   double pedestrian_width_max_;
 
+  // in camera coordinate
+  cv::Vec3d camera_optical_axis_{0.0, 0.0, 1.0};
+
   std::unordered_map<int, CameraInfo> camera_info_;
   std::unordered_map<int, CameraIntrinsics> cam_intrinsics_;
   std::unordered_map<int, bool> is_camera_info_arrived_;
