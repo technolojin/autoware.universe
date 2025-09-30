@@ -6,6 +6,13 @@
     "roi_based_detector": {
       "type": "object",
       "properties": {
+        "rois_ids": {
+          "type": "array",
+          "items": {
+            "type": "integer"
+          },
+          "description": "An array of input ROIs ids"
+        },
         "target_frame": {
           "type": "string",
           "description": "Transform target frame.",
