@@ -50,14 +50,11 @@ public:
     const tf2_ros::Buffer & tf_buffer, std::vector<Box3D> & det_boxes3d,
     bool & is_num_pillars_within_range);
 
-  bool detectVoxelsDebug(
-    const std::shared_ptr<const cuda_blackboard::CudaPointCloud2> & input_pointcloud_msg_ptr,
-    const tf2_ros::Buffer & tf_buffer, std::vector<Box3D> & det_boxes3d,
-    bool & is_num_pillars_within_range);
-
   bool getVoxelGridData(
     std::vector<int> & coordinates, std::vector<float> & point_counts,
     unsigned int & num_voxels);
+
+  const CenterPointConfig & getConfig() const { return config_; }
 
 protected:
   void initPtr();

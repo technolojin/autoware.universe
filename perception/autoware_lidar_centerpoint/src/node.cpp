@@ -200,19 +200,47 @@ void LidarCenterPointNode::pointCloudCallback(
     
     if (detector_ptr_->getVoxelGridData(coordinates, point_counts, num_voxels)) {
       // Get voxel config from detector
-      const float voxel_size_x = 0.32f;  // TODO: Get from config
-      const float voxel_size_y = 0.32f;
-      const float range_min_x = -89.6f;
-      const float range_min_y = -89.6f;
-      const float viz_min_x = -30.0f;
-      const float viz_max_x = 30.0f;
-      const float viz_min_y = -1.0f;
-      const float viz_max_y = 30.0f;
-      const float max_point_in_voxel = 32.0f;  // TODO: Get from config
+      const auto & config = detector_ptr_->getConfig();
+      const float voxel_size_x = config.voxel_size_x_;
+      const float voxel_size_y = config.voxel_size_y_;
+      const float range_min_x = config.range_min_x_;
+      const float range_min_y = config.range_min_y_;
+      const float viz_min_x = -40.0f;
+      const float viz_max_x = 40.0f;
+      const float viz_min_y = -40.0f;
+      const float viz_max_y = 40.0f;
+      const float max_point_in_voxel = static_cast<float>(config.max_point_in_voxel_size_);
+      
+      // Voxel coordinate system:
+      // - Voxel (0,0) left edge is at world position (range_min_x, range_min_y)
+      // - Voxel (i,j) left edge is at (range_min_x + i*voxel_size, range_min_y + j*voxel_size)
+      // - Voxel (i,j) center is at (range_min_x + (i+0.5)*voxel_size, range_min_y + (j+0.5)*voxel_size)
+      
+      // Calculate which voxel index corresponds to the visualization area
+      const int grid_offset_x = static_cast<int>(std::floor((viz_min_x - range_min_x) / voxel_size_x));
+      const int grid_offset_y = static_cast<int>(std::floor((viz_min_y - range_min_y) / voxel_size_y));
+      
+      // OccupancyGrid origin: In ROS, this is typically at the LOWER-LEFT corner of cell [0,0]
+      // which aligns with the LEFT EDGE of the voxel (not center)
+      const float grid_origin_x = range_min_x + grid_offset_x * voxel_size_x;
+      const float grid_origin_y = range_min_y + grid_offset_y * voxel_size_y;
+      
+      // Debug: Calculate world position of first few voxels
+      const float voxel_155_center_x = range_min_x + (155 + 0.5f) * voxel_size_x;
+      const float voxel_155_center_y = range_min_y + (155 + 0.5f) * voxel_size_y;
+      RCLCPP_INFO_ONCE(
+        rclcpp::get_logger("lidar_centerpoint"),
+        "Voxel 155 center: (%.2f, %.2f), Grid origin: (%.2f, %.2f)",
+        voxel_155_center_x, voxel_155_center_y, grid_origin_x, grid_origin_y);
       
       // Calculate grid dimensions
       const int grid_width = static_cast<int>((viz_max_x - viz_min_x) / voxel_size_x);
       const int grid_height = static_cast<int>((viz_max_y - viz_min_y) / voxel_size_y);
+      
+      RCLCPP_INFO_ONCE(
+        rclcpp::get_logger("lidar_centerpoint"),
+        "Voxel grid debug - offset: (%d, %d), origin: (%.2f, %.2f), size: (%d, %d)",
+        grid_offset_x, grid_offset_y, grid_origin_x, grid_origin_y, grid_width, grid_height);
       
       // Create occupancy grid message
       nav_msgs::msg::OccupancyGrid grid_msg;
@@ -220,8 +248,8 @@ void LidarCenterPointNode::pointCloudCallback(
       grid_msg.info.resolution = voxel_size_x;
       grid_msg.info.width = grid_width;
       grid_msg.info.height = grid_height;
-      grid_msg.info.origin.position.x = viz_min_x;
-      grid_msg.info.origin.position.y = viz_min_y;
+      grid_msg.info.origin.position.x = grid_origin_x;
+      grid_msg.info.origin.position.y = grid_origin_y;
       grid_msg.info.origin.position.z = 0.0;
       grid_msg.info.origin.orientation.w = 1.0;
       
@@ -229,40 +257,48 @@ void LidarCenterPointNode::pointCloudCallback(
       grid_msg.data.resize(grid_width * grid_height, -1);
       
       // Fill grid with voxel data
+      int num_filled = 0;
+      int min_coord_x = 999999, max_coord_x = -999999;
+      int min_coord_y = 999999, max_coord_y = -999999;
+      
       for (unsigned int i = 0; i < num_voxels; ++i) {
         const int coord_x = coordinates[i * 3 + 2];
         const int coord_y = coordinates[i * 3 + 1];
         
-        // Convert voxel grid coordinates to world coordinates
-        const float x = voxel_size_x * (coord_x + 0.5f) + range_min_x;
-        const float y = voxel_size_y * (coord_y + 0.5f) + range_min_y;
+        // Track coordinate range
+        min_coord_x = std::min(min_coord_x, coord_x);
+        max_coord_x = std::max(max_coord_x, coord_x);
+        min_coord_y = std::min(min_coord_y, coord_y);
+        max_coord_y = std::max(max_coord_y, coord_y);
         
-        // Filter by visualization area
-        if (x < viz_min_x || x > viz_max_x || y < viz_min_y || y > viz_max_y) {
-          continue;
-        }
+        // Convert voxel coordinates directly to grid indices
+        const int grid_x = coord_x - grid_offset_x;
+        const int grid_y = coord_y - grid_offset_y;
         
-        // Convert to grid index
-        const int grid_x = static_cast<int>((x - viz_min_x) / voxel_size_x);
-        const int grid_y = static_cast<int>((y - viz_min_y) / voxel_size_y);
-        
+        // Check if within grid bounds
         if (grid_x >= 0 && grid_x < grid_width && grid_y >= 0 && grid_y < grid_height) {
           const int grid_idx = grid_y * grid_width + grid_x;
           
-          // Map point count to occupancy value
-          // 0 = empty, 0.2 = lowest filled (1 point), 1.0 = fully filled
+          // Map point count to occupancy value (inverted scale)
+          // 0.0 = fully filled (32 points), 0.8 = lowest filled (1 point), 1.0 = empty
           const float normalized_count = point_counts[i] / max_point_in_voxel;
-          const float occupancy = std::min(0.2f + 0.8f * normalized_count, 1.0f);
+          const float occupancy = std::max(0.8f - 0.8f * normalized_count, 0.0f);
           
           // Convert to occupancy grid value (0-100)
           grid_msg.data[grid_idx] = static_cast<int8_t>(occupancy * 100);
+          num_filled++;
         }
       }
       
-      // Set empty cells (still -1) to 0
+      RCLCPP_INFO_ONCE(
+        rclcpp::get_logger("lidar_centerpoint"),
+        "Voxels: total=%u, filled_in_grid=%d, coord_x=[%d,%d], coord_y=[%d,%d]",
+        num_voxels, num_filled, min_coord_x, max_coord_x, min_coord_y, max_coord_y);
+      
+      // Set empty cells (still -1) to 100 (fully empty)
       for (auto & cell : grid_msg.data) {
         if (cell == -1) {
-          cell = 0;
+          cell = 100;
         }
       }
       
