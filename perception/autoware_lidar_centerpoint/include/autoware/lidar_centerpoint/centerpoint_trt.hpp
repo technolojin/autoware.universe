@@ -55,6 +55,10 @@ public:
     const tf2_ros::Buffer & tf_buffer, std::vector<Box3D> & det_boxes3d,
     bool & is_num_pillars_within_range);
 
+  bool getVoxelGridData(
+    std::vector<int> & coordinates, std::vector<float> & point_counts,
+    unsigned int & num_voxels);
+
 protected:
   void initPtr();
   void initTrt(const TrtCommonConfig & encoder_param, const TrtCommonConfig & head_param);
