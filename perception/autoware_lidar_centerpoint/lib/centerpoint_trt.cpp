@@ -188,10 +188,22 @@ bool CenterPointTRT::detect(
       rclcpp::get_logger(config_.logger_name_.c_str()), "Fail to preprocess and skip to detect.");
     return false;
   }
+  
+  // inference();
 
-  inference();
+  // postProcess(det_boxes3d);
 
-  postProcess(det_boxes3d);
+  // Debug mode: Skip inference and directly visualize voxels
+  CHECK_CUDA_ERROR(post_proc_ptr_->generateVoxelBoxes3D_launch(
+    coordinates_d_.get(), num_points_per_voxel_d_.get(), num_voxels_d_.get(), det_boxes3d, stream_));
+
+  if (det_boxes3d.size() == 0) {
+    RCLCPP_DEBUG_STREAM(rclcpp::get_logger(config_.logger_name_.c_str()), "No voxels generated.");
+  } else {
+    RCLCPP_INFO_STREAM(
+      rclcpp::get_logger(config_.logger_name_.c_str()),
+      "Generated " << det_boxes3d.size() << " voxel boxes for visualization.");
+  }
 
   // Check the actual number of pillars after inference to avoid unnecessary synchronization.
   unsigned int num_pillars = 0;
@@ -283,6 +295,56 @@ void CenterPointTRT::postProcess(std::vector<Box3D> & det_boxes3d)
   if (det_boxes3d.size() == 0) {
     RCLCPP_DEBUG_STREAM(rclcpp::get_logger(config_.logger_name_.c_str()), "No detected boxes.");
   }
+}
+
+bool CenterPointTRT::detectVoxelsDebug(
+  const std::shared_ptr<const cuda_blackboard::CudaPointCloud2> & input_pointcloud_msg_ptr,
+  const tf2_ros::Buffer & tf_buffer, std::vector<Box3D> & det_boxes3d,
+  bool & is_num_pillars_within_range)
+{
+  is_num_pillars_within_range = true;
+
+  // Clear buffers
+  CHECK_CUDA_ERROR(cudaMemsetAsync(
+    encoder_in_features_d_.get(), 0, encoder_in_feature_size_ * sizeof(float), stream_));
+  CHECK_CUDA_ERROR(
+    cudaMemsetAsync(spatial_features_d_.get(), 0, spatial_features_size_ * sizeof(float), stream_));
+
+  // Run preprocessing to generate voxels
+  if (!preprocess(input_pointcloud_msg_ptr, tf_buffer)) {
+    RCLCPP_WARN(
+      rclcpp::get_logger(config_.logger_name_.c_str()), "Fail to preprocess and skip to detect.");
+    return false;
+  }
+
+  // Skip inference - directly convert voxels to boxes for visualization
+  CHECK_CUDA_ERROR(post_proc_ptr_->generateVoxelBoxes3D_launch(
+    coordinates_d_.get(), num_points_per_voxel_d_.get(), num_voxels_d_.get(), det_boxes3d, stream_));
+
+  if (det_boxes3d.size() == 0) {
+    RCLCPP_DEBUG_STREAM(rclcpp::get_logger(config_.logger_name_.c_str()), "No voxels generated.");
+  } else {
+    RCLCPP_INFO_STREAM(
+      rclcpp::get_logger(config_.logger_name_.c_str()),
+      "Generated " << det_boxes3d.size() << " voxel boxes for visualization.");
+  }
+
+  // Check the actual number of pillars
+  unsigned int num_pillars = 0;
+  CHECK_CUDA_ERROR(
+    cudaMemcpy(&num_pillars, num_voxels_d_.get(), sizeof(unsigned int), cudaMemcpyDeviceToHost));
+
+  if (num_pillars >= config_.max_voxel_size_) {
+    rclcpp::Clock clock{RCL_ROS_TIME};
+    RCLCPP_WARN_THROTTLE(
+      rclcpp::get_logger(config_.logger_name_.c_str()), clock, 1000,
+      "The actual number of pillars (%u) exceeds its maximum value (%zu). "
+      "Please considering increasing it since it may limit the detection performance.",
+      num_pillars, config_.max_voxel_size_);
+    is_num_pillars_within_range = false;
+  }
+
+  return true;
 }
 
 }  // namespace autoware::lidar_centerpoint

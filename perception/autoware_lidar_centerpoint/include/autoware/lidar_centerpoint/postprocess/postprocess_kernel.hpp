@@ -35,6 +35,10 @@ public:
     const float * out_rot, const float * out_vel, std::vector<Box3D> & det_boxes3d,
     cudaStream_t stream);
 
+  cudaError_t generateVoxelBoxes3D_launch(
+    const int * coordinates, const float * num_points_per_voxel, const unsigned int * num_voxels,
+    std::vector<Box3D> & det_boxes3d, cudaStream_t stream);
+
 private:
   CenterPointConfig config_;
 

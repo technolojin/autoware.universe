@@ -137,6 +137,47 @@ __global__ void generateBoxes3D_kernel(
   }
 }
 
+__global__ void generateVoxelBoxes3D_kernel(
+  const int * coordinates, const float * num_points_per_voxel, const unsigned int num_voxels,
+  const float voxel_size_x, const float voxel_size_y, const float voxel_size_z,
+  const float range_min_x, const float range_min_y, const float range_min_z,
+  const std::size_t max_point_in_voxel, Box3D * det_boxes3d)
+{
+  // generate boxes3d from voxel coordinates for visualization
+  const auto idx = blockIdx.x * blockDim.x + threadIdx.x;
+  
+  if (idx >= num_voxels) {
+    return;
+  }
+
+  // Get voxel coordinates (z, y, x order in the array)
+  const int coord_x = coordinates[idx * 3 + 2];
+  const int coord_y = coordinates[idx * 3 + 1];
+  const int coord_z = coordinates[idx * 3 + 0];
+
+  // Convert voxel grid coordinates to world coordinates (center of voxel)
+  const float x = voxel_size_x * (coord_x + 0.5f) + range_min_x;
+  const float y = voxel_size_y * (coord_y + 0.5f) + range_min_y;
+  const float z = voxel_size_z * (coord_z + 0.5f) + range_min_z;
+
+  // Get number of points in this voxel and normalize as score
+  const float num_points = num_points_per_voxel[idx];
+  const float score = fminf(num_points / max_point_in_voxel, 1.0f);
+
+  // Create box with voxel dimensions
+  det_boxes3d[idx].label = 0;  // Use label 0 for all voxels
+  det_boxes3d[idx].score = score;
+  det_boxes3d[idx].x = x;
+  det_boxes3d[idx].y = y;
+  det_boxes3d[idx].z = z;
+  det_boxes3d[idx].length = voxel_size_x;
+  det_boxes3d[idx].width = voxel_size_y;
+  det_boxes3d[idx].height = voxel_size_z;
+  det_boxes3d[idx].yaw = 0.0f;
+  det_boxes3d[idx].vel_x = 0.0f;
+  det_boxes3d[idx].vel_y = 0.0f;
+}
+
 PostProcessCUDA::PostProcessCUDA(const CenterPointConfig & config, cudaStream_t & stream)
 : config_(config), stream_(stream)
 {
@@ -203,6 +244,43 @@ cudaError_t PostProcessCUDA::generateDetectedBoxes3D_launch(
   // memcpy device to host
   det_boxes3d.resize(num_final_det_boxes3d);
   thrust::copy(final_det_boxes3d_d.begin(), final_det_boxes3d_d.end(), det_boxes3d.begin());
+
+  return cudaGetLastError();
+}
+
+cudaError_t PostProcessCUDA::generateVoxelBoxes3D_launch(
+  const int * coordinates, const float * num_points_per_voxel, const unsigned int * num_voxels,
+  std::vector<Box3D> & det_boxes3d, cudaStream_t stream)
+{
+  // Get the number of voxels from device
+  unsigned int num_voxels_host = 0;
+  CHECK_CUDA_ERROR(cudaMemcpyAsync(
+    &num_voxels_host, num_voxels, sizeof(unsigned int), cudaMemcpyDeviceToHost, stream));
+  CHECK_CUDA_ERROR(cudaStreamSynchronize(stream));
+
+  if (num_voxels_host == 0) {
+    return cudaGetLastError();
+  }
+
+  // Allocate device memory for output boxes
+  thrust::device_vector<Box3D> boxes3d_d(num_voxels_host);
+
+  // Launch kernel
+  const std::size_t threads = 256;
+  const std::size_t blocks = (num_voxels_host + threads - 1) / threads;
+  
+  generateVoxelBoxes3D_kernel<<<blocks, threads, 0, stream>>>(
+    coordinates, num_points_per_voxel, num_voxels_host,
+    config_.voxel_size_x_, config_.voxel_size_y_, config_.voxel_size_z_,
+    config_.range_min_x_, config_.range_min_y_, config_.range_min_z_,
+    config_.max_point_in_voxel_size_,
+    thrust::raw_pointer_cast(boxes3d_d.data()));
+
+  CHECK_CUDA_ERROR(cudaStreamSynchronize(stream));
+
+  // Copy results to host
+  det_boxes3d.resize(num_voxels_host);
+  thrust::copy(boxes3d_d.begin(), boxes3d_d.end(), det_boxes3d.begin());
 
   return cudaGetLastError();
 }

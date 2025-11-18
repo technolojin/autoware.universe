@@ -50,6 +50,11 @@ public:
     const tf2_ros::Buffer & tf_buffer, std::vector<Box3D> & det_boxes3d,
     bool & is_num_pillars_within_range);
 
+  bool detectVoxelsDebug(
+    const std::shared_ptr<const cuda_blackboard::CudaPointCloud2> & input_pointcloud_msg_ptr,
+    const tf2_ros::Buffer & tf_buffer, std::vector<Box3D> & det_boxes3d,
+    bool & is_num_pillars_within_range);
+
 protected:
   void initPtr();
   void initTrt(const TrtCommonConfig & encoder_param, const TrtCommonConfig & head_param);
