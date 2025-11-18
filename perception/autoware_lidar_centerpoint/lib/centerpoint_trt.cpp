@@ -185,6 +185,11 @@ bool CenterPointTRT::detect(
   CHECK_CUDA_ERROR(
     cudaMemsetAsync(spatial_features_d_.get(), 0, spatial_features_size_ * sizeof(float), stream_));
 
+  // Synchronize to ensure buffer clearing completes before preprocessing and inference
+  // This prevents stale data from previous frames contaminating current inference,
+  // especially under high GPU load or when vehicle has moved
+  CHECK_CUDA_ERROR(cudaStreamSynchronize(stream_));
+
   if (!preprocess(input_pointcloud_msg_ptr, tf_buffer)) {
     RCLCPP_WARN(
       rclcpp::get_logger(config_.logger_name_.c_str()), "Fail to preprocess and skip to detect.");
@@ -192,6 +197,10 @@ bool CenterPointTRT::detect(
   }
 
   inference();
+  
+  CHECK_CUDA_ERROR(cudaStreamSynchronize(stream_));
+
+  
 
   postProcess(det_boxes3d);
 
@@ -230,6 +239,9 @@ bool CenterPointTRT::preprocess(
   clear_async(voxels_d_.get(), voxels_size_, stream_);
   clear_async(coordinates_d_.get(), coordinates_size_, stream_);
   clear_async(num_points_per_voxel_d_.get(), config_.max_voxel_size_, stream_);
+  // Clear pillar features buffer to prevent stale data contamination
+  const auto pillar_features_size = config_.max_voxel_size_ * config_.encoder_out_feature_size_;
+  clear_async(pillar_features_d_.get(), pillar_features_size, stream_);
   CHECK_CUDA_ERROR(cudaStreamSynchronize(stream_));
 
   const std::size_t count = vg_ptr_->generateSweepPoints(points_aux_d_.get());
@@ -271,11 +283,18 @@ void CenterPointTRT::inference()
   encoder_trt_ptr_->setTensorsAddresses(encoder_tensors);
   encoder_trt_ptr_->enqueueV3(stream_);
 
+  // Synchronize to ensure encoder network completes before scatter operation
+  // TensorRT's enqueueV3 is asynchronous and may not complete before next operation
+  CHECK_CUDA_ERROR(cudaStreamSynchronize(stream_));
+
   // scatter
   CHECK_CUDA_ERROR(scatterFeatures_launch(
     pillar_features_d_.get(), coordinates_d_.get(), num_voxels_d_.get(), config_.max_voxel_size_,
     config_.encoder_out_feature_size_, config_.grid_size_x_, config_.grid_size_y_,
     spatial_features_d_.get(), stream_));
+
+  // Synchronize to ensure scatter completes before head network reads spatial_features
+  CHECK_CUDA_ERROR(cudaStreamSynchronize(stream_));
 
   // head network
   std::vector<void *> head_tensors = {spatial_features_d_.get(), head_out_heatmap_d_.get(),

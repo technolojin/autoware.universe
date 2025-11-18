@@ -213,6 +213,12 @@ void LidarCenterPointNode::pointCloudCallback(
       data_available = detector_ptr_->getVoxelGridData(coordinates, point_counts, num_voxels);
     }
     
+    // Diagnostic: Log to verify visualization is reading post-inference data
+    RCLCPP_DEBUG_THROTTLE(
+      this->get_logger(), *this->get_clock(), 5000,
+      "Debug visualization: num_voxels=%u, detected_boxes=%zu, frame=%s",
+      num_voxels, det_boxes3d.size(), input_pointcloud_msg->header.frame_id.c_str());
+    
     if (data_available) {
       // Get voxel config from detector
       const auto & config = detector_ptr_->getConfig();

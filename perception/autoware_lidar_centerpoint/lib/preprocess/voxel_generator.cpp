@@ -56,8 +56,9 @@ bool VoxelGeneratorTemplate::enqueuePointCloud(
 std::size_t VoxelGenerator::generateSweepPoints(float * points_d)
 {
   std::size_t point_counter = 0;
+  std::size_t frame_idx = 0;
   for (auto pc_cache_iter = pd_ptr_->getPointCloudCacheIter(); !pd_ptr_->isCacheEnd(pc_cache_iter);
-       pc_cache_iter++) {
+       pc_cache_iter++, frame_idx++) {
     const auto & input_pointcloud_msg_ptr = pc_cache_iter->input_pointcloud_msg_ptr;
     auto sweep_num_points = input_pointcloud_msg_ptr->height * input_pointcloud_msg_ptr->width;
     auto output_offset = point_counter * config_.point_feature_size_;
@@ -66,6 +67,17 @@ std::size_t VoxelGenerator::generateSweepPoints(float * points_d)
     float time_lag = static_cast<float>(
       pd_ptr_->getCurrentTimestamp() -
       rclcpp::Time(input_pointcloud_msg_ptr->header.stamp).seconds());
+    
+    // Diagnostic: Log transformation matrix to detect identity transforms (stale data)
+    bool is_identity = affine_past2current.matrix().isIdentity(1e-6);
+    if (frame_idx > 0 && is_identity) {
+      rclcpp::Clock clock(RCL_ROS_TIME);
+      RCLCPP_WARN_THROTTLE(
+        rclcpp::get_logger(config_.logger_name_.c_str()), 
+        clock, 1000,
+        "Past frame %zu has IDENTITY transform (potential TF issue) - time_lag: %.3f s",
+        frame_idx, time_lag);
+    }
 
     if (point_counter + sweep_num_points > config_.cloud_capacity_) {
       RCLCPP_WARN_STREAM(
