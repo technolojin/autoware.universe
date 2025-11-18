@@ -196,9 +196,18 @@ void LidarCenterPointNode::pointCloudCallback(
   if (voxel_grid_pub_->get_subscription_count() > 0) {
     std::vector<int> coordinates;
     std::vector<float> point_counts;
+    std::vector<float> voxel_heights;
     unsigned int num_voxels = 0;
     
-    if (detector_ptr_->getVoxelGridData(coordinates, point_counts, num_voxels)) {
+    // Visualization mode selector
+    enum class VoxelVisualizationMode { OCCUPANCY, HEIGHT };
+    const VoxelVisualizationMode viz_mode = VoxelVisualizationMode::HEIGHT;
+    
+    bool data_available = (viz_mode == VoxelVisualizationMode::HEIGHT) ?
+      detector_ptr_->getVoxelGridData(coordinates, point_counts, voxel_heights, num_voxels) :
+      detector_ptr_->getVoxelGridData(coordinates, point_counts, num_voxels);
+    
+    if (data_available) {
       // Get voxel config from detector
       const auto & config = detector_ptr_->getConfig();
       const float voxel_size_x = config.voxel_size_x_;
@@ -279,13 +288,33 @@ void LidarCenterPointNode::pointCloudCallback(
         if (grid_x >= 0 && grid_x < grid_width && grid_y >= 0 && grid_y < grid_height) {
           const int grid_idx = grid_y * grid_width + grid_x;
           
-          // Map point count to occupancy value (inverted scale)
-          // 0.0 = fully filled (32 points), 0.8 = lowest filled (1 point), 1.0 = empty
-          const float normalized_count = point_counts[i] / max_point_in_voxel;
-          const float occupancy = std::max(0.8f - 0.8f * normalized_count, 0.0f);
+          float value;
+          switch (viz_mode) {
+            case VoxelVisualizationMode::HEIGHT:
+              // Map height to value: 2m max -> 0.0, 0m -> 0.8
+              {
+                const float height = voxel_heights[i];
+                const float max_height = 2.0f;
+                const float min_value = 0.0f;
+                const float max_value = 0.8f;
+                value = max_value - (height / max_height) * (max_value - min_value);
+                value = std::max(min_value, std::min(max_value, value));
+              }
+              break;
+            
+            case VoxelVisualizationMode::OCCUPANCY:
+            default:
+              // Map point count to occupancy value (inverted scale)
+              // 0.0 = fully filled (32 points), 0.8 = lowest filled (1 point), 1.0 = empty
+              {
+                const float normalized_count = point_counts[i] / max_point_in_voxel;
+                value = std::max(0.8f - 0.8f * normalized_count, 0.0f);
+              }
+              break;
+          }
           
           // Convert to occupancy grid value (0-100)
-          grid_msg.data[grid_idx] = static_cast<int8_t>(occupancy * 100);
+          grid_msg.data[grid_idx] = static_cast<int8_t>(value * 100);
           num_filled++;
         }
       }
