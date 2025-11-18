@@ -43,6 +43,11 @@ struct is_kept
   __device__ bool operator()(const bool keep) { return keep; }
 };
 
+struct is_valid_voxel
+{
+  __device__ bool operator()(const Box3D & box) { return box.score >= 0.0f; }
+};
+
 struct score_greater
 {
   __device__ bool operator()(const Box3D & lb, const Box3D & rb) { return lb.score > rb.score; }
@@ -141,7 +146,8 @@ __global__ void generateVoxelBoxes3D_kernel(
   const int * coordinates, const float * num_points_per_voxel, const unsigned int num_voxels,
   const float voxel_size_x, const float voxel_size_y, const float voxel_size_z,
   const float range_min_x, const float range_min_y, const float range_min_z,
-  const std::size_t max_point_in_voxel, Box3D * det_boxes3d)
+  const std::size_t max_point_in_voxel, const float viz_min_x, const float viz_max_x,
+  const float viz_min_y, const float viz_max_y, Box3D * det_boxes3d)
 {
   // generate boxes3d from voxel coordinates for visualization
   const auto idx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -158,21 +164,32 @@ __global__ void generateVoxelBoxes3D_kernel(
   // Convert voxel grid coordinates to world coordinates (center of voxel)
   const float x = voxel_size_x * (coord_x + 0.5f) + range_min_x;
   const float y = voxel_size_y * (coord_y + 0.5f) + range_min_y;
-  const float z = voxel_size_z * (coord_z + 0.5f) + range_min_z;
+  
+  // For debug visualization: use minimal height positioned at lowest point
+  const float debug_box_height = 0.3f;  // Small height for ground-level visualization
+  const float z_bottom = voxel_size_z * coord_z + range_min_z;  // Bottom of voxel
+  const float z = z_bottom + debug_box_height * 0.5f;  // Center at half the debug height
 
-  // Get number of points in this voxel and normalize as score
+  // Filter by visualization area (use negative score to mark for filtering)
+  if (x < viz_min_x || x > viz_max_x || y < viz_min_y || y > viz_max_y) {
+    det_boxes3d[idx].score = -1.0f;  // Mark for removal
+    return;
+  }
+
+  // Debug mode: Use raw point count as score (integer value, not normalized)
+  // This shows the actual number of points in each voxel for debugging
   const float num_points = num_points_per_voxel[idx];
-  const float score = fminf(num_points / max_point_in_voxel, 1.0f);
+  const float score = num_points;  // Will display as integer: 1, 2, 3, ... 32, etc.
 
-  // Create box with voxel dimensions
+  // Create box with voxel dimensions (minimal height for ground visualization)
   det_boxes3d[idx].label = 0;  // Use label 0 for all voxels
-  det_boxes3d[idx].score = score;
+  det_boxes3d[idx].score = score;  // Score = point count (e.g., 5 means 5 points in this voxel)
   det_boxes3d[idx].x = x;
   det_boxes3d[idx].y = y;
   det_boxes3d[idx].z = z;
   det_boxes3d[idx].length = voxel_size_x;
   det_boxes3d[idx].width = voxel_size_y;
-  det_boxes3d[idx].height = voxel_size_z;
+  det_boxes3d[idx].height = debug_box_height;
   det_boxes3d[idx].yaw = 0.0f;
   det_boxes3d[idx].vel_x = 0.0f;
   det_boxes3d[idx].vel_y = 0.0f;
@@ -265,6 +282,12 @@ cudaError_t PostProcessCUDA::generateVoxelBoxes3D_launch(
   // Allocate device memory for output boxes
   thrust::device_vector<Box3D> boxes3d_d(num_voxels_host);
 
+  // Visualization bounds: -40 < x < 40, -5 < y < 40
+  const float viz_min_x = -30.0f;
+  const float viz_max_x = 30.0f;
+  const float viz_min_y = -1.0f;
+  const float viz_max_y = 30.0f;
+
   // Launch kernel
   const std::size_t threads = 256;
   const std::size_t blocks = (num_voxels_host + threads - 1) / threads;
@@ -274,13 +297,27 @@ cudaError_t PostProcessCUDA::generateVoxelBoxes3D_launch(
     config_.voxel_size_x_, config_.voxel_size_y_, config_.voxel_size_z_,
     config_.range_min_x_, config_.range_min_y_, config_.range_min_z_,
     config_.max_point_in_voxel_size_,
+    viz_min_x, viz_max_x, viz_min_y, viz_max_y,
     thrust::raw_pointer_cast(boxes3d_d.data()));
 
   CHECK_CUDA_ERROR(cudaStreamSynchronize(stream));
 
-  // Copy results to host
-  det_boxes3d.resize(num_voxels_host);
-  thrust::copy(boxes3d_d.begin(), boxes3d_d.end(), det_boxes3d.begin());
+  // Filter out boxes outside visualization area (score < 0)
+  const auto num_valid_boxes = thrust::count_if(
+    thrust::device, boxes3d_d.begin(), boxes3d_d.end(), is_valid_voxel());
+  
+  if (num_valid_boxes == 0) {
+    return cudaGetLastError();
+  }
+
+  thrust::device_vector<Box3D> filtered_boxes3d_d(num_valid_boxes);
+  thrust::copy_if(
+    thrust::device, boxes3d_d.begin(), boxes3d_d.end(), 
+    filtered_boxes3d_d.begin(), is_valid_voxel());
+
+  // Copy filtered results to host
+  det_boxes3d.resize(num_valid_boxes);
+  thrust::copy(filtered_boxes3d_d.begin(), filtered_boxes3d_d.end(), det_boxes3d.begin());
 
   return cudaGetLastError();
 }

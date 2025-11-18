@@ -188,22 +188,10 @@ bool CenterPointTRT::detect(
       rclcpp::get_logger(config_.logger_name_.c_str()), "Fail to preprocess and skip to detect.");
     return false;
   }
-  
-  // inference();
 
-  // postProcess(det_boxes3d);
+  inference();
 
-  // Debug mode: Skip inference and directly visualize voxels
-  CHECK_CUDA_ERROR(post_proc_ptr_->generateVoxelBoxes3D_launch(
-    coordinates_d_.get(), num_points_per_voxel_d_.get(), num_voxels_d_.get(), det_boxes3d, stream_));
-
-  if (det_boxes3d.size() == 0) {
-    RCLCPP_DEBUG_STREAM(rclcpp::get_logger(config_.logger_name_.c_str()), "No voxels generated.");
-  } else {
-    RCLCPP_INFO_STREAM(
-      rclcpp::get_logger(config_.logger_name_.c_str()),
-      "Generated " << det_boxes3d.size() << " voxel boxes for visualization.");
-  }
+  postProcess(det_boxes3d);
 
   // Check the actual number of pillars after inference to avoid unnecessary synchronization.
   unsigned int num_pillars = 0;
@@ -343,6 +331,32 @@ bool CenterPointTRT::detectVoxelsDebug(
       num_pillars, config_.max_voxel_size_);
     is_num_pillars_within_range = false;
   }
+
+  return true;
+}
+
+bool CenterPointTRT::getVoxelGridData(
+  std::vector<int> & coordinates, std::vector<float> & point_counts, unsigned int & num_voxels)
+{
+  // Get number of voxels
+  CHECK_CUDA_ERROR(
+    cudaMemcpy(&num_voxels, num_voxels_d_.get(), sizeof(unsigned int), cudaMemcpyDeviceToHost));
+
+  if (num_voxels == 0) {
+    return false;
+  }
+
+  // Allocate host memory
+  coordinates.resize(num_voxels * 3);  // z, y, x for each voxel
+  point_counts.resize(num_voxels);
+
+  // Copy data from device to host
+  CHECK_CUDA_ERROR(cudaMemcpy(
+    coordinates.data(), coordinates_d_.get(), num_voxels * 3 * sizeof(int),
+    cudaMemcpyDeviceToHost));
+  CHECK_CUDA_ERROR(cudaMemcpy(
+    point_counts.data(), num_points_per_voxel_d_.get(), num_voxels * sizeof(float),
+    cudaMemcpyDeviceToHost));
 
   return true;
 }
