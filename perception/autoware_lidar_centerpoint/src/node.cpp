@@ -46,6 +46,8 @@ LidarCenterPointNode::LidarCenterPointNode(const rclcpp::NodeOptions & node_opti
     this->declare_parameter<double>("post_process_params.circle_nms_dist_threshold"));
   const auto yaw_norm_thresholds =
     this->declare_parameter<std::vector<double>>("post_process_params.yaw_norm_thresholds");
+  const std::size_t max_num_detections = static_cast<std::size_t>(
+    this->declare_parameter<std::int64_t>("post_process_params.max_num_detections", 1000));
   const std::string densification_world_frame_id =
     this->declare_parameter<std::string>("densification_params.world_frame_id");
   const int densification_num_past_frames =
@@ -108,7 +110,8 @@ LidarCenterPointNode::LidarCenterPointNode(const rclcpp::NodeOptions & node_opti
   CenterPointConfig config(
     class_names_.size(), point_feature_size, cloud_capacity, max_voxel_size, point_cloud_range,
     voxel_size, downsample_factor, encoder_in_feature_size, score_thresholds,
-    circle_nms_dist_threshold, yaw_norm_thresholds, has_variance_, this->logger_name_);
+    circle_nms_dist_threshold, yaw_norm_thresholds, has_variance_, max_num_detections,
+    this->logger_name_);
   detector_ptr_ =
     std::make_unique<CenterPointTRT>(encoder_param, head_param, densification_param, config);
   diagnostics_centerpoint_trt_ =
