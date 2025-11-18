@@ -46,6 +46,10 @@ public:
     const float * voxel_features, const float * voxel_num_points, const int * coords,
     const unsigned int * num_voxels, float * features);
 
+  cudaError_t computeVoxelHeights_launch(
+    const float * voxels, const float * voxel_num_points, unsigned int num_voxels,
+    float * voxel_heights);
+
 private:
   CenterPointConfig config_;
   cudaStream_t stream_;
