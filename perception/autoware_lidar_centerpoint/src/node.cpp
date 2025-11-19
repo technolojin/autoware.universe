@@ -265,15 +265,15 @@ void LidarCenterPointNode::pointCloudCallback(
       // Create occupancy grid message
       nav_msgs::msg::OccupancyGrid grid_msg;
       grid_msg.header = input_pointcloud_msg->header;
-      
+
       // Transform grid to map frame
       const std::string target_frame = "map";
       try {
         // Get transform from ego frame to map frame at the pointcloud timestamp
         geometry_msgs::msg::TransformStamped transform_stamped = tf_buffer_.lookupTransform(
-          target_frame, input_pointcloud_msg->header.frame_id,
-          input_pointcloud_msg->header.stamp, rclcpp::Duration::from_seconds(0.5));
-        
+          target_frame, input_pointcloud_msg->header.frame_id, input_pointcloud_msg->header.stamp,
+          rclcpp::Duration::from_seconds(0.5));
+
         // Transform the grid origin position from ego frame to map frame
         geometry_msgs::msg::PoseStamped origin_ego;
         origin_ego.header = input_pointcloud_msg->header;
@@ -281,13 +281,13 @@ void LidarCenterPointNode::pointCloudCallback(
         origin_ego.pose.position.y = grid_origin_y;
         origin_ego.pose.position.z = 0.0;
         origin_ego.pose.orientation.w = 1.0;
-        
+
         geometry_msgs::msg::PoseStamped origin_map;
         tf2::doTransform(origin_ego, origin_map, transform_stamped);
-        
+
         // Set header to map frame
         grid_msg.header.frame_id = target_frame;
-        
+
         // Set transformed origin
         grid_msg.info.resolution = voxel_size_x;
         grid_msg.info.width = grid_width;
@@ -300,7 +300,7 @@ void LidarCenterPointNode::pointCloudCallback(
         RCLCPP_WARN_THROTTLE(
           rclcpp::get_logger("lidar_centerpoint"), *this->get_clock(), 1000,
           "Could not transform grid to map frame: %s. Publishing in ego frame.", ex.what());
-        
+
         // Fallback to ego frame
         grid_msg.info.resolution = voxel_size_x;
         grid_msg.info.width = grid_width;
