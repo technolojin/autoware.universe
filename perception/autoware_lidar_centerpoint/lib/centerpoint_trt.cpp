@@ -252,8 +252,8 @@ bool CenterPointTRT::preprocess(
 
   // Extract mean Z from encoded features for visualization
   unsigned int num_voxels_host;
-  CHECK_CUDA_ERROR(
-    cudaMemcpy(&num_voxels_host, num_voxels_d_.get(), sizeof(unsigned int), cudaMemcpyDeviceToHost));
+  CHECK_CUDA_ERROR(cudaMemcpy(
+    &num_voxels_host, num_voxels_d_.get(), sizeof(unsigned int), cudaMemcpyDeviceToHost));
   if (num_voxels_host > 0) {
     pre_proc_ptr_->extractFeatureMeanZ_launch(
       encoder_in_features_d_.get(), num_points_per_voxel_d_.get(), num_voxels_host,

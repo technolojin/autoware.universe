@@ -51,8 +51,7 @@ public:
     bool & is_num_pillars_within_range);
 
   bool getVoxelGridData(
-    std::vector<int> & coordinates, std::vector<float> & point_counts,
-    unsigned int & num_voxels);
+    std::vector<int> & coordinates, std::vector<float> & point_counts, unsigned int & num_voxels);
 
   bool getVoxelGridData(
     std::vector<int> & coordinates, std::vector<float> & point_counts,
