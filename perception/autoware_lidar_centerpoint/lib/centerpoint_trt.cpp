@@ -263,6 +263,10 @@ bool CenterPointTRT::preprocess(
   // Clear pillar features buffer to prevent stale data contamination
   const auto pillar_features_size = config_.max_voxel_size_ * config_.encoder_out_feature_size_;
   clear_async(pillar_features_d_.get(), pillar_features_size, stream_);
+  // Clear auxiliary points buffer to prevent stale transformed points from previous frames
+  const auto points_capacity_size = config_.cloud_capacity_ * config_.point_feature_size_;
+  clear_async(points_aux_d_.get(), points_capacity_size, stream_);
+  clear_async(points_d_.get(), points_capacity_size, stream_);
   CHECK_CUDA_ERROR(cudaStreamSynchronize(stream_));
 
   const std::size_t count = vg_ptr_->generateSweepPoints(points_aux_d_.get());
@@ -271,13 +275,19 @@ bool CenterPointTRT::preprocess(
   pre_proc_ptr_->shufflePoints_launch(
     points_aux_d_.get(), shuffle_indices_d_.get(), points_d_.get(), count, config_.cloud_capacity_,
     random_offset);
+  // Sync after shuffle to ensure points_d_ is ready for voxel generation
+  CHECK_CUDA_ERROR(cudaStreamSynchronize(stream_));
 
   pre_proc_ptr_->generateVoxels_random_launch(
     points_d_.get(), config_.cloud_capacity_, mask_d_.get(), voxels_buffer_d_.get());
+  // Sync after voxel generation to ensure mask/voxels_buffer are ready
+  CHECK_CUDA_ERROR(cudaStreamSynchronize(stream_));
 
   pre_proc_ptr_->generateBaseFeatures_launch(
     mask_d_.get(), voxels_buffer_d_.get(), num_voxels_d_.get(), voxels_d_.get(),
     num_points_per_voxel_d_.get(), coordinates_d_.get());
+  // Sync after base features to ensure voxels/coordinates are ready
+  CHECK_CUDA_ERROR(cudaStreamSynchronize(stream_));
 
   pre_proc_ptr_->generateFeatures_launch(
     voxels_d_.get(), num_points_per_voxel_d_.get(), coordinates_d_.get(), num_voxels_d_.get(),

@@ -98,6 +98,11 @@ std::size_t VoxelGenerator::generateSweepPoints(float * points_d)
     pre_ptr_->generateSweepPoints_launch(
       reinterpret_cast<InputPointType *>(input_pointcloud_msg_ptr->data.get()), sweep_num_points,
       time_lag, affine_past2current_d_.get(), points_d + output_offset);
+    
+    // CRITICAL: Synchronize after each frame's transform to prevent race condition
+    // Without this, the next iteration's cudaMemcpyAsync overwrites affine_past2current_d_
+    // while the current kernel is still reading it, causing incorrect transforms during ego motion
+    CHECK_CUDA_ERROR(cudaStreamSynchronize(stream_));
 
     point_counter += sweep_num_points;
   }
