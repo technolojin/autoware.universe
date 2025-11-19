@@ -345,56 +345,36 @@ void LidarCenterPointNode::pointCloudCallback(
           switch (viz_mode) {
             case VoxelVisualizationMode::POINT_INDEX_MAP:
               // Map auto-scaled mean point index to value
-              // Lower indices (earlier points) -> darker (higher value)
-              // Higher indices (later points) -> lighter (lower value)
               // Auto-scaling: values are normalized by actual min/max in the data
               {
                 const float normalized_index = voxel_point_index_map[i];
                 if (normalized_index < 0.0f) {
                   // Invalid voxel (no points)
-                  value = 1.0f;  // Mark as empty
+                  value = -1.0f;  // Mark as empty
                 } else {
-                  const float min_value = 0.0f;
-                  const float max_value = 0.8f;
                   // Direct mapping: normalized_index is already auto-scaled to [0, 1]
-                  value = 0.9 - normalized_index ; // 0.9 to -0.1, and crop to 0.8 to 0.0 fro emphasis
-                  value = std::max(min_value, std::min(max_value, value));
+                  value =normalized_index; 
                 }
               }
               break;
 
             case VoxelVisualizationMode::FEAT_MEAN_Z:
-              // Map mean.z to value: 1m -> 0.0, 0m -> 0.8, empty voxel -> 1.0
               {
-                const float mean_z = voxel_mean_z[i];
-                const float max_z = 1.0f;
-                const float min_value = 0.0f;
-                const float max_value = 0.8f;
-                // Linear mapping: value = 0.8 - 0.8 * (mean_z / 1.0)
-                value = max_value - (mean_z / max_z) * (max_value - min_value);
-                value = std::max(min_value, std::min(max_value, value));
+                value = voxel_mean_z[i];
               }
               break;
 
             case VoxelVisualizationMode::HEIGHT:
-              // Map height to value: 2m max -> 0.0, 0m -> 0.8
               {
-                const float height = voxel_heights[i];
-                const float max_height = 2.0f;
-                const float min_value = 0.0f;
-                const float max_value = 0.8f;
-                value = max_value - (height / max_height) * (max_value - min_value);
-                value = std::max(min_value, std::min(max_value, value));
+                value = voxel_heights[i];
               }
               break;
 
             case VoxelVisualizationMode::OCCUPANCY:
             default:
               // Map point count to occupancy value (inverted scale)
-              // 0.0 = fully filled (32 points), 0.8 = lowest filled (1 point), 1.0 = empty
               {
-                const float normalized_count = point_counts[i] / max_point_in_voxel;
-                value = std::max(0.8f - 0.8f * normalized_count, 0.0f);
+                value = point_counts[i] / max_point_in_voxel;
               }
               break;
           }
