@@ -136,12 +136,11 @@ __global__ void generateVoxelIndexMap_random_kernel(
   atomicAdd(&(voxel_point_index_sums[voxel_index]), static_cast<float>(point_idx));
 }
 
-// Kernel to compute normalized mean point indices per voxel
+// Kernel to compute mean point indices per voxel (unnormalized)
 // Takes the coordinate mapping from generateBaseFeatures and computes mean index
 __global__ void computeVoxelPointIndexMean_kernel(
   const int * coords, const float * voxel_point_index_sums, const unsigned int * voxel_point_counts,
-  unsigned int num_voxels, int grid_y_size, int grid_x_size, float max_point_index,
-  float * voxel_point_index_map)
+  unsigned int num_voxels, int grid_y_size, int grid_x_size, float * voxel_point_index_map)
 {
   int voxel_idx = blockIdx.x * blockDim.x + threadIdx.x;
   if (voxel_idx >= num_voxels) return;
@@ -158,10 +157,60 @@ __global__ void computeVoxelPointIndexMean_kernel(
   if (count > 0) {
     float sum = voxel_point_index_sums[grid_index];
     float mean_index = sum / static_cast<float>(count);
-    // Normalize by max point index
-    voxel_point_index_map[voxel_idx] = mean_index / max_point_index;
+    voxel_point_index_map[voxel_idx] = mean_index;
   } else {
-    voxel_point_index_map[voxel_idx] = 0.0f;
+    voxel_point_index_map[voxel_idx] = -1.0f;  // Mark as invalid
+  }
+}
+
+// Kernel to find min/max of mean point indices (for auto-scaling)
+__global__ void findMinMaxPointIndex_kernel(
+  const float * voxel_point_index_map, unsigned int num_voxels, float * min_max_result)
+{
+  __shared__ float shared_min;
+  __shared__ float shared_max;
+
+  if (threadIdx.x == 0) {
+    shared_min = INFINITY;
+    shared_max = -INFINITY;
+  }
+  __syncthreads();
+
+  int voxel_idx = blockIdx.x * blockDim.x + threadIdx.x;
+  
+  float local_value = (voxel_idx < num_voxels) ? voxel_point_index_map[voxel_idx] : -1.0f;
+  
+  // Only consider valid values (>= 0)
+  if (local_value >= 0.0f) {
+    atomicMin(reinterpret_cast<int*>(&shared_min), __float_as_int(local_value));
+    atomicMax(reinterpret_cast<int*>(&shared_max), __float_as_int(local_value));
+  }
+  __syncthreads();
+
+  // First thread writes block result
+  if (threadIdx.x == 0) {
+    atomicMin(reinterpret_cast<int*>(&min_max_result[0]), __float_as_int(shared_min));
+    atomicMax(reinterpret_cast<int*>(&min_max_result[1]), __float_as_int(shared_max));
+  }
+}
+
+// Kernel to normalize point indices by min/max
+__global__ void normalizePointIndices_kernel(
+  float * voxel_point_index_map, unsigned int num_voxels, float min_index, float max_index)
+{
+  int voxel_idx = blockIdx.x * blockDim.x + threadIdx.x;
+  if (voxel_idx >= num_voxels) return;
+
+  float value = voxel_point_index_map[voxel_idx];
+  if (value >= 0.0f && max_index > min_index) {
+    // Normalize to [0, 1]
+    voxel_point_index_map[voxel_idx] = (value - min_index) / (max_index - min_index);
+  } else if (value < 0.0f) {
+    // Keep invalid markers
+    voxel_point_index_map[voxel_idx] = -1.0f;
+  } else {
+    // If min == max, set to 0.5
+    voxel_point_index_map[voxel_idx] = 0.5f;
   }
 }
 }  // namespace
@@ -650,15 +699,37 @@ cudaError_t PreprocessCuda::generateVoxelIndexMap_random_launch(
 
 cudaError_t PreprocessCuda::computeVoxelPointIndexMean_launch(
   const int * coords, const float * voxel_point_index_sums,
-  const unsigned int * voxel_point_counts, unsigned int num_voxels, float max_point_index,
-  float * voxel_point_index_map)
+  const unsigned int * voxel_point_counts, unsigned int num_voxels,
+  float * voxel_point_index_map, float * min_max_buffer, bool auto_scale)
 {
   dim3 threads(256);
   dim3 blocks((num_voxels + threads.x - 1) / threads.x);
 
+  // Step 1: Compute mean indices (unnormalized)
   computeVoxelPointIndexMean_kernel<<<blocks, threads, 0, stream_>>>(
     coords, voxel_point_index_sums, voxel_point_counts, num_voxels, config_.grid_size_y_,
-    config_.grid_size_x_, max_point_index, voxel_point_index_map);
+    config_.grid_size_x_, voxel_point_index_map);
+
+  if (auto_scale && num_voxels > 0) {
+    // Step 2: Initialize min_max_buffer
+    float init_values[2] = {INFINITY, -INFINITY};
+    CHECK_CUDA_ERROR(cudaMemcpyAsync(
+      min_max_buffer, init_values, 2 * sizeof(float), cudaMemcpyHostToDevice, stream_));
+
+    // Step 3: Find min/max
+    findMinMaxPointIndex_kernel<<<blocks, threads, 0, stream_>>>(
+      voxel_point_index_map, num_voxels, min_max_buffer);
+
+    // Step 4: Get min/max values back to host
+    float min_max_host[2];
+    CHECK_CUDA_ERROR(cudaMemcpyAsync(
+      min_max_host, min_max_buffer, 2 * sizeof(float), cudaMemcpyDeviceToHost, stream_));
+    CHECK_CUDA_ERROR(cudaStreamSynchronize(stream_));
+
+    // Step 5: Normalize by min/max
+    normalizePointIndices_kernel<<<blocks, threads, 0, stream_>>>(
+      voxel_point_index_map, num_voxels, min_max_host[0], min_max_host[1]);
+  }
 
   return cudaGetLastError();
 }

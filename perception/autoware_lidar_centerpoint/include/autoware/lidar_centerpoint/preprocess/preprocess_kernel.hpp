@@ -60,8 +60,8 @@ public:
 
   cudaError_t computeVoxelPointIndexMean_launch(
     const int * coords, const float * voxel_point_index_sums,
-    const unsigned int * voxel_point_counts, unsigned int num_voxels, float max_point_index,
-    float * voxel_point_index_map);
+    const unsigned int * voxel_point_counts, unsigned int num_voxels,
+    float * voxel_point_index_map, float * min_max_buffer, bool auto_scale = true);
 
 private:
   CenterPointConfig config_;

@@ -102,6 +102,7 @@ void CenterPointTRT::initPtr()
   voxel_point_index_sums_d_ = cuda::make_unique<float[]>(mask_size_);
   voxel_point_counts_d_ = cuda::make_unique<unsigned int[]>(mask_size_);
   voxel_point_index_map_d_ = cuda::make_unique<float[]>(config_.max_voxel_size_);
+  min_max_buffer_d_ = cuda::make_unique<float[]>(2);  // [min, max]
 
   std::vector<unsigned int> indexes(config_.cloud_capacity_);
   std::iota(indexes.begin(), indexes.end(), 0);
@@ -421,16 +422,10 @@ bool CenterPointTRT::getVoxelGridData(
   }
 
   if (get_index_map) {
-    // Find the maximum valid point index
-    // Since we called generateVoxelIndexMap_random_launch with count points,
-    // we need to pass the effective max point index
-    // We'll use the cloud capacity as a reasonable upper bound
-    float max_point_index = static_cast<float>(config_.cloud_capacity_);
-
-    // Compute normalized mean point indices per voxel
+    // Compute normalized mean point indices per voxel with auto-scaling
     pre_proc_ptr_->computeVoxelPointIndexMean_launch(
       coordinates_d_.get(), voxel_point_index_sums_d_.get(), voxel_point_counts_d_.get(),
-      num_voxels, max_point_index, voxel_point_index_map_d_.get());
+      num_voxels, voxel_point_index_map_d_.get(), min_max_buffer_d_.get(), true);
     CHECK_CUDA_ERROR(cudaStreamSynchronize(stream_));
   }
 

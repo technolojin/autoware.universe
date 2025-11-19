@@ -119,6 +119,7 @@ protected:
   cuda::unique_ptr<float[]> voxel_point_index_sums_d_{nullptr};
   cuda::unique_ptr<unsigned int[]> voxel_point_counts_d_{nullptr};
   cuda::unique_ptr<float[]> voxel_point_index_map_d_{nullptr};
+  cuda::unique_ptr<float[]> min_max_buffer_d_{nullptr};
 };
 
 }  // namespace autoware::lidar_centerpoint

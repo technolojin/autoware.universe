@@ -344,16 +344,22 @@ void LidarCenterPointNode::pointCloudCallback(
           float value;
           switch (viz_mode) {
             case VoxelVisualizationMode::POINT_INDEX_MAP:
-              // Map normalized mean point index to value
-              // Lower indices (earlier points) -> darker (lower value)
-              // Higher indices (later points) -> lighter (higher value)
+              // Map auto-scaled mean point index to value
+              // Lower indices (earlier points) -> darker (higher value)
+              // Higher indices (later points) -> lighter (lower value)
+              // Auto-scaling: values are normalized by actual min/max in the data
               {
                 const float normalized_index = voxel_point_index_map[i];
-                const float min_value = 0.0f;
-                const float max_value = 0.8f;
-                // Direct mapping: normalized_index is already in [0, 1]
-                value = min_value + normalized_index * (max_value - min_value);
-                value = std::max(min_value, std::min(max_value, value));
+                if (normalized_index < 0.0f) {
+                  // Invalid voxel (no points)
+                  value = 1.0f;  // Mark as empty
+                } else {
+                  const float min_value = 0.0f;
+                  const float max_value = 0.8f;
+                  // Direct mapping: normalized_index is already auto-scaled to [0, 1]
+                  value = 0.9 - normalized_index ; // 0.9 to -0.1, and crop to 0.8 to 0.0 fro emphasis
+                  value = std::max(min_value, std::min(max_value, value));
+                }
               }
               break;
 
