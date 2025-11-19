@@ -67,16 +67,15 @@ std::size_t VoxelGenerator::generateSweepPoints(float * points_d)
     float time_lag = static_cast<float>(
       pd_ptr_->getCurrentTimestamp() -
       rclcpp::Time(input_pointcloud_msg_ptr->header.stamp).seconds());
-    
+
     // Diagnostic: Log transformation matrix to detect identity transforms (stale data)
     bool is_identity = affine_past2current.matrix().isIdentity(1e-6);
     if (frame_idx > 0 && is_identity) {
       rclcpp::Clock clock(RCL_ROS_TIME);
       RCLCPP_WARN_THROTTLE(
-        rclcpp::get_logger(config_.logger_name_.c_str()), 
-        clock, 1000,
-        "Past frame %zu has IDENTITY transform (potential TF issue) - time_lag: %.3f s",
-        frame_idx, time_lag);
+        rclcpp::get_logger(config_.logger_name_.c_str()), clock, 1000,
+        "Past frame %zu has IDENTITY transform (potential TF issue) - time_lag: %.3f s", frame_idx,
+        time_lag);
     }
 
     if (point_counter + sweep_num_points > config_.cloud_capacity_) {
@@ -98,7 +97,7 @@ std::size_t VoxelGenerator::generateSweepPoints(float * points_d)
     pre_ptr_->generateSweepPoints_launch(
       reinterpret_cast<InputPointType *>(input_pointcloud_msg_ptr->data.get()), sweep_num_points,
       time_lag, affine_past2current_d_.get(), points_d + output_offset);
-    
+
     // CRITICAL: Synchronize after each frame's transform to prevent race condition
     // Without this, the next iteration's cudaMemcpyAsync overwrites affine_past2current_d_
     // while the current kernel is still reading it, causing incorrect transforms during ego motion

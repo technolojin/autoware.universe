@@ -127,7 +127,8 @@ public:
   std::vector<float> score_thresholds_{};
   float circle_nms_dist_threshold_{1.5f};
   std::vector<float> yaw_norm_thresholds_{};
-  std::size_t max_num_detections_{1000};  // Maximum number of detections before NMS to limit GPU memory usage
+  std::size_t max_num_detections_{
+    1000};  // Maximum number of detections before NMS to limit GPU memory usage
 
   // calculated params
   std::size_t grid_size_x_ = (range_max_x_ - range_min_x_) / voxel_size_x_;

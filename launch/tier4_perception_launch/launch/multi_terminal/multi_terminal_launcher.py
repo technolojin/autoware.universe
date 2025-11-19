@@ -9,15 +9,15 @@ from launch.substitutions import LaunchConfiguration
 
 logger = logging.getLogger(__name__)
 
-TERMINAL_METHOD_PRIORITY = ('terminator', 'tmux')
+TERMINAL_METHOD_PRIORITY = ("terminator", "tmux")
 # TERMINAL_METHOD_PRIORITY = ('tmux', 'terminator')
 GUI_TERMINAL_CANDIDATES = (
-    'gnome-terminal',
-    'xterm',
-    'konsole',
-    'xfce4-terminal',
-    'mate-terminal',
-    'terminator',
+    "gnome-terminal",
+    "xterm",
+    "konsole",
+    "xfce4-terminal",
+    "mate-terminal",
+    "terminator",
 )
 
 TERMINATOR_SIGINT_WAIT_SECONDS = 20
@@ -30,18 +30,18 @@ TERMINAL_SIGKILL_TIMEOUT = 10.0
 
 def _first_available_command(candidates: tuple[str, ...]) -> str:
     """Return the first executable available from the candidates."""
-    return next((cmd for cmd in candidates if shutil.which(cmd)), '')
+    return next((cmd for cmd in candidates if shutil.which(cmd)), "")
 
 
 def detect_terminal_method() -> str:
     """Detect available terminal method for launching separate terminals."""
-    return _first_available_command(TERMINAL_METHOD_PRIORITY) or 'none'
+    return _first_available_command(TERMINAL_METHOD_PRIORITY) or "none"
 
 
 def detect_gui_terminal() -> str:
     """Detect available GUI terminal emulator."""
-    if os.environ.get('DISPLAY') is None:
-        return ''
+    if os.environ.get("DISPLAY") is None:
+        return ""
     return _first_available_command(GUI_TERMINAL_CANDIDATES)
 
 
@@ -62,31 +62,36 @@ def escape_dollar_signs_for_bash(cmd_str: str) -> str:
 
 def _get_workspace_setup_path(launcher_pkg_install_dir: str) -> str:
     """Get workspace setup.bash path."""
-    workspace_install_dir = os.path.dirname(os.path.dirname(os.path.dirname(launcher_pkg_install_dir)))
-    return os.path.join(workspace_install_dir, 'setup.bash')
+    workspace_install_dir = os.path.dirname(
+        os.path.dirname(os.path.dirname(launcher_pkg_install_dir))
+    )
+    return os.path.join(workspace_install_dir, "setup.bash")
 
 
 def _build_command_string(cmd_parts: list[str], escape_dollars: bool = True) -> str:
     """Build quoted command string from parts."""
-    cmd = ' '.join(shlex.quote(p) for p in cmd_parts)
+    cmd = " ".join(shlex.quote(p) for p in cmd_parts)
     return escape_dollar_signs_for_bash(cmd) if escape_dollars else cmd
 
 
-def _write_temp_script(content: str, prefix: str, suffix: str = '.sh') -> str:
+def _write_temp_script(content: str, prefix: str, suffix: str = ".sh") -> str:
     """Write script content to temporary file and return path."""
     fd, script_path = tempfile.mkstemp(suffix=suffix, prefix=prefix)
-    with os.fdopen(fd, 'w') as f:
+    with os.fdopen(fd, "w") as f:
         f.write(content)
     os.chmod(script_path, 0o755)
     return script_path
 
 
-def create_tmux_launcher_script(launcher_paths: list[str], launch_args_cmd: list[str],
-                                launcher_pkg_install_dir: str,
-                                launcher_pkg_name: str = 'tier4_perception_launch',
-                                session_name: str = 'ros2_launchers',
-                                window_name: str = 'launchers',
-                                launch_pointcloud_container: bool = False) -> str:
+def create_tmux_launcher_script(
+    launcher_paths: list[str],
+    launch_args_cmd: list[str],
+    launcher_pkg_install_dir: str,
+    launcher_pkg_name: str = "tier4_perception_launch",
+    session_name: str = "ros2_launchers",
+    window_name: str = "launchers",
+    launch_pointcloud_container: bool = False,
+) -> str:
     """Delegate tmux script creation to the tmux helper module."""
     from . import tmux as tmux_module
 
@@ -101,12 +106,16 @@ def create_tmux_launcher_script(launcher_paths: list[str], launch_args_cmd: list
     )
 
 
-def launch_in_tmux(context, launch_arguments_names: list[str], launcher_paths: list[str],
-                   launcher_pkg_install_dir: str,
-                   launcher_pkg_name: str = 'tier4_perception_launch',
-                   session_name: str = 'ros2_launchers',
-                   window_name: str = 'launchers',
-                   launch_pointcloud_container: bool = False) -> list[ExecuteProcess]:
+def launch_in_tmux(
+    context,
+    launch_arguments_names: list[str],
+    launcher_paths: list[str],
+    launcher_pkg_install_dir: str,
+    launcher_pkg_name: str = "tier4_perception_launch",
+    session_name: str = "ros2_launchers",
+    window_name: str = "launchers",
+    launch_pointcloud_container: bool = False,
+) -> list[ExecuteProcess]:
     """Public wrapper that defers to the tmux helper for launching."""
     from . import tmux as tmux_module
 
@@ -122,12 +131,15 @@ def launch_in_tmux(context, launch_arguments_names: list[str], launcher_paths: l
     )
 
 
-def create_terminator_launcher_script(launcher_paths: list[str], launch_args_cmd: list[str],
-                                      launcher_pkg_install_dir: str,
-                                      launcher_pkg_name: str = 'tier4_perception_launch',
-                                      layout_name: str = 'ros2_launchers',
-                                      launch_pointcloud_container: bool = False,
-                                      titles: list[str] = None) -> str:
+def create_terminator_launcher_script(
+    launcher_paths: list[str],
+    launch_args_cmd: list[str],
+    launcher_pkg_install_dir: str,
+    launcher_pkg_name: str = "tier4_perception_launch",
+    layout_name: str = "ros2_launchers",
+    launch_pointcloud_container: bool = False,
+    titles: list[str] = None,
+) -> str:
     """Delegate to the terminator helper module for script creation."""
     from . import terminator as terminator_module
 
@@ -142,12 +154,16 @@ def create_terminator_launcher_script(launcher_paths: list[str], launch_args_cmd
     )
 
 
-def launch_in_terminator(context, launch_arguments_names: list[str], launcher_paths: list[str],
-                         launcher_pkg_install_dir: str,
-                         launcher_pkg_name: str = 'tier4_perception_launch',
-                         layout_name: str = 'ros2_launchers',
-                         launch_pointcloud_container: bool = False,
-                         titles: list[str] = None) -> list[ExecuteProcess]:
+def launch_in_terminator(
+    context,
+    launch_arguments_names: list[str],
+    launcher_paths: list[str],
+    launcher_pkg_install_dir: str,
+    launcher_pkg_name: str = "tier4_perception_launch",
+    layout_name: str = "ros2_launchers",
+    launch_pointcloud_container: bool = False,
+    titles: list[str] = None,
+) -> list[ExecuteProcess]:
     """Public wrapper that defers to the terminator helper for launching."""
     from . import terminator as terminator_module
 

@@ -42,7 +42,7 @@ CenterPointTRT::CenterPointTRT(
 {
   // CRITICAL: Create stream BEFORE using it in child objects
   cudaStreamCreate(&stream_);
-  
+
   vg_ptr_ = std::make_unique<VoxelGenerator>(densification_param, config_, stream_);
   pre_proc_ptr_ = std::make_unique<PreprocessCuda>(config_, stream_);
   post_proc_ptr_ = std::make_unique<PostProcessCUDA>(config_, stream_);
@@ -182,19 +182,20 @@ bool CenterPointTRT::detect(
   is_num_pillars_within_range = true;
 
   const auto grid_xy_size = config_.down_grid_size_x_ * config_.down_grid_size_y_;
-  
+
   // Clear all feature buffers to prevent residue from previous frames
   // This is critical during ego motion (especially turns) to avoid ghost detections
   CHECK_CUDA_ERROR(cudaMemsetAsync(
     encoder_in_features_d_.get(), 0, encoder_in_feature_size_ * sizeof(float), stream_));
   CHECK_CUDA_ERROR(
     cudaMemsetAsync(spatial_features_d_.get(), 0, spatial_features_size_ * sizeof(float), stream_));
-  
+
   // Clear head output buffers to prevent stale detections from contaminating results
   CHECK_CUDA_ERROR(cudaMemsetAsync(
     head_out_heatmap_d_.get(), 0, grid_xy_size * config_.class_size_ * sizeof(float), stream_));
   CHECK_CUDA_ERROR(cudaMemsetAsync(
-    head_out_offset_d_.get(), 0, grid_xy_size * config_.head_out_offset_size_ * sizeof(float), stream_));
+    head_out_offset_d_.get(), 0, grid_xy_size * config_.head_out_offset_size_ * sizeof(float),
+    stream_));
   CHECK_CUDA_ERROR(cudaMemsetAsync(
     head_out_z_d_.get(), 0, grid_xy_size * config_.head_out_z_size_ * sizeof(float), stream_));
   CHECK_CUDA_ERROR(cudaMemsetAsync(
@@ -295,8 +296,8 @@ bool CenterPointTRT::preprocess(
 
   // Extract mean Z from encoded features for visualization
   unsigned int num_voxels_host;
-  CHECK_CUDA_ERROR(
-    cudaMemcpy(&num_voxels_host, num_voxels_d_.get(), sizeof(unsigned int), cudaMemcpyDeviceToHost));
+  CHECK_CUDA_ERROR(cudaMemcpy(
+    &num_voxels_host, num_voxels_d_.get(), sizeof(unsigned int), cudaMemcpyDeviceToHost));
   if (num_voxels_host > 0) {
     pre_proc_ptr_->extractFeatureMeanZ_launch(
       encoder_in_features_d_.get(), num_points_per_voxel_d_.get(), num_voxels_host,
@@ -335,7 +336,7 @@ void CenterPointTRT::inference()
   head_trt_ptr_->setTensorsAddresses(head_tensors);
 
   head_trt_ptr_->enqueueV3(stream_);
-  
+
   // Synchronize to ensure head network completes before postprocessing reads outputs
   CHECK_CUDA_ERROR(cudaStreamSynchronize(stream_));
 }
