@@ -197,15 +197,21 @@ void LidarCenterPointNode::pointCloudCallback(
     std::vector<int> coordinates;
     std::vector<float> point_counts;
     std::vector<float> voxel_heights;
+    std::vector<float> voxel_mean_z;
     unsigned int num_voxels = 0;
     
     // Visualization mode selector
-    enum class VoxelVisualizationMode { OCCUPANCY, HEIGHT };
-    const VoxelVisualizationMode viz_mode = VoxelVisualizationMode::HEIGHT;
+    enum class VoxelVisualizationMode { OCCUPANCY, HEIGHT, FEAT_MEAN_Z };
+    const VoxelVisualizationMode viz_mode = VoxelVisualizationMode::FEAT_MEAN_Z;
     
-    bool data_available = (viz_mode == VoxelVisualizationMode::HEIGHT) ?
-      detector_ptr_->getVoxelGridData(coordinates, point_counts, voxel_heights, num_voxels) :
-      detector_ptr_->getVoxelGridData(coordinates, point_counts, num_voxels);
+    bool data_available = false;
+    if (viz_mode == VoxelVisualizationMode::FEAT_MEAN_Z) {
+      data_available = detector_ptr_->getVoxelGridData(coordinates, point_counts, voxel_heights, voxel_mean_z, num_voxels);
+    } else if (viz_mode == VoxelVisualizationMode::HEIGHT) {
+      data_available = detector_ptr_->getVoxelGridData(coordinates, point_counts, voxel_heights, num_voxels);
+    } else {
+      data_available = detector_ptr_->getVoxelGridData(coordinates, point_counts, num_voxels);
+    }
     
     if (data_available) {
       // Get voxel config from detector
@@ -290,6 +296,19 @@ void LidarCenterPointNode::pointCloudCallback(
           
           float value;
           switch (viz_mode) {
+            case VoxelVisualizationMode::FEAT_MEAN_Z:
+              // Map mean.z to value: 1m -> 0.0, 0m -> 0.8, empty voxel -> 1.0
+              {
+                const float mean_z = voxel_mean_z[i];
+                const float max_z = 1.0f;
+                const float min_value = 0.0f;
+                const float max_value = 0.8f;
+                // Linear mapping: value = 0.8 - 0.8 * (mean_z / 1.0)
+                value = max_value - (mean_z / max_z) * (max_value - min_value);
+                value = std::max(min_value, std::min(max_value, value));
+              }
+              break;
+            
             case VoxelVisualizationMode::HEIGHT:
               // Map height to value: 2m max -> 0.0, 0m -> 0.8
               {
