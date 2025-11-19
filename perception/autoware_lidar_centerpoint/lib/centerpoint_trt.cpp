@@ -99,6 +99,9 @@ void CenterPointTRT::initPtr()
   shuffle_indices_d_ = cuda::make_unique<unsigned int[]>(config_.cloud_capacity_);
   voxel_heights_d_ = cuda::make_unique<float[]>(config_.max_voxel_size_);
   voxel_mean_z_d_ = cuda::make_unique<float[]>(config_.max_voxel_size_);
+  voxel_point_index_sums_d_ = cuda::make_unique<float[]>(mask_size_);
+  voxel_point_counts_d_ = cuda::make_unique<unsigned int[]>(mask_size_);
+  voxel_point_index_map_d_ = cuda::make_unique<float[]>(config_.max_voxel_size_);
 
   std::vector<unsigned int> indexes(config_.cloud_capacity_);
   std::iota(indexes.begin(), indexes.end(), 0);
@@ -230,10 +233,16 @@ bool CenterPointTRT::preprocess(
   clear_async(voxels_d_.get(), voxels_size_, stream_);
   clear_async(coordinates_d_.get(), coordinates_size_, stream_);
   clear_async(num_points_per_voxel_d_.get(), config_.max_voxel_size_, stream_);
+  clear_async(voxel_point_index_sums_d_.get(), mask_size_, stream_);
+  clear_async(voxel_point_counts_d_.get(), mask_size_, stream_);
   CHECK_CUDA_ERROR(cudaStreamSynchronize(stream_));
 
   const std::size_t count = vg_ptr_->generateSweepPoints(points_aux_d_.get());
   const std::size_t random_offset = std::rand() % config_.cloud_capacity_;
+
+  // Generate voxel index map before shuffling points
+  pre_proc_ptr_->generateVoxelIndexMap_random_launch(
+    points_aux_d_.get(), count, voxel_point_index_sums_d_.get(), voxel_point_counts_d_.get());
 
   pre_proc_ptr_->shufflePoints_launch(
     points_aux_d_.get(), shuffle_indices_d_.get(), points_d_.get(), count, config_.cloud_capacity_,
@@ -395,6 +404,54 @@ bool CenterPointTRT::getVoxelGridData(
   CHECK_CUDA_ERROR(cudaMemcpy(
     voxel_mean_z.data(), voxel_mean_z_d_.get(), num_voxels * sizeof(float),
     cudaMemcpyDeviceToHost));
+
+  return true;
+}
+
+bool CenterPointTRT::getVoxelGridData(
+  std::vector<int> & coordinates, std::vector<float> & point_counts,
+  std::vector<float> & voxel_point_index_map, unsigned int & num_voxels, bool get_index_map)
+{
+  // Get number of voxels
+  CHECK_CUDA_ERROR(
+    cudaMemcpy(&num_voxels, num_voxels_d_.get(), sizeof(unsigned int), cudaMemcpyDeviceToHost));
+
+  if (num_voxels == 0) {
+    return false;
+  }
+
+  if (get_index_map) {
+    // Find the maximum valid point index
+    // Since we called generateVoxelIndexMap_random_launch with count points,
+    // we need to pass the effective max point index
+    // We'll use the cloud capacity as a reasonable upper bound
+    float max_point_index = static_cast<float>(config_.cloud_capacity_);
+
+    // Compute normalized mean point indices per voxel
+    pre_proc_ptr_->computeVoxelPointIndexMean_launch(
+      coordinates_d_.get(), voxel_point_index_sums_d_.get(), voxel_point_counts_d_.get(),
+      num_voxels, max_point_index, voxel_point_index_map_d_.get());
+    CHECK_CUDA_ERROR(cudaStreamSynchronize(stream_));
+  }
+
+  // Allocate host memory
+  coordinates.resize(num_voxels * 3);  // z, y, x for each voxel
+  point_counts.resize(num_voxels);
+  voxel_point_index_map.resize(num_voxels);
+
+  // Copy data from device to host
+  CHECK_CUDA_ERROR(cudaMemcpy(
+    coordinates.data(), coordinates_d_.get(), num_voxels * 3 * sizeof(int),
+    cudaMemcpyDeviceToHost));
+  CHECK_CUDA_ERROR(cudaMemcpy(
+    point_counts.data(), num_points_per_voxel_d_.get(), num_voxels * sizeof(float),
+    cudaMemcpyDeviceToHost));
+
+  if (get_index_map) {
+    CHECK_CUDA_ERROR(cudaMemcpy(
+      voxel_point_index_map.data(), voxel_point_index_map_d_.get(), num_voxels * sizeof(float),
+      cudaMemcpyDeviceToHost));
+  }
 
   return true;
 }

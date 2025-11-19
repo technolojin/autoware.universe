@@ -54,6 +54,15 @@ public:
     const float * encoder_features, const float * voxel_num_points, unsigned int num_voxels,
     float * voxel_mean_z);
 
+  cudaError_t generateVoxelIndexMap_random_launch(
+    const float * points, std::size_t points_size, float * voxel_point_index_sums,
+    unsigned int * voxel_point_counts);
+
+  cudaError_t computeVoxelPointIndexMean_launch(
+    const int * coords, const float * voxel_point_index_sums,
+    const unsigned int * voxel_point_counts, unsigned int num_voxels, float max_point_index,
+    float * voxel_point_index_map);
+
 private:
   CenterPointConfig config_;
   cudaStream_t stream_;

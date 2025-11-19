@@ -198,14 +198,18 @@ void LidarCenterPointNode::pointCloudCallback(
     std::vector<float> point_counts;
     std::vector<float> voxel_heights;
     std::vector<float> voxel_mean_z;
+    std::vector<float> voxel_point_index_map;
     unsigned int num_voxels = 0;
 
     // Visualization mode selector
-    enum class VoxelVisualizationMode { OCCUPANCY, HEIGHT, FEAT_MEAN_Z };
-    const VoxelVisualizationMode viz_mode = VoxelVisualizationMode::FEAT_MEAN_Z;
+    enum class VoxelVisualizationMode { OCCUPANCY, HEIGHT, FEAT_MEAN_Z, POINT_INDEX_MAP };
+    const VoxelVisualizationMode viz_mode = VoxelVisualizationMode::POINT_INDEX_MAP;
 
     bool data_available = false;
-    if (viz_mode == VoxelVisualizationMode::FEAT_MEAN_Z) {
+    if (viz_mode == VoxelVisualizationMode::POINT_INDEX_MAP) {
+      data_available = detector_ptr_->getVoxelGridData(
+        coordinates, point_counts, voxel_point_index_map, num_voxels, true);
+    } else if (viz_mode == VoxelVisualizationMode::FEAT_MEAN_Z) {
       data_available = detector_ptr_->getVoxelGridData(
         coordinates, point_counts, voxel_heights, voxel_mean_z, num_voxels);
     } else if (viz_mode == VoxelVisualizationMode::HEIGHT) {
@@ -339,6 +343,20 @@ void LidarCenterPointNode::pointCloudCallback(
 
           float value;
           switch (viz_mode) {
+            case VoxelVisualizationMode::POINT_INDEX_MAP:
+              // Map normalized mean point index to value
+              // Lower indices (earlier points) -> darker (lower value)
+              // Higher indices (later points) -> lighter (higher value)
+              {
+                const float normalized_index = voxel_point_index_map[i];
+                const float min_value = 0.0f;
+                const float max_value = 0.8f;
+                // Direct mapping: normalized_index is already in [0, 1]
+                value = min_value + normalized_index * (max_value - min_value);
+                value = std::max(min_value, std::min(max_value, value));
+              }
+              break;
+
             case VoxelVisualizationMode::FEAT_MEAN_Z:
               // Map mean.z to value: 1m -> 0.0, 0m -> 0.8, empty voxel -> 1.0
               {

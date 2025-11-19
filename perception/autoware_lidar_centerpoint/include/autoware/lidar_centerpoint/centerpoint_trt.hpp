@@ -62,6 +62,10 @@ public:
     std::vector<float> & voxel_heights, std::vector<float> & voxel_mean_z,
     unsigned int & num_voxels);
 
+  bool getVoxelGridData(
+    std::vector<int> & coordinates, std::vector<float> & point_counts,
+    std::vector<float> & voxel_point_index_map, unsigned int & num_voxels, bool get_index_map);
+
   const CenterPointConfig & getConfig() const { return config_; }
 
 protected:
@@ -112,6 +116,9 @@ protected:
   cuda::unique_ptr<unsigned int[]> shuffle_indices_d_{nullptr};
   cuda::unique_ptr<float[]> voxel_heights_d_{nullptr};
   cuda::unique_ptr<float[]> voxel_mean_z_d_{nullptr};
+  cuda::unique_ptr<float[]> voxel_point_index_sums_d_{nullptr};
+  cuda::unique_ptr<unsigned int[]> voxel_point_counts_d_{nullptr};
+  cuda::unique_ptr<float[]> voxel_point_index_map_d_{nullptr};
 };
 
 }  // namespace autoware::lidar_centerpoint

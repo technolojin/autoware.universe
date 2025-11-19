@@ -100,6 +100,70 @@ __global__ void extractFeatureMeanZ_kernel(
   int feature_index = voxel_idx * MAX_POINT_IN_VOXEL_SIZE * encoder_in_feature_size + mean_z_idx;
   voxel_mean_z[voxel_idx] = encoder_features[feature_index];
 }
+
+// Kernel to compute point index map for voxels (before shuffling)
+// Computes sum of point indices and count per voxel
+template <std::size_t POINT_NUM_FEATURES>
+__global__ void generateVoxelIndexMap_random_kernel(
+  const float * points, std::size_t points_size, float min_x_range, float max_x_range,
+  float min_y_range, float max_y_range, float min_z_range, float max_z_range, float pillar_x_size,
+  float pillar_y_size, int grid_y_size, int grid_x_size, float * voxel_point_index_sums,
+  unsigned int * voxel_point_counts)
+{
+  int point_idx = blockIdx.x * blockDim.x + threadIdx.x;
+  if (point_idx >= points_size) return;
+
+  const float x = points[point_idx * POINT_NUM_FEATURES];
+  const float y = points[point_idx * POINT_NUM_FEATURES + 1];
+  const float z = points[point_idx * POINT_NUM_FEATURES + 2];
+
+  if (
+    x < min_x_range || x >= max_x_range || y < min_y_range || y >= max_y_range || z < min_z_range ||
+    z >= max_z_range)
+    return;
+
+  int voxel_idx = floorf((x - min_x_range) / pillar_x_size);
+  int voxel_idy = floorf((y - min_y_range) / pillar_y_size);
+  voxel_idx = voxel_idx < 0 ? 0 : voxel_idx >= grid_x_size ? grid_x_size - 1 : voxel_idx;
+  voxel_idy = voxel_idy < 0 ? 0 : voxel_idy >= grid_y_size ? grid_y_size - 1 : voxel_idy;
+  unsigned int voxel_index = (grid_x_size - 1 - voxel_idx) * grid_y_size + voxel_idy;
+
+  // Increment count for this voxel
+  atomicAdd(&(voxel_point_counts[voxel_index]), 1);
+
+  // Add point index to sum (for computing mean later)
+  // Using atomicAdd for float to accumulate the sum of point indices
+  atomicAdd(&(voxel_point_index_sums[voxel_index]), static_cast<float>(point_idx));
+}
+
+// Kernel to compute normalized mean point indices per voxel
+// Takes the coordinate mapping from generateBaseFeatures and computes mean index
+__global__ void computeVoxelPointIndexMean_kernel(
+  const int * coords, const float * voxel_point_index_sums, const unsigned int * voxel_point_counts,
+  unsigned int num_voxels, int grid_y_size, int grid_x_size, float max_point_index,
+  float * voxel_point_index_map)
+{
+  int voxel_idx = blockIdx.x * blockDim.x + threadIdx.x;
+  if (voxel_idx >= num_voxels) return;
+
+  // Get voxel grid coordinates
+  int coord_x = coords[voxel_idx * 3 + 2];
+  int coord_y = coords[voxel_idx * 3 + 1];
+
+  // Compute voxel_index in the grid (same as in generateVoxelIndexMap_random_kernel)
+  int voxel_idx_inverted = grid_x_size - 1 - coord_x;
+  unsigned int grid_index = voxel_idx_inverted * grid_y_size + coord_y;
+
+  unsigned int count = voxel_point_counts[grid_index];
+  if (count > 0) {
+    float sum = voxel_point_index_sums[grid_index];
+    float mean_index = sum / static_cast<float>(count);
+    // Normalize by max point index
+    voxel_point_index_map[voxel_idx] = mean_index / max_point_index;
+  } else {
+    voxel_point_index_map[voxel_idx] = 0.0f;
+  }
+}
 }  // namespace
 
 namespace autoware::lidar_centerpoint
@@ -549,6 +613,52 @@ cudaError_t PreprocessCuda::extractFeatureMeanZ_launch(
 
   extractFeatureMeanZ_kernel<<<blocks, threads, 0, stream_>>>(
     encoder_features, voxel_num_points, num_voxels, voxel_mean_z, config_.encoder_in_feature_size_);
+
+  return cudaGetLastError();
+}
+
+cudaError_t PreprocessCuda::generateVoxelIndexMap_random_launch(
+  const float * points, std::size_t points_size, float * voxel_point_index_sums,
+  unsigned int * voxel_point_counts)
+{
+  dim3 blocks((points_size + 256 - 1) / 256);
+  dim3 threads(256);
+
+  if (blocks.x == 0) {
+    return cudaGetLastError();
+  }
+
+  if (config_.point_feature_size_ == POINT_DIM_XYZT) {
+    generateVoxelIndexMap_random_kernel<POINT_DIM_XYZT><<<blocks, threads, 0, stream_>>>(
+      points, points_size, config_.range_min_x_, config_.range_max_x_, config_.range_min_y_,
+      config_.range_max_y_, config_.range_min_z_, config_.range_max_z_, config_.voxel_size_x_,
+      config_.voxel_size_y_, config_.grid_size_y_, config_.grid_size_x_, voxel_point_index_sums,
+      voxel_point_counts);
+  } else if (config_.point_feature_size_ == POINT_DIM_XYZIT) {
+    generateVoxelIndexMap_random_kernel<POINT_DIM_XYZIT><<<blocks, threads, 0, stream_>>>(
+      points, points_size, config_.range_min_x_, config_.range_max_x_, config_.range_min_y_,
+      config_.range_max_y_, config_.range_min_z_, config_.range_max_z_, config_.voxel_size_x_,
+      config_.voxel_size_y_, config_.grid_size_y_, config_.grid_size_x_, voxel_point_index_sums,
+      voxel_point_counts);
+  } else {
+    throw std::runtime_error("Value of point_features_size is not supported!");
+  }
+
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+cudaError_t PreprocessCuda::computeVoxelPointIndexMean_launch(
+  const int * coords, const float * voxel_point_index_sums,
+  const unsigned int * voxel_point_counts, unsigned int num_voxels, float max_point_index,
+  float * voxel_point_index_map)
+{
+  dim3 threads(256);
+  dim3 blocks((num_voxels + threads.x - 1) / threads.x);
+
+  computeVoxelPointIndexMean_kernel<<<blocks, threads, 0, stream_>>>(
+    coords, voxel_point_index_sums, voxel_point_counts, num_voxels, config_.grid_size_y_,
+    config_.grid_size_x_, max_point_index, voxel_point_index_map);
 
   return cudaGetLastError();
 }
