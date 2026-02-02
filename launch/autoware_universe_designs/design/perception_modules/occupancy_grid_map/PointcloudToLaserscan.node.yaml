@@ -13,18 +13,21 @@ launch:
 inputs:
   - name: pointcloud
     message_type: sensor_msgs/msg/PointCloud2
+    remap_target: "~/input/pointcloud"
 
 outputs:
   - name: laserscan
     message_type: sensor_msgs/msg/LaserScan
-    qos:
-      reliability: reliable
-      durability: transient_local
+    remap_target: "~/output/laserscan"
   - name: pointcloud
     message_type: sensor_msgs/msg/PointCloud2
-    qos:
-      reliability: reliable
-      durability: transient_local
+    remap_target: "~/output/pointcloud"
+  - name: ray
+    message_type: visualization_msgs/msg/Marker
+    remap_target: "~/output/ray"
+  - name: stixel
+    message_type: visualization_msgs/msg/MarkerArray
+    remap_target: "~/output/stixel"
 
 # parameters
 parameter_files: []
