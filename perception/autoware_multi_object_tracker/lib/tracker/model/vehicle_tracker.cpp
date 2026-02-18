@@ -41,7 +41,9 @@ VehicleTracker::VehicleTracker(
 : Tracker(time, object), logger_(rclcpp::get_logger("VehicleTracker")), object_model_(object_model)
 {
   // set tracker type based on object model
-  if (object_model.type == object_model::ObjectModelType::NormalVehicle) {
+  if (object_model.type == object_model::ObjectModelType::GeneralVehicle) {
+    tracker_type_ = TrackerType::MULTIPLE_VEHICLE;
+  } else if (object_model.type == object_model::ObjectModelType::NormalVehicle) {
     tracker_type_ = TrackerType::NORMAL_VEHICLE;
   } else if (object_model.type == object_model::ObjectModelType::BigVehicle) {
     tracker_type_ = TrackerType::BIG_VEHICLE;

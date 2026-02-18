@@ -156,7 +156,7 @@ std::shared_ptr<Tracker> TrackerProcessor::createNewTracker(
   if (config_.tracker_map.count(label) != 0) {
     const auto tracker_type = config_.tracker_map.at(label);
     if (tracker_type == TrackerType::MULTIPLE_VEHICLE)
-      return std::make_shared<MultipleVehicleTracker>(time, object);
+      return std::make_shared<VehicleTracker>(object_model::general_vehicle, time, object);
     if (tracker_type == TrackerType::PEDESTRIAN_AND_BICYCLE)
       return std::make_shared<PedestrianAndBicycleTracker>(time, object);
     if (tracker_type == TrackerType::UNKNOWN)
